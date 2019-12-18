@@ -1,0 +1,37 @@
+name: Swift Tests
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+  push:
+    branches:
+      - master
+      - develop
+      - rc/*
+      - 1.*
+
+jobs:
+  bionic-test:
+    container:
+      image: swift:5.1.2-bionic
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v1.2.0
+    - name: Run unit tests
+      run: |
+        apt-get -qq update && apt-get install -y \
+          libssl-dev zlib1g-dev \
+          && rm -r /var/lib/apt/lists/*
+        swift test
+    - name: Build library in release mode
+      run: |
+        apt-get -qq update && apt-get install -y \
+        libssl-dev zlib1g-dev \
+        && rm -r /var/lib/apt/lists/*
+        swift build -c release
+      if: github.ref == 'refs/heads/master'
+    - name: Release new version
+      run: bash ./CI/release-version.sh
+      if: github.ref == 'refs/heads/master'
