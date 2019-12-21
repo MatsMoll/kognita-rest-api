@@ -16,9 +16,10 @@ class TaskResultController: RouteCollection {
         router.get("results",                           use: getRevisitSchedual)
         router.get("results/topics", Int.parameter,     use: getRevisitSchedualFilter)
         router.get("results/overview",                  use: getResultsOverview)
+        router.get("results/export",                    use: export)
     }
 
-    func getRevisitSchedual(_ req: Request) throws -> Future<[TaskResult]> {
+    func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -29,7 +30,7 @@ class TaskResultController: RouteCollection {
         }
     }
 
-    func getRevisitSchedualFilter(_ req: Request) throws -> Future<[TaskResult]> {
+    func getRevisitSchedualFilter(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
 
         let user = try req.requireAuthenticated(User.self)
         let topicID = try req.parameters.next(Int.self)
@@ -41,7 +42,7 @@ class TaskResultController: RouteCollection {
         }
     }
 
-    func getResultsOverview(on req: Request) throws -> Future<[UserResultOverview]> {
+    func getResultsOverview(on req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
         let user = try req.requireAuthenticated(User.self)
         guard user.isCreator else {
             throw Abort(.forbidden)
@@ -51,4 +52,18 @@ class TaskResultController: RouteCollection {
                 TaskResultRepository.getResults(on: conn)
         }
     }
+
+    func export(on req: Request) throws -> EventLoopFuture<[TaskResult.Answer]> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        guard user.role == .admin else {
+            throw Abort(.forbidden)
+        }
+
+        return try TaskResultRepository
+            .exportResults(on: req)
+    }
 }
+
+extension TaskResult.Answer: Content {}
