@@ -8,22 +8,7 @@
 import Vapor
 import KognitaCore
 
-public final class SubjectController: KognitaCRUDControllable, RouteCollection {
-
-    typealias Model = Subject
-    typealias ResponseContent = Subject
-
-    public func boot(router: Router) {
-        router.register(controller: self, at: "subjects")
-        router.get("subjects", Subject.parameter, "export", use: SubjectController.export)
-        router.get("subjects/export", use: SubjectController.exportAll)
-        router.post("subjects/import", use: SubjectController.importContent)
-    }
-    
-    public static func getAll(_ req: Request) throws -> EventLoopFuture<[Subject]> {
-        return Subject.Repository
-            .all(on: req)
-    }
+public final class SubjectAPIController<Repository: SubjectRepositoring>: SubjectAPIControlling {
 
     public static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
 
@@ -33,15 +18,15 @@ public final class SubjectController: KognitaCRUDControllable, RouteCollection {
             .next(Subject.self)
             .flatMap { subject in
 
-                try Topic.Repository
+                try Topic.DatabaseRepository
                     .getTopicsWithTaskCount(in: subject, conn: req)
                     .flatMap { topics in
 
-                        try TaskResultRepository
+                        try TaskResult.DatabaseRepository
                             .getUserLevel(for: user.requireID(), in: topics.map { try $0.topic.requireID() }, on: req)
                             .map { levels in
 
-                                try Subject.Details(
+                                Subject.Details(
                                     subject: subject,
                                     topics: topics,
                                     levels: levels
@@ -51,31 +36,20 @@ public final class SubjectController: KognitaCRUDControllable, RouteCollection {
         }
     }
 
-//    func createTest(_ req: Request) throws -> Future<SubjectTestSet> {
-//
-//        let user = try req.requireAuthenticated(User.self)
-//
-//        return try req.parameters.next(Subject.self)
-//            .and(req.content.decode(CreateSubjectTest.self))
-//            .flatMap { (subject, _) in
-//                try SubjectTest.create(for: user, on: subject, with: req)
-//            }
-//    }
-
     public static func export(on req: Request) throws -> Future<SubjectExportContent> {
         _ = try req.requireAuthenticated(User.self)
         return try req.parameters.next(Subject.self).flatMap { subject in
-            try Topic.Repository
+            try Topic.DatabaseRepository
                 .exportTopics(in: subject, on: req)
         }
     }
 
     public static func exportAll(on req: Request) throws -> Future<[SubjectExportContent]> {
         _ = try req.requireAuthenticated(User.self)
-        return Subject.Repository
+        return try Repository
             .all(on: req)
             .flatMap { subjects in
-                try subjects.map { try Topic.Repository
+                try subjects.map { try Topic.DatabaseRepository
                     .exportTopics(in: $0, on: req)
                 }
                 .flatten(on: req)
@@ -88,9 +62,12 @@ public final class SubjectController: KognitaCRUDControllable, RouteCollection {
         return try req.content
             .decode(SubjectExportContent.self)
             .flatMap {
-                Subject.Repository
+                Subject.DatabaseRepository
                     .importContent($0, on: req)
         }
     }
 }
 
+extension Subject {
+    public typealias DefaultAPIController = SubjectAPIController<Subject.DatabaseRepository>
+}

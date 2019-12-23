@@ -8,28 +8,11 @@
 import Vapor
 import KognitaCore
 
-final class FlashCardTaskController: RouteCollection, KognitaCRUDControllable {
-    
-    typealias Model = FlashCardTask
-    typealias ResponseContent = Task
+public final class FlashCardTaskAPIController
+    <Repository: FlashCardTaskRepository>:
+    FlashCardTaskAPIControlling
+{}
 
-    static var shared = FlashCardTaskController()
-    
-    var parameter: PathComponentsRepresentable { return FlashCardTask.parameter }
-
-    func boot(router: Router) throws {
-        router.register(controller: self, at: "tasks/flash-card")
-    }
-    
-    static func map(model: FlashCardTask, on conn: DatabaseConnectable) throws -> EventLoopFuture<Task> {
-        return try FlashCardTask.Repository
-            .get(task: model, conn: conn)
-    }
-    
-    static func getAll(_ req: Request) throws -> EventLoopFuture<[Task]> {
-        return FlashCardTask.query(on: req)
-            .join(\FlashCardTask.id, to: \Task.id)
-            .decode(Task.self)
-            .all()
-    }
+extension FlashCardTask {
+    public typealias DefaultAPIController = FlashCardTaskAPIController<FlashCardTask.DatabaseRepository>
 }
