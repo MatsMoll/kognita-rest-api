@@ -103,7 +103,9 @@ function skip_if_norelease_set {
 
 function create_new_release {
     if [ -z "$DRYRUN" ]; then
+        cat new_release_data
         curl --silent --header "Authorization: token ${GITHUB_TOKEN}" \
+             --header "Content-Type: application/json" \
              --url "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases" \
              --request POST \
              --data @new_release_data

@@ -18,7 +18,7 @@ protocol SubjectAPIControlling:
     UpdateResponse  == Subject.Edit.Response
 {
     static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
-    static func importContent(on req: Request) throws -> EventLoopFuture<Subject>
+    static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension SubjectAPIControlling {

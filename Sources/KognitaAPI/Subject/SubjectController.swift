@@ -56,14 +56,21 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
     }
 
-    public static func importContent(on req: Request) throws -> Future<Subject> {
-        _ = try req.requireAuthenticated(User.self)
+    public static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let user = try req.requireAuthenticated(User.self)
 
+        guard user.role == .admin else {
+            throw Abort(.forbidden)
+        }
         return try req.content
-            .decode(SubjectExportContent.self)
-            .flatMap {
-                Subject.DatabaseRepository
-                    .importContent($0, on: req)
+            .decode([SubjectExportContent].self)
+            .flatMap { content in
+                content.map {
+                    Subject.DatabaseRepository
+                        .importContent($0, on: req)
+                }
+                .flatten(on: req)
+                .transform(to: .ok)
         }
     }
 }

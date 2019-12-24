@@ -105,7 +105,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
                 let index = try req.parameters.next(Int.self)
 
-                return try PracticeSession.DatabaseRepository.taskID(index: index, in: session, on: req)
+                return try PracticeSession.DatabaseRepository
+                    .taskID(index: index, in: session, on: req)
                     .flatMap { taskID in
                         TaskSolution.Repository.solutions(for: taskID, on: req)
                 }
