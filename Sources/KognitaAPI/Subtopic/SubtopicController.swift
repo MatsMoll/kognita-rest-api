@@ -8,27 +8,19 @@
 import Vapor
 import KognitaCore
 
-final class SubtopicController : KognitaCRUDControllable, RouteCollection {
-
-    typealias Model = Subtopic
-    typealias ResponseContent = Subtopic
+public final class SubtopicController<Repository: SubtopicRepositoring>: SubtopicAPIControlling {
     
-    static let shared = SubtopicController()
-    
-    func boot(router: Router) throws {
-        router.register(controller: self, at: "subtopics")
-        router.get(
-            "topics", Topic.parameter, "subtopics",
-            use: SubtopicController.getAll)
-    }
-    
-    static func getAll(_ req: Request) throws -> EventLoopFuture<[Subtopic]> {
+    public static func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
         return try req.parameters
             .next(Topic.self)
             .flatMap { topic in
 
-                try Subtopic.Repository
+                try Repository
                     .getSubtopics(in: topic, with: req)
         }
     }
+}
+
+extension Subtopic {
+    public typealias DefaultAPIController = SubtopicController<Subtopic.DatabaseRepository>
 }

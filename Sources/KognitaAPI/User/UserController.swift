@@ -1,4 +1,3 @@
-import Crypto
 import Vapor
 import FluentPostgreSQL
 import KognitaCore
@@ -15,37 +14,18 @@ extension User.ResetPassword {
 }
 
 /// Creates new users and logs them in.
-public final class UserController: RouteCollection {
+public final class UserAPIController<Repository: UserRepository>: UserAPIControlling {
 
     public enum Errors: Error {
         case userNotFound
     }
-
-    public func boot(router: Router) {
-
-        let users = router.grouped("users")
-
-        // public routes
-        router.post("users", use: UserController.create)
-        users.post("send-reset-mail", use: UserController.startResetPassword)
-        users.post("reset-password", use: UserController.resetPassword)
-
-        // basic / password auth protected routes
-        let basic = router.grouped(User.basicAuthMiddleware(using: BCryptDigest()))
-        basic.post("users/login", use: UserController.login)
-
-//        let auth = basic.grouped(User.authSessionsMiddleware())
-//        auth.get("users/overview", use: UserController.getAllUsers)
-        }
-
-    static let shared = UserController()
 
     /// Logs a user in, returning a token for accessing protected endpoints.
     public static func login(_ req: Request) throws -> EventLoopFuture<UserToken> {
         // get user auth'd by basic auth middleware
         let user = try req.requireAuthenticated(User.self)
 
-        return try User.Repository
+        return try User.DatabaseRepository
             .login(with: user, conn: req)
     }
 
@@ -55,32 +35,24 @@ public final class UserController: RouteCollection {
         return try req.content
             .decode(User.Create.Data.self)
             .flatMap { content in
-                try User.Repository
+                try User.DatabaseRepository
                     .create(from: content, by: nil, on: req)
         }
     }
 
-    public static func getAllUsers(on req: Request) throws -> EventLoopFuture<[User.Response]> {
-        let user = try req.requireAuthenticated(User.self)
-        guard user.isCreator else {
-            throw Abort(.forbidden)
-        }
-        return User.Repository
-            .getAll(on: req)
-    }
 
-    public static func startResetPassword(on req: Request) throws -> EventLoopFuture<Response> {
+    public static func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        try req.content
+        return try req.content
             .decode(User.ResetPassword.Email.self)
             .flatMap { email in
 
-                User.Repository
-                    .first(where: \User.email == email.email, on: req)
+                Repository
+                    .first(with: email.email, on: req)
                     .flatMap { user in
 
                         guard let user = user else {
-                            return req.future(Response(using: req))
+                            return req.future(.ok)
                         }
                         return try User.ResetPassword.Token.Repository
                             .create(by: user, on: req)
@@ -97,13 +69,13 @@ public final class UserController: RouteCollection {
                                     html:       renderer.render(with: token, for: user)
                                 )
                                 return try mailgun.send(mail, on: req)
-                                    .transform(to: Response(using: req))
+                                    .transform(to: .ok)
                         }
                 }
         }
     }
 
-    public static func resetPassword(on req: Request) throws -> EventLoopFuture<Response> {
+    public static func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
         return try req.content
             .decode(User.ResetPassword.Token.Data.self)
             .flatMap { token in
@@ -114,8 +86,12 @@ public final class UserController: RouteCollection {
 
                         try User.ResetPassword.Token.Repository
                             .reset(to: data, with: token.token, on: req)
-                            .transform(to: Response(using: req))
+                            .transform(to: .ok)
                 }
         }
     }
+}
+
+extension User {
+    public typealias DefaultAPIController = UserAPIController<User.DatabaseRepository>
 }

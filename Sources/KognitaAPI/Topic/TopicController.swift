@@ -9,25 +9,19 @@ import FluentPostgreSQL
 import Vapor
 import KognitaCore
 
-final class TopicController: KognitaCRUDControllable, RouteCollection {
+public final class TopicAPIController<Repository: TopicRepository>: TopicAPIControlling {
     
-    typealias Model = Topic
-    typealias ResponseContent = Topic
-
-    static let shared = TopicController()
-
-    func boot(router: Router) {
-        router.register(controller: self, at: "topics")
-        router.get("subjects", Subject.parameter, "topics", use: TopicController.getAll)
-    }
-    
-    static func getAll(_ req: Request) throws -> EventLoopFuture<[Topic]> {
+    public static func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
         return try req.parameters
             .next(Subject.self)
             .flatMap { (subject) in
 
-                try Topic.Repository
+                try Repository
                     .getTopics(in: subject, conn: req)
         }
     }
+}
+
+extension Topic {
+    public typealias DefaultAPIController = TopicAPIController<Topic.DatabaseRepository>
 }

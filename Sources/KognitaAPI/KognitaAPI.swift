@@ -6,22 +6,28 @@ import FluentPostgreSQL
 public class KognitaAPI {
 
     public static func setupApi(for router: Router) throws {
-        
-        let authMiddleware = router.grouped(
+
+        try router.register(collection: User.DefaultAPIController())
+
+        let auth = router.grouped(
             User.tokenAuthMiddleware(),
             User.authSessionsMiddleware(),
             User.guardAuthMiddleware()
         )
 
-        try router.register(collection: UserController())
-        try authMiddleware.register(collection: SubjectController())
-        try authMiddleware.register(collection: TopicController())
-        try authMiddleware.register(collection: MultipleChoiseTaskController())
-        try authMiddleware.register(collection: PracticeSessionController())
-        try authMiddleware.register(collection: NumberInputTaskController())
-        try authMiddleware.register(collection: FlashCardTaskController())
-        try authMiddleware.register(collection: TaskResultController())
-        try authMiddleware.register(collection: SubtopicController())
+        let authControllers: [RouteCollection] = [
+            Subject             .DefaultAPIController(),
+            Topic               .DefaultAPIController(),
+            Subtopic            .DefaultAPIController(),
+            MultipleChoiseTask  .DefaultAPIController(),
+            FlashCardTask       .DefaultAPIController(),
+            PracticeSession     .DefaultAPIController(),
+            TaskResult          .DefaultAPIController()
+        ]
+
+        try authControllers.forEach {
+            try auth.register(collection: $0)
+        }
     }
 
     public static func setupApi(with env: Environment, in services: inout Services) {
