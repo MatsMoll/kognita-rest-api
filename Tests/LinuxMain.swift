@@ -1,7 +1,10 @@
+#if os(Linux)
+
 import XCTest
+@testable import KognitaAPITests
 
-import KognitaAPITests
+XCTMain(
+    KognitaAPITests.allTests()
+)
 
-var tests = [XCTestCaseEntry]()
-tests += KognitaAPITests.allTests()
-XCTMain(tests)
+#endif

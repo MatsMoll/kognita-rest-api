@@ -12,7 +12,7 @@ import KognitaCore
 public final class PracticeSessionAPIController<Repository: PracticeSessionRepository>: PracticeSessionAPIControlling {
 
     public enum Errors: Error {
-        case unableToFindTask(PracticeSession, User)
+        case unableToFindTask(PracticeSession.ID, User)
     }
 
     /// Submits an answer to a session
@@ -20,7 +20,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
     /// - Parameter req: The http request
     /// - Returns: A response containing the result
     /// - Throws: if unautorized, database errors ext.
-    public static func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<PracticeSessionResult<[MultipleChoiseTaskChoise.Result]>> {
+    public static func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<TaskSessionResult<[MultipleChoiseTaskChoise.Result]>> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -29,16 +29,16 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .flatMap { submit in
 
                 try req.parameters
-                    .next(PracticeSession.self)
+                    .next(TaskSession.PracticeParameter.self)
                     .flatMap { (session) in
 
                         try PracticeSession.DatabaseRepository
-                            .submitMultipleChoise(submit, in: session, by: user, on: req)
+                            .submit(submit, in: session, by: user, on: req)
                 }
         }
     }
 
-    public static func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<PracticeSessionResult<FlashCardTask.Submit>> {
+    public static func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<TaskSessionResult<FlashCardTask.Submit>> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -47,24 +47,25 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .flatMap { submit in
 
                 try req.parameters
-                    .next(PracticeSession.self)
+                    .next(TaskSession.PracticeParameter.self)
                     .flatMap { session in
 
                         try PracticeSession.DatabaseRepository
-                            .submitFlashCard(submit, in: session, by: user, on: req)
+                            .submit(submit, in: session, by: user, on: req)
                 }
         }
     }
 
-    public static func end(session req: Request) throws -> EventLoopFuture<PracticeSession> {
+    public static func end(session req: Request) throws -> EventLoopFuture<TaskSession.PracticeParameter> {
 
         let user = try req.requireAuthenticated(User.self)
 
         return try req.parameters
-            .next(PracticeSession.self)
+            .next(TaskSession.PracticeParameter.self)
             .flatMap { session in
                 try PracticeSession.DatabaseRepository
                     .end(session, for: user, on: req)
+                    .transform(to: session)
         }
     }
 
@@ -96,7 +97,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         let user = try req.requireAuthenticated(User.self)
 
         return try req.parameters
-            .next(PracticeSession.self)
+            .next(TaskSession.PracticeParameter.self)
             .flatMap { (session) in
 
                 guard session.userID == user.id else {
@@ -106,7 +107,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 let index = try req.parameters.next(Int.self)
 
                 return try PracticeSession.DatabaseRepository
-                    .taskID(index: index, in: session, on: req)
+                    .taskID(index: index, in: session.requireID(), on: req)
                     .flatMap { taskID in
                         TaskSolution.Repository.solutions(for: taskID, on: req)
                 }
@@ -137,7 +138,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         let user = try req.requireAuthenticated(User.self)
 
         return try req.parameters
-            .next(PracticeSession.self)
+            .next(TaskSession.PracticeParameter.self)
             .flatMap { session in
                 guard user.id == session.userID else {
                     throw Abort(.forbidden)
@@ -148,7 +149,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                     .flatMap { progress in
 
                         try PracticeSession.DatabaseRepository
-                            .getResult(for: session, on: req)
+                            .getResult(for: session.requireID(), on: req)
                 }
         }
     }
@@ -159,7 +160,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         let user = try req.requireAuthenticated(User.self)
 
         return try req.parameters
-            .next(PracticeSession.self)
+            .next(TaskSession.PracticeParameter.self)
             .flatMap { session in
 
                 let index = try req.parameters.next(Int.self)
@@ -170,8 +171,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 return req.databaseConnection(to: .psql)
                     .flatMap { conn in
 
-                        try session
-                            .taskAt(index: index, on: conn)
+                        try PracticeSession.DatabaseRepository
+                            .taskAt(index: index, in: session.requireID(), on: conn)
                             .map { taskType in
 
                                 try PracticeSession.CurrentTask(
@@ -182,7 +183,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                                 )
                         }
                         .catchMap { _ in
-                            throw Errors.unableToFindTask(session, user)
+                            throw Errors.unableToFindTask((try? session.requireID()) ?? 0, user)
                         }
                 }
         }
