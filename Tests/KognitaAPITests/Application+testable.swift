@@ -30,7 +30,7 @@ import Vapor
 import Authentication
 import FluentPostgreSQL
 import KognitaCore
-import KognitaAPI
+@testable import KognitaAPI
 
 extension Application {
     
@@ -43,19 +43,37 @@ extension Application {
             env.arguments = environmentArgs
         }
 
-        let router = EngineRouter.default()
-
-        try! KognitaAPI.setupApi(for: router.grouped("api"))
-        try! KognitaAPI.setupApi(with: env, in: &services)
-
-//        // Sets the templating framework and Web Sessions
         config.prefer(MemoryKeyedCache.self, for: KeyedCache.self)
+        
+        let router = EngineRouter.default()
+        
+        try services.register(KognitaAPIProvider(env: env))
 
         services.register(router, as: Router.self)
+//        services.register(APIControllerCollection.self) { _ in
+//            APIControllerCollection.defaultControllers
+//        }
+        services.register(APIControllerCollection.self) { _ in
+            APIControllerCollection(
+                authControllers: [
+//                    Subject             .DefaultAPIController(),
+//                    Topic               .DefaultAPIController(),
+//                    Subtopic            .DefaultAPIController(),
+//                    MultipleChoiseTask  .DefaultAPIController(),
+//                    FlashCardTask       .DefaultAPIController(),
+//                    PracticeSession     .DefaultAPIController(),
+//                    TaskResult          .DefaultAPIController(),
+                    SubjectTestAPIController<SubjectTestRepositoryMock>(),
+                    TopicAPIController<TopicRepositoryMock>()
+                ],
+                unauthControllers: [
+                    // Needs to be used in order to authenticate users
+                    User                .DefaultAPIController()
+                ]
+            )
+        }
 
-        let app = try Application(config: config, environment: env, services: services)
-
-        return app
+        return try Application(config: config, environment: env, services: services)
     }
     
     static func reset() throws {

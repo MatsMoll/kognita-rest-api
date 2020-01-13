@@ -45,12 +45,20 @@ class VaporTestCase: XCTestCase {
 
 
 extension Response {
-    func has(statusCode: HTTPResponseStatus) {
-        XCTAssertEqual(self.http.status, statusCode)
+    func has(statusCode: HTTPResponseStatus, file: StaticString = #file, line: UInt = #line) {
+        XCTAssertEqual(http.status, statusCode, "The http status code should have been \(statusCode), but were \(http.status)", file: file, line: line)
     }
 
-    func has(headerName: String, with value: String? = nil) {
-        XCTAssertTrue(self.http.headers.contains(name: headerName))
-//        XCTAssertTrue(self.http.headers.firstValue(name: headerName) == value)
+    func has(headerName: String, with value: String? = nil, file: StaticString = #file, line: UInt = #line) {
+        XCTAssertTrue(self.http.headers.contains(name: headerName), file: file, line: line)
+    }
+
+    func has<T: Decodable>(content type: T.Type, file: StaticString = #file, line: UInt = #line) {
+        XCTAssertNoThrow(
+            try content.syncDecode(T.self),
+            "Was not able to decode \(type) based on the reponse content",
+            file: file,
+            line: line
+        )
     }
 }

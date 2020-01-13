@@ -19,21 +19,25 @@ class TopicTests: VaporTestCase {
     
     func testGetAllTopics() throws {
 
+        TopicRepositoryMock.Logger.shared.clear()
+
         let user                = try User.create(on: conn)
         let topic               = try Topic.create(on: conn)
-        _                       = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
-        let otherTopic          = try Topic.create(on: conn)
 
         let uri                 = "api/subjects/\(topic.subjectId)/topics"
         let response            = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)
 
-        let topics              = try response.content.syncDecode([Topic].self)
-        XCTAssert(response.http.status      == .ok,         "The http status code should have been OK, but were \(response.http.status)")
+        response.has(statusCode: .ok)
+        response.has(content: [Topic].self)
 
-        let isMatchingSubject   = topics.contains(where: { $0.id == otherTopic.id })
+        let latestLog = try XCTUnwrap(TopicRepositoryMock.Logger.shared.logs.last)
 
-        XCTAssert(topics.count              == 2,           "Should return two topics for subject \(topic.subjectId), but returned \(topics.count)")
-        XCTAssert(isMatchingSubject         == false,       "The response contains a topic that should not be there")
+        switch latestLog {
+        case .getTopics(let subject):
+            XCTAssertEqual(subject.id, topic.subjectId)
+        default:
+            XCTFail("Incorrect log entry")
+        }
     }
     
     
@@ -43,12 +47,11 @@ class TopicTests: VaporTestCase {
         _               = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
         _               = try Topic.create(on: conn)
 
-        XCTAssertThrowsError(
-            try app.sendRequest(to: path, method: .GET, headers: standardHeaders)
-        )
+        let response = try app.sendRequest(to: path, method: .GET, headers: standardHeaders)
+        response.has(statusCode: .unauthorized)
     }
     
-    // MARK: - GET /subjects/:id/topics/:id
+    // MARK: - GET /topics/:id
     
     func testGetTopicWithId() throws {
 
@@ -58,13 +61,9 @@ class TopicTests: VaporTestCase {
 
         let uri             = try path + "\(topic.requireID())"
         let response        = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)
-        XCTAssert(response.http.status          == .ok,                 "The http statuscode should have been OK, but were \(response.http.status)")
 
-        let responseTopic   = try response.content.syncDecode(Topic.self)
-
-        try XCTAssert(responseTopic.requireID() == topic.requireID(),   "The ids do not match, returned topic with id: \(try! responseTopic.requireID())")
-        XCTAssert(responseTopic.name            == topic.name,          "The names do not match, returned topic with id: \(responseTopic.name)")
-        XCTAssert(responseTopic.subjectId       == topic.subjectId,     "The subjectIds do not match, returned topic with id: \(responseTopic.subjectId)")
+        response.has(statusCode: .ok)
+        response.has(content: Topic.self)
     }
     
     
@@ -74,9 +73,8 @@ class TopicTests: VaporTestCase {
         _                   = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
 
         let uri             = try path + "\(topic.requireID())"
-        XCTAssertThrowsError(
-            try app.sendRequest(to: uri, method: .GET, headers: standardHeaders)
-        )
+        let response = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders)
+        response.has(statusCode: .unauthorized)
     }
     
     
@@ -114,9 +112,8 @@ class TopicTests: VaporTestCase {
 
         let uri             = try path + "\(topic.requireID())"
 
-        XCTAssertThrowsError(
-            try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
-        )
+        let response = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
+        response.has(statusCode: .ok)
         let databaseTopic = try Topic.find(topic.requireID(), on: conn).wait()
         XCTAssert(databaseTopic != nil,             "The topic should NOT be deleted, but the topic is not in the database")
     }

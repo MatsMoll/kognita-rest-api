@@ -29,9 +29,8 @@ class UserTests: VaporTestCase {
         var headers = standardHeaders
         headers.add(name: .authorization, value: "Basic dGVzdEAxLmNvbTpwYXNzd29y")
 
-        XCTAssertThrowsError(
-            try app.sendRequest(to: uri + "/login", method: .POST, headers: headers)
-        )
+        let response = try app.sendRequest(to: uri + "/login", method: .POST, headers: headers)
+        response.has(statusCode: .unauthorized)
     }
     
     
@@ -52,17 +51,15 @@ class UserTests: VaporTestCase {
 
         let user = try User.create(on: conn)
         let newUser = User.Create.Data(username: "Mats", email: user.email, password: "password", verifyPassword: "password", acceptedTermsInput: "on")
-        XCTAssertThrowsError(
-            try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
-        )
+        let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
+        response.has(statusCode: .internalServerError)
     }
     
     func testCreateUserPasswordMismatch() throws {
         let newUser = User.Create.Data(username: "Mats", email: "test@3.com", password: "password1", verifyPassword: "not matching", acceptedTermsInput: "on")
 
-        XCTAssertThrowsError(
-            try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
-        )
+        let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
+        response.has(statusCode: .internalServerError)
     }
     
     static let allTests = [
