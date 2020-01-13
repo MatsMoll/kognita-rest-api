@@ -16,10 +16,12 @@ class TopicTests: VaporTestCase {
     
     private let path = "api/topics/"
 
+    override func setUp() {
+        super.setUp()
+        TopicRepositoryMock.Logger.shared.clear()
+    }
     
     func testGetAllTopics() throws {
-
-        TopicRepositoryMock.Logger.shared.clear()
 
         let user                = try User.create(on: conn)
         let topic               = try Topic.create(on: conn)
@@ -30,7 +32,7 @@ class TopicTests: VaporTestCase {
         response.has(statusCode: .ok)
         response.has(content: [Topic].self)
 
-        let latestLog = try XCTUnwrap(TopicRepositoryMock.Logger.shared.logs.last)
+        let latestLog = try XCTUnwrap(TopicRepositoryMock.Logger.shared.lastEntry)
 
         switch latestLog {
         case .getTopics(let subject):
@@ -87,10 +89,16 @@ class TopicTests: VaporTestCase {
 
         let uri             = try path + "\(topic.requireID())"
         let response        = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders, loggedInUser: user)
-        XCTAssert(response.http.status  == .ok, "The http statuscode should have been ok, but were \(response.http.status)")
+        response.has(statusCode: .ok)
 
-        let databaseTopic   = try Topic.find(topic.requireID(), on: conn).wait()
-        XCTAssert(databaseTopic         == nil, "The topic should be deleted, but still exists in the database")
+        let latestLog = try XCTUnwrap(TopicRepositoryMock.Logger.shared.lastEntry)
+
+        switch latestLog {
+        case .delete(let loggedTopic):
+            XCTAssertEqual(try topic.requireID(), loggedTopic.id)
+        default:
+            XCTFail("Incorrect log entry")
+        }
     }
     
 //    func testDeleteingTopicWhenNotCreatorError() throws {
@@ -113,9 +121,9 @@ class TopicTests: VaporTestCase {
         let uri             = try path + "\(topic.requireID())"
 
         let response = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
-        response.has(statusCode: .ok)
-        let databaseTopic = try Topic.find(topic.requireID(), on: conn).wait()
-        XCTAssert(databaseTopic != nil,             "The topic should NOT be deleted, but the topic is not in the database")
+        response.has(statusCode: .unauthorized)
+
+        XCTAssertTrue(TopicRepositoryMock.Logger.shared.isEmpty)
     }
     
     static let allTests = [

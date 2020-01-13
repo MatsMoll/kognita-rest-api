@@ -7,6 +7,7 @@ class TopicRepositoryMock: TopicRepository {
         enum Entry {
             case getTopics(subject: Subject)
             case create(data: Topic.Create.Data, user: User?)
+            case delete(Topic)
         }
 
         var logs: [Entry] = []
@@ -36,6 +37,7 @@ class TopicRepositoryMock: TopicRepository {
     }
 
     static func delete(model: Topic, by user: User?, on conn: DatabaseConnectable) throws -> EventLoopFuture<Void> {
-        conn.future()
+        Logger.shared.log(entry: .delete(model))
+        return conn.future()
     }
 }

@@ -42,9 +42,9 @@ class MultipleChoiseTaskTests: VaporTestCase {
         _                       = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
 
         let uri                 = try self.uri + "/\(task.requireID())"
-        XCTAssertThrowsError(
-            try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
-        )
+        let response = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
+        response.has(statusCode: .unauthorized)
+        
         let databaseTask        = try Task.find(task.requireID(), on: conn).wait()
         let databaseMultiple    = try MultipleChoiseTask.find(task.requireID(), on: conn).wait()
 

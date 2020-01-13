@@ -77,9 +77,8 @@ class SubjectTests: VaporTestCase {
             .wait()
             .isEmpty == true, "There exists a subject with name: \(requestBody.name)")
 
-        XCTAssertThrowsError(
-            try app.sendRequest(to: subjectPath, method: .POST, headers: standardHeaders, body: requestBody)
-        )
+        let response = try app.sendRequest(to: subjectPath, method: .POST, headers: standardHeaders, body: requestBody)
+        response.has(statusCode: .unauthorized)
 
         let currentSubjects = try Subject.query(on: conn).filter(\.name == requestBody.name).all().wait()
         XCTAssert(currentSubjects.isEmpty == true, "The new subject was added, but should not have been")
@@ -149,9 +148,9 @@ class SubjectTests: VaporTestCase {
         let startSubjects = try Subject.query(on: conn).all().wait()
 
         let path = try subjectPath + "/\(subjectToDelete.requireID())"
-        XCTAssertThrowsError(
-            try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders)
-        )
+        let response = try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders)
+        response.has(statusCode: .unauthorized)
+
         let currentSubjects = try Subject.query(on: conn).all().wait()
         XCTAssert(currentSubjects.count == startSubjects.count, "The amount of subject is incorrect, count: \(currentSubjects.count)")
     }

@@ -50,21 +50,19 @@ extension Application {
         try services.register(KognitaAPIProvider(env: env))
 
         services.register(router, as: Router.self)
-//        services.register(APIControllerCollection.self) { _ in
-//            APIControllerCollection.defaultControllers
-//        }
         services.register(APIControllerCollection.self) { _ in
             APIControllerCollection(
                 authControllers: [
-//                    Subject             .DefaultAPIController(),
-//                    Topic               .DefaultAPIController(),
-//                    Subtopic            .DefaultAPIController(),
-//                    MultipleChoiseTask  .DefaultAPIController(),
-//                    FlashCardTask       .DefaultAPIController(),
-//                    PracticeSession     .DefaultAPIController(),
-//                    TaskResult          .DefaultAPIController(),
-                    SubjectTestAPIController<SubjectTestRepositoryMock>(),
-                    TopicAPIController<TopicRepositoryMock>()
+                    Subject             .DefaultAPIController(),
+                    Subtopic            .DefaultAPIController(),
+                    MultipleChoiseTask  .DefaultAPIController(),
+                    FlashCardTask       .DefaultAPIController(),
+                    PracticeSession     .DefaultAPIController(),
+                    TaskResult          .DefaultAPIController(),
+
+                    TestSessionAPIController    <TestSessionRepositoryMock>(),
+                    SubjectTestAPIController    <SubjectTestRepositoryMock>(),
+                    TopicAPIController          <TopicRepositoryMock>()
                 ],
                 unauthControllers: [
                     // Needs to be used in order to authenticate users
