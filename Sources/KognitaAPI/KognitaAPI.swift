@@ -47,7 +47,8 @@ public final class APIControllerCollection: Service {
             FlashCardTask       .DefaultAPIController(),
             PracticeSession     .DefaultAPIController(),
             TaskResult          .DefaultAPIController(),
-            SubjectTest         .DefaultAPIController()
+            SubjectTest         .DefaultAPIController(),
+            TestSession         .DefaultAPIController()
         ],
         unauthControllers: [
             User                .DefaultAPIController()

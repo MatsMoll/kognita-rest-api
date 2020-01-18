@@ -10,7 +10,7 @@ public protocol UserAPIControlling:
     CreateData      == User.Create.Data,
     CreateResponse  == User.Create.Response
 {
-    static func login(_ req: Request) throws -> EventLoopFuture<UserToken>
+    static func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token>
     static func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }

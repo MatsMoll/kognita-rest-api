@@ -50,3 +50,7 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
     }
 }
 
+
+extension TestSession {
+    public typealias DefaultAPIController = TestSessionAPIController<TestSession.DatabaseRepository>
+}

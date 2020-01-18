@@ -12,7 +12,7 @@ import KognitaCore
 public final class PracticeSessionAPIController<Repository: PracticeSessionRepository>: PracticeSessionAPIControlling {
 
     public enum Errors: Error {
-        case unableToFindTask(PracticeSession.ID, User)
+        case unableToFindTask(PracticeSessionRepresentable, User)
     }
 
     /// Submits an answer to a session
@@ -183,7 +183,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                                 )
                         }
                         .catchMap { _ in
-                            throw Errors.unableToFindTask((try? session.requireID()) ?? 0, user)
+                            throw Errors.unableToFindTask(session, user)
                         }
                 }
         }
