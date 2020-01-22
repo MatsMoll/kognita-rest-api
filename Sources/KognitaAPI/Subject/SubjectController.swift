@@ -100,7 +100,11 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                             subjects: subjects,
                             ongoingPracticeSession: nil,
                             ongoingTestSession: nil,
-                            openedTest: test?.response
+                            openedTest: subjects
+                                .first(where: { $0.id == test?.subjectID })
+                                .flatMap {
+                                    test?.response(with: $0)
+                            }
                         )
                 }
         }

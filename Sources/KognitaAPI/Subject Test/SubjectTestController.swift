@@ -34,7 +34,14 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
     }
 
     public static func userCompletionStatus(on req: Request) throws -> EventLoopFuture<SubjectTest.CompletionStatus> {
-        throw Abort(.notImplemented)
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.parameters
+            .next(SubjectTest.self)
+            .flatMap { test in
+
+                try Repository.userCompletionStatus(in: test, user: user, on: req)
+        }
     }
 
     public static func taskForID(on req: Request) throws -> EventLoopFuture<SubjectTest.MultipleChoiseTaskContent> {

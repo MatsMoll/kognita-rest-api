@@ -48,6 +48,18 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
                 try Repository.results(in: session, for: user, on: req)
         }
     }
+
+    public static func overview(on req: Request) throws -> EventLoopFuture<TestSession.Overview> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.parameters
+            .next(TaskSession.TestParameter.self)
+            .flatMap { session in
+
+                try Repository.overview(in: session, for: user, on: req)
+        }
+    }
 }
 
 

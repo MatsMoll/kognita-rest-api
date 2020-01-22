@@ -6,6 +6,7 @@ public protocol TestSessionAPIControlling: RouteCollection {
     static func submit(test req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func submit(multipleChoiseTask req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func results(on req: Request) throws -> EventLoopFuture<TestSession.Results>
+    static func overview(on req: Request) throws -> EventLoopFuture<TestSession.Overview>
 }
 
 extension TestSessionAPIControlling {
@@ -17,5 +18,6 @@ extension TestSessionAPIControlling {
         session.post("finnish",     use: Self.submit(test: ))
         session.post("save",        use: Self.submit(multipleChoiseTask: ))
         session.get("results",      use: Self.results(on: ))
+        session.get("overview",     use: Self.overview(on: ))
     }
 }
