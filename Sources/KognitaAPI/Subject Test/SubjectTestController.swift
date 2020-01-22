@@ -49,7 +49,15 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
     }
 
     public static func results(on req: Request) throws -> EventLoopFuture<SubjectTest.Results> {
-        throw Abort(.notImplemented)
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.parameters
+            .next(SubjectTest.self)
+            .flatMap { test in
+
+                try Repository.results(for: test, user: user, on: req)
+        }
     }
 
     public static func allInSubject(on req: Request) throws -> EventLoopFuture<SubjectTest.ListReponse> {
@@ -88,6 +96,17 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
                         )
                 }
         }
+    }
+
+    public static func end(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.parameters
+            .next(SubjectTest.self)
+            .flatMap { test in
+                try Repository.end(test: test, by: user, on: req)
+        }
+        .transform(to: .ok)
     }
 }
 

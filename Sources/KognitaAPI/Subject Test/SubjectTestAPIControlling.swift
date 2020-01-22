@@ -21,6 +21,7 @@ public protocol SubjectTestAPIControlling:
     static func results(on req: Request) throws -> EventLoopFuture<SubjectTest.Results>
     static func allInSubject(on req: Request) throws -> EventLoopFuture<SubjectTest.ListReponse>
     static func test(withID req: Request) throws -> EventLoopFuture<SubjectTest.ModifyResponse>
+    static func end(req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension SubjectTestAPIControlling {
@@ -36,6 +37,7 @@ extension SubjectTestAPIControlling {
 
         router.get("subjects", Subject.parameter, "subject-tests",  use: Self.allInSubject(on: ))
 
+        testInstance.post("end",                                    use: Self.end(req: ))
         testInstance.post("open",                                   use: Self.open(on: ))
         testInstance.post("enter",                                  use: Self.enter(on: ))
 
