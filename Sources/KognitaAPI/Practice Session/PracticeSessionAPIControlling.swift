@@ -9,9 +9,9 @@ protocol PracticeSessionAPIControlling:
     CreateData == PracticeSession.Create.Data,
     CreateResponse == PracticeSession.Create.Response
 {
-    static func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<TaskSessionResult<[MultipleChoiseTaskChoise.Result]>>
-    static func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<TaskSessionResult<FlashCardTask.Submit>>
-    static func end(session req: Request)               throws -> EventLoopFuture<TaskSession.PracticeParameter>
+    static func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<PracticeSessionResult<[MultipleChoiseTaskChoise.Result]>>
+    static func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<PracticeSessionResult<FlashCardTask.Submit>>
+    static func end(session req: Request)               throws -> EventLoopFuture<PracticeSession>
     static func get(amountHistogram req: Request)       throws -> EventLoopFuture<[TaskResult.History]>
     static func get(solutions req: Request)             throws -> EventLoopFuture<[TaskSolution.Response]>
     static func get(sessions req: Request)              throws -> EventLoopFuture<PracticeSession.HistoryList>
@@ -22,7 +22,7 @@ extension PracticeSessionAPIControlling {
     public func boot(router: Router) {
 
         let session         = router.grouped("practice-sessions")
-        let sessionInstance = router.grouped("practice-sessions", TaskSession.PracticeParameter.parameter)
+        let sessionInstance = router.grouped("practice-sessions", PracticeSession.parameter)
 
         router.post("subjects", Subject.parameter, "practice-sessions/start", use: Self.create)
 

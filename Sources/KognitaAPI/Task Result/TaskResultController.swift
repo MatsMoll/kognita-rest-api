@@ -28,7 +28,7 @@ public final class TaskResultAPIController<Repository: TaskResultRepositoring>: 
 
     public static func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
         let user = try req.requireAuthenticated(User.self)
-        guard user.isAdmin else {
+        guard user.isCreator else {
             throw Abort(.forbidden)
         }
         return Repository

@@ -19,9 +19,6 @@ protocol SubjectAPIControlling:
 {
     static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
     static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func getListContent(_ req: Request) throws -> EventLoopFuture<Subject.ListContent>
-    static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent>
-    static func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension SubjectAPIControlling {
@@ -35,9 +32,8 @@ extension SubjectAPIControlling {
         register(retrive:       subjects)
         register(retriveAll:    subjects)
 
-        router.get  ("subjects", Subject.parameter, "export",  use: Self.export)
+//        router.get  ("subjects", Self.parameter, "export",  use: Self.export)
 //        router.get  ("subjects/export",                     use: Self.exportAll)
         router.post ("subjects/import",                     use: Self.importContent)
-        subjects.post(Subject.parameter, "active", use: Self.makeSubject(active: ))
     }
 }
