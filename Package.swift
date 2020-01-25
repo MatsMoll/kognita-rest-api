@@ -7,7 +7,7 @@ var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
     .package(url: "https://github.com/vapor/vapor.git", from: "3.3.1"),
 
-    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0")
+    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0"),
 ]
 
 #if os(macOS) // Local development
@@ -17,7 +17,7 @@ dependencies.append(contentsOf: [
 )
 #else
 dependencies.append(contentsOf: [
-        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "1.0.0"),
+        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
     ]
 )
 #endif

@@ -22,6 +22,7 @@ public protocol SubjectTestAPIControlling:
     static func allInSubject(on req: Request) throws -> EventLoopFuture<SubjectTest.ListReponse>
     static func test(withID req: Request) throws -> EventLoopFuture<SubjectTest.ModifyResponse>
     static func end(req: Request) throws -> EventLoopFuture<HTTPStatus>
+    static func scoreHistogram(req: Request) throws -> EventLoopFuture<SubjectTest.ScoreHistogram>
 }
 
 extension SubjectTestAPIControlling {
@@ -43,6 +44,7 @@ extension SubjectTestAPIControlling {
 
         testInstance.get("status",                                  use: Self.userCompletionStatus(on: ))
         testInstance.get("results",                                 use: Self.results(on: ))
+        testInstance.get("results/score-histogram",                 use: Self.scoreHistogram(req: ))
         testInstance.get(SubjectTest.Pivot.Task.ID.parameter,       use: Self.taskForID(on: ))
         testInstance.get("/",                                       use: Self.test(withID: ))
     }

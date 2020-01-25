@@ -108,6 +108,18 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
         }
         .transform(to: .ok)
     }
+
+    public static func scoreHistogram(req: Request) throws -> EventLoopFuture<SubjectTest.ScoreHistogram> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.parameters
+            .next(SubjectTest.self)
+            .flatMap { test in
+
+                try Repository.scoreHistogram(for: test, user: user, on: req)
+        }
+    }
 }
 
 
