@@ -12,7 +12,8 @@ final class SubjectTestTests: VaporTestCase {
             SubjectTestRepositoryMock.Logger.shared.clear()
 
             let user = try User.create(on: conn)
-            let subtopic = try Subtopic.create(on: conn)
+            let topic = try Topic.create(on: conn)
+            let subtopic = try Subtopic.create(topic: topic, on: conn)
             let numberOfTasks = 4
             let taskIds = try (0..<numberOfTasks).map { _ in
                 try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
@@ -21,6 +22,7 @@ final class SubjectTestTests: VaporTestCase {
 
             let createTest = SubjectTest.Create.Data(
                 tasks:          taskIds,
+                subjectID:      topic.subjectId,
                 duration:       .minutes(10),
                 scheduledAt:    Date().addingTimeInterval(.minutes(50)),
                 password:       "testing",
@@ -63,6 +65,7 @@ final class SubjectTestTests: VaporTestCase {
             }
             let updateTest = SubjectTest.Update.Data(
                 tasks:          taskIds,
+                subjectID:      test.subjectID,
                 duration:       .minutes(15),
                 scheduledAt:    Date().addingTimeInterval(.minutes(50)),
                 password:       "testing",
@@ -135,7 +138,8 @@ final class SubjectTestTests: VaporTestCase {
     }
 
     func setupTestWithTasks(scheduledAt: Date = .now, duration: TimeInterval = .minutes(10), numberOfTasks: Int = 3) throws -> SubjectTest {
-        let subtopic = try Subtopic.create(on: conn)
+        let topic = try Topic.create(on: conn)
+        let subtopic = try Subtopic.create(topic: topic, on: conn)
         let taskIds = try (0..<numberOfTasks).map { _ in
             try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
                 .requireID()
@@ -148,6 +152,7 @@ final class SubjectTestTests: VaporTestCase {
 
         let data = SubjectTest.Create.Data(
             tasks:          taskIds,
+            subjectID:      topic.subjectId,
             duration:       duration,
             scheduledAt:    scheduledAt,
             password:       "password",

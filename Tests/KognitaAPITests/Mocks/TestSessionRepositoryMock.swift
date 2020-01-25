@@ -36,4 +36,14 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
             )
         )
     }
+
+    static func overview(in session: TestSessionRepresentable, for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<TestSession.Overview> {
+        try conn.future(
+            TestSession.Overview(
+                sessionID: session.requireID(),
+                test: SubjectTest(scheduledAt: .now, duration: 0, password: "", title: "Test", subjectID: 0),
+                tasks: []
+            )
+        )
+    }
 }

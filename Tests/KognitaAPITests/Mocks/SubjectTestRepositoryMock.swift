@@ -51,6 +51,7 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
             .map { conn in
 
                 try SubjectTest.MultipleChoiseTaskContent(
+                    test: SubjectTest(scheduledAt: .now, duration: 0, password: "T", title: "Test", subjectID: session.testID),
                     task: Task.create(on: conn),
                     multipleChoiseTask: MultipleChoiseTask.create(on: conn),
                     choises: [],
@@ -68,7 +69,10 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
             SubjectTest.Results(
                 title: "Testing",
                 heldAt: .now,
-                taskResults: []
+                taskResults: [],
+                averageScore: 0,
+                subjectID: test.subjectID,
+                subjectName: "Subject"
             )
         )
     }
@@ -82,5 +86,33 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
 
         Logger.shared.log(entry: .update(data: data, user: user))
         return conn.future(model.update(with: data))
+    }
+
+    static func currentlyOpenTest(for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest?> {
+        conn.future(nil)
+    }
+
+    static func all(in subject: Subject, for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<[SubjectTest]> {
+        conn.future([])
+    }
+
+    static func taskIDsFor(testID id: SubjectTest.ID, on conn: DatabaseConnectable) throws -> EventLoopFuture<[Task.ID]> {
+        conn.future([])
+    }
+
+    static func firstTaskID(testID: SubjectTest.ID, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest.Pivot.Task.ID?> {
+        conn.future(nil)
+    }
+
+    static func end(test: SubjectTest, by user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<Void> {
+        conn.future()
+    }
+
+    static func scoreHistogram(for test: SubjectTest, user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest.ScoreHistogram> {
+        conn.future(
+            SubjectTest.ScoreHistogram(
+                scores: []
+            )
+        )
     }
 }
