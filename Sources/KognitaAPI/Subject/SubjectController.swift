@@ -24,19 +24,30 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
 
                         try TaskResult.DatabaseRepository
                             .getUserLevel(for: user.requireID(), in: topics.map { try $0.topic.requireID() }, on: req)
-                            .map { levels in
+                            .flatMap { levels in
 
-                                Subject.Details(
-                                    subject: subject,
-                                    topics: topics,
-                                    levels: levels
-                                )
+                                try Repository.active(subject: subject, for: user, on: req)
+                                    .map { activeSubject in
+
+                                        var canPractice = activeSubject?.canPractice ?? false
+                                        if user.isAdmin {
+                                            canPractice = true
+                                        }
+
+                                        return Subject.Details(
+                                            subject: subject,
+                                            topics: topics,
+                                            levels: levels,
+                                            isActive: activeSubject != nil,
+                                            canPractice: canPractice
+                                        )
+                                }
                         }
                 }
         }
     }
 
-    public static func export(on req: Request) throws -> Future<SubjectExportContent> {
+    public static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent> {
         _ = try req.requireAuthenticated(User.self)
         return try req.parameters.next(Subject.self).flatMap { subject in
             try Topic.DatabaseRepository
@@ -44,7 +55,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
     }
 
-    public static func exportAll(on req: Request) throws -> Future<[SubjectExportContent]> {
+    public static func exportAll(on req: Request) throws -> EventLoopFuture<[SubjectExportContent]> {
         _ = try req.requireAuthenticated(User.self)
         return try Repository
             .all(on: req)
@@ -59,7 +70,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
     public static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.requireAuthenticated(User.self)
 
-        guard user.role == .admin else {
+        guard user.isAdmin else {
             throw Abort(.forbidden)
         }
         return try req.content
@@ -72,6 +83,44 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                 .flatten(on: req)
                 .transform(to: .ok)
         }
+    }
+
+    public static func getListContent(_ req: Request) throws -> EventLoopFuture<Subject.ListContent> {
+        let user = try req.requireAuthenticated(User.self)
+
+        return try Repository.all(on: req)
+            .flatMap { subjects in
+
+                try SubjectTest.DatabaseRepository
+                    .currentlyOpenTest(for: user, on: req)
+                    .map { test in
+
+                        // FIXME: - Set ongoing sessions parameters
+                        Subject.ListContent(
+                            subjects: subjects,
+                            ongoingPracticeSession: nil,
+                            ongoingTestSession: nil,
+                            openedTest: subjects
+                                .first(where: { $0.id == test?.subjectID })
+                                .flatMap {
+                                    test?.response(with: $0)
+                            }
+                        )
+                }
+        }
+    }
+
+    public static func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.parameters
+            .next(Subject.self)
+            .flatMap { subject in
+
+                try Repository.mark(active: subject, canPractice: true, for: user, on: req)
+        }
+        .transform(to: .ok)
     }
 }
 

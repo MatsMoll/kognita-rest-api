@@ -21,7 +21,7 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
     }
 
     /// Logs a user in, returning a token for accessing protected endpoints.
-    public static func login(_ req: Request) throws -> EventLoopFuture<UserToken> {
+    public static func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
         // get user auth'd by basic auth middleware
         let user = try req.requireAuthenticated(User.self)
 
