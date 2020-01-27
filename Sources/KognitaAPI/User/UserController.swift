@@ -38,6 +38,18 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                 try User.DatabaseRepository
                     .create(from: content, by: nil, on: req)
         }
+        .flatMap { userResponse in
+            try sendVerifyEmail(to: userResponse, on: req)
+                .transform(to: userResponse)
+        }
+    }
+
+    static func sendVerifyEmail(to user: User.Response, on req: Request) throws -> EventLoopFuture<Void> {
+        let sender = try req.make(VerifyEmailSendable.self)
+        return try Repository.verifyToken(for: user.userId, on: req)
+            .flatMap { token in
+                try sender.sendEmail(with: token.content(with: user.email), on: req)
+        }
     }
 
 
@@ -88,6 +100,35 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                             .reset(to: data, with: token.token, on: req)
                             .transform(to: .ok)
                 }
+        }
+    }
+
+
+    public static func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        // For Web
+        if let request = try? req.query.decode(User.VerifyEmail.Request.self) {
+            return try req.parameters
+                .next(User.self)
+                .flatMap { user in
+
+                    try Repository.verify(user: user, with: request, on: req)
+                        .transform(to: .ok)
+            }
+        } else {
+            // For API
+            return try req.content
+                .decode(User.VerifyEmail.Request.self)
+                .flatMap { request in
+
+                    try req.parameters
+                        .next(User.self)
+                        .flatMap { user in
+
+                            try Repository.verify(user: user, with: request, on: req)
+                                .transform(to: .ok)
+                    }
+            }
         }
     }
 }
