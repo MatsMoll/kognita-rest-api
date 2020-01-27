@@ -17,7 +17,7 @@ dependencies.append(contentsOf: [
 )
 #else
 dependencies.append(contentsOf: [
-        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
+        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
     ]
 )
 #endif
