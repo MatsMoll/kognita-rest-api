@@ -38,9 +38,10 @@ class UserTests: VaporTestCase {
 
         _ = try User.create(on: conn)
 
-        let newUser = User.Create.Data(username: "Mats", email: "test@3.com", password: "password", verifyPassword: "password", acceptedTermsInput: "on")
+        let newUser = User.Create.Data(username: "Mats", email: "test@ntnu.no", password: "password", verifyPassword: "password", acceptedTermsInput: "on")
         let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
-        XCTAssert(response.http.status == .ok, "This should not return an error code: \(response.http.status)")
+
+        response.has(statusCode: .ok)
 
         let user = try response.content.syncDecode(User.Create.Response.self)
         XCTAssert(user.username == newUser.username, "The name is different: \(user.username)")
