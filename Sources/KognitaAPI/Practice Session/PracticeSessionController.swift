@@ -145,12 +145,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 }
 
                 return try PracticeSession.DatabaseRepository
-                    .goalProgress(in: session, on: req)
-                    .flatMap { progress in
-
-                        try PracticeSession.DatabaseRepository
-                            .getResult(for: session.requireID(), on: req)
-                }
+                    .getResult(for: session.requireID(), on: req)
         }
     }
 

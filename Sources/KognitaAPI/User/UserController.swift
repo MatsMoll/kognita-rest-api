@@ -4,7 +4,7 @@ import KognitaCore
 import Mailgun
 
 public protocol ResetPasswordMailRenderable: Service {
-    func render(with token: User.ResetPassword.Token.Create.Response, for user: User) throws -> String
+    func render(with token: User.ResetPassword.Token.Data, for user: User) throws -> String
 }
 
 extension User.ResetPassword {
