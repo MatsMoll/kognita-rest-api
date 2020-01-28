@@ -2,7 +2,7 @@ import KognitaCore
 import Vapor
 import Mailgun
 
-public protocol VerifyEmailRenderable {
+public protocol VerifyEmailRenderable: Service {
     func render(with content: User.VerifyEmail.EmailContent, on container: Container) throws -> EventLoopFuture<String>
 }
 
