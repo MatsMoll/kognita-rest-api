@@ -131,8 +131,7 @@ class KognitaAPI {
     private static func setupMailgun(in services: inout Services) {
         guard let mailgunKey = Environment.get("MAILGUN_KEY"),
             let mailgunDomain = Environment.get("MAILGUN_DOMAIN") else {
-                print("Mailgun is NOT activated")
-                return
+                fatalError("Mailgun is NOT activated")
         }
         let mailgun = Mailgun(apiKey: mailgunKey, domain: mailgunDomain, region: .eu)
         services.register(mailgun, as: Mailgun.self)
