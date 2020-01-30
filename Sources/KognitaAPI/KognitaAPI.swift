@@ -103,7 +103,6 @@ class KognitaAPI {
         services.register(migrations)
 
         setupDatabase(for: env, in: &services)
-        setupMailgun(in: &services)
         services.register(User.VerifyEmailSender(), as: VerifyEmailSendable.self)
 
         // Needs to be after addMigrations(), because it relies on the tables created there
@@ -112,6 +111,8 @@ class KognitaAPI {
             var commandConfig = CommandConfig()
             commandConfig.useFluentCommands()
             services.register(commandConfig)
+        } else {
+            setupMailgun(in: &services)
         }
     }
 
@@ -131,8 +132,7 @@ class KognitaAPI {
     private static func setupMailgun(in services: inout Services) {
         guard let mailgunKey = Environment.get("MAILGUN_KEY"),
             let mailgunDomain = Environment.get("MAILGUN_DOMAIN") else {
-                print("Mailgun is NOT activated")
-                return
+                fatalError("Mailgun is NOT activated")
         }
         let mailgun = Mailgun(apiKey: mailgunKey, domain: mailgunDomain, region: .eu)
         services.register(mailgun, as: Mailgun.self)
