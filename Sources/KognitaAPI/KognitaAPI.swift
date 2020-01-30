@@ -103,7 +103,6 @@ class KognitaAPI {
         services.register(migrations)
 
         setupDatabase(for: env, in: &services)
-        setupMailgun(in: &services)
         services.register(User.VerifyEmailSender(), as: VerifyEmailSendable.self)
 
         // Needs to be after addMigrations(), because it relies on the tables created there
@@ -112,6 +111,8 @@ class KognitaAPI {
             var commandConfig = CommandConfig()
             commandConfig.useFluentCommands()
             services.register(commandConfig)
+        } else {
+            setupMailgun(in: &services)
         }
     }
 
