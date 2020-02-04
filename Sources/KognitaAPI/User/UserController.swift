@@ -38,9 +38,10 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                 try User.DatabaseRepository
                     .create(from: content, by: nil, on: req)
         }
-        .flatMap { userResponse in
-            try sendVerifyEmail(to: userResponse, on: req)
-                .transform(to: userResponse)
+        .map { userResponse in
+            // Using map in order to not delay the user experiance
+            _ = try sendVerifyEmail(to: userResponse, on: req)
+            return userResponse
         }
     }
 
