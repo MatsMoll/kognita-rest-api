@@ -121,7 +121,7 @@ public class KognitaAPI {
         middlewares.use(ErrorMiddleware.self)
         services.register(middlewares)
 
-        services.register(DatabaseConnectionPoolConfig(maxConnections: 1))
+        services.register(DatabaseConnectionPoolConfig(maxConnections: 2))
     }
 
     /// Configures the mailing service
