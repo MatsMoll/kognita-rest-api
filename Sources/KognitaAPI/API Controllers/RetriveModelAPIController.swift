@@ -3,7 +3,7 @@ import KognitaCore
 
 public protocol RetriveModelAPIController {
 
-    associatedtype Model: Parameter
+    associatedtype Model: ModelParameterRepresentable
     associatedtype ModelResponse: Content
 
     static func retrive(on req: Request) throws -> EventLoopFuture<ModelResponse>
@@ -19,9 +19,9 @@ extension RetriveModelAPIController {
 
 extension RetriveModelAPIController where
     Model == ModelResponse,
-    Model.ResolvedParameter == EventLoopFuture<Model>
+    Model.ParameterModel == Model
 {
     public static func retrive(on req: Request) throws -> EventLoopFuture<ModelResponse> {
-        try req.parameters.next(Model.self)
+        req.parameters.model(Model.self, on: req)
     }
 }

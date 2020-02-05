@@ -11,8 +11,8 @@ import KognitaCore
 public final class SubtopicController<Repository: SubtopicRepositoring>: SubtopicAPIControlling {
     
     public static func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
-        return try req.parameters
-            .next(Topic.self)
+        return req.parameters
+            .model(Topic.self, on: req)
             .flatMap { topic in
 
                 try Repository

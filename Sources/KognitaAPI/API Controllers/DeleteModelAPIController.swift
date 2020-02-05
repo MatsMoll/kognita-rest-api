@@ -2,7 +2,7 @@ import Vapor
 import KognitaCore
 
 public protocol DeleteModelAPIController {
-    associatedtype Model: Parameter
+    associatedtype Model: ModelParameterRepresentable
     associatedtype Repository: DeleteModelRepository
 
     static func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -18,14 +18,14 @@ extension DeleteModelAPIController {
 
 extension DeleteModelAPIController where
     Repository.Model == Model,
-    Model.ResolvedParameter == EventLoopFuture<Model>
+    Model.ParameterModel == Model
 {
     public static func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.authenticated(User.self)
 
-        return try req.parameters
-            .next(Model.self)
+        return req.parameters
+            .model(Model.self, on: req)
             .flatMap { model in
 
                 try Repository.delete(model: model, by: user, on: req)

@@ -28,8 +28,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .decode(MultipleChoiseTask.Submit.self)
             .flatMap { submit in
 
-                try req.parameters
-                    .next(TaskSession.PracticeParameter.self)
+                req.parameters
+                    .model(TaskSession.PracticeParameter.self, on: req)
                     .flatMap { (session) in
 
                         try PracticeSession.DatabaseRepository
@@ -46,8 +46,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .decode(FlashCardTask.Submit.self)
             .flatMap { submit in
 
-                try req.parameters
-                    .next(TaskSession.PracticeParameter.self)
+                req.parameters
+                    .model(TaskSession.PracticeParameter.self, on: req)
                     .flatMap { session in
 
                         try PracticeSession.DatabaseRepository
@@ -60,8 +60,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.PracticeParameter.self)
+        return req.parameters
+            .model(TaskSession.PracticeParameter.self, on: req)
             .flatMap { session in
                 try PracticeSession.DatabaseRepository
                     .end(session, for: user, on: req)
@@ -96,8 +96,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.PracticeParameter.self)
+        return req.parameters
+            .model(TaskSession.PracticeParameter.self, on: req)
             .flatMap { (session) in
 
                 guard session.userID == user.id else {
@@ -137,8 +137,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.PracticeParameter.self)
+        return req.parameters
+            .model(TaskSession.PracticeParameter.self, on: req)
             .flatMap { session in
                 guard user.id == session.userID else {
                     throw Abort(.forbidden)
@@ -154,8 +154,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.PracticeParameter.self)
+        return req.parameters
+            .model(TaskSession.PracticeParameter.self, on: req)
             .flatMap { session in
 
                 let index = try req.parameters.next(Int.self)

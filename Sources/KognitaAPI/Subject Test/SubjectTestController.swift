@@ -9,8 +9,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(SubjectTest.self)
+        return req.parameters
+            .model(SubjectTest.self, on: req)
             .flatMap { test in
                 try Repository.open(test: test, by: user, on: req)
         }
@@ -24,8 +24,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
             .decode(SubjectTest.Enter.Request.self)
             .flatMap { request in
 
-                try req.parameters
-                    .next(SubjectTest.self)
+                req.parameters
+                    .model(SubjectTest.self, on: req)
                     .flatMap { test in
 
                         try Repository.enter(test: test, with: request, by: user, on: req)
@@ -36,8 +36,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
     public static func userCompletionStatus(on req: Request) throws -> EventLoopFuture<SubjectTest.CompletionStatus> {
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(SubjectTest.self)
+        return req.parameters
+            .model(SubjectTest.self, on: req)
             .flatMap { test in
 
                 try Repository.userCompletionStatus(in: test, user: user, on: req)
@@ -52,8 +52,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(SubjectTest.self)
+        return req.parameters
+            .model(SubjectTest.self, on: req)
             .flatMap { test in
 
                 try Repository.results(for: test, user: user, on: req)
@@ -64,8 +64,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(Subject.self)
+        return req.parameters
+            .model(Subject.self, on: req)
             .flatMap { subject in
 
                 try Repository.all(in: subject, for: user, on: req)
@@ -83,8 +83,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
 
         _ = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(SubjectTest.self)
+        return req.parameters
+            .model(SubjectTest.self, on: req)
             .flatMap { test in
 
                 return try Repository.taskIDsFor(testID: test.requireID(), on: req)
@@ -101,8 +101,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
     public static func end(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(SubjectTest.self)
+        return req.parameters
+            .model(SubjectTest.self, on: req)
             .flatMap { test in
                 try Repository.end(test: test, by: user, on: req)
         }
@@ -113,8 +113,8 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(SubjectTest.self)
+        return req.parameters
+            .model(SubjectTest.self, on: req)
             .flatMap { test in
 
                 try Repository.scoreHistogram(for: test, user: user, on: req)

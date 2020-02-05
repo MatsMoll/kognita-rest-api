@@ -10,8 +10,8 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.TestParameter.self)
+        return req.parameters
+            .model(TaskSession.TestParameter.self, on: req)
             .flatMap { session in
 
                 try Repository.submit(test: session, by: user, on: req)
@@ -23,8 +23,8 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.TestParameter.self)
+        return req.parameters
+            .model(TaskSession.TestParameter.self, on: req)
             .flatMap { session in
 
                 try req.content
@@ -41,8 +41,8 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.TestParameter.self)
+        return req.parameters
+            .model(TaskSession.TestParameter.self, on: req)
             .flatMap { session in
 
                 try Repository.results(in: session, for: user, on: req)
@@ -53,8 +53,8 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(TaskSession.TestParameter.self)
+        return req.parameters
+            .model(TaskSession.TestParameter.self, on: req)
             .flatMap { session in
 
                 try Repository.overview(in: session, for: user, on: req)
