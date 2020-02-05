@@ -90,7 +90,11 @@ public struct KognitaAPIProvider: Provider {
     }
 }
 
-class KognitaAPI {
+public class KognitaAPI {
+
+    public static func configMiddleware(config: inout MiddlewareConfig) {
+        config.use(HTTPSRedirectMiddleware())
+    }
 
     static func setupApi(with env: Environment, in services: inout Services) throws {
         /// In order to upload big files
@@ -183,5 +187,16 @@ class KognitaAPI {
         databases.enableLogging(on: .psql)
         databases.add(database: postgres, as: .psql)
         services.register(databases)
+    }
+}
+
+
+class HTTPSRedirectMiddleware: Middleware {
+    func respond(to request: Request, chainingTo next: Responder) throws -> EventLoopFuture<Response> {
+        guard request.http.headers.firstValue(name: HTTPHeaderName("X-Forwarded-Proto")) == "http" else {
+            return try next.respond(to: request)
+        }
+        let redirectPath = request.http.urlString.replacingOccurrences(of: "http://", with: "https://")
+        return request.future(request.redirect(to: redirectPath, type: RedirectType.temporary))
     }
 }
