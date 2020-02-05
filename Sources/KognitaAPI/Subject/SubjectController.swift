@@ -118,7 +118,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
             .next(Subject.self)
             .flatMap { subject in
 
-                try Repository.mark(active: subject, canPractice: true, for: user, on: req)
+                try Repository.mark(active: subject, canPractice: .random(), for: user, on: req)
         }
         .transform(to: .ok)
     }
