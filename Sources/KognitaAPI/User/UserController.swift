@@ -108,8 +108,8 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
 
         // For Web
         if let request = try? req.query.decode(User.VerifyEmail.Request.self) {
-            return try req.parameters
-                .next(User.self)
+            return req.parameters
+                .model(User.self, on: req)
                 .flatMap { user in
 
                     try Repository.verify(user: user, with: request, on: req)
@@ -121,8 +121,8 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                 .decode(User.VerifyEmail.Request.self)
                 .flatMap { request in
 
-                    try req.parameters
-                        .next(User.self)
+                    req.parameters
+                        .model(User.self, on: req)
                         .flatMap { user in
 
                             try Repository.verify(user: user, with: request, on: req)

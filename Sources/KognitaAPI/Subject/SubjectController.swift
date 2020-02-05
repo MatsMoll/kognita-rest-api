@@ -14,8 +14,8 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(Subject.self)
+        return req.parameters
+            .model(Subject.self, on: req)
             .flatMap { subject in
 
                 try Topic.DatabaseRepository
@@ -49,7 +49,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
 
     public static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent> {
         _ = try req.requireAuthenticated(User.self)
-        return try req.parameters.next(Subject.self).flatMap { subject in
+        return req.parameters.model(Subject.self, on: req).flatMap { subject in
             try Topic.DatabaseRepository
                 .exportTopics(in: subject, on: req)
         }
@@ -114,8 +114,8 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try req.parameters
-            .next(Subject.self)
+        return req.parameters
+            .model(Subject.self, on: req)
             .flatMap { subject in
 
                 try Repository.mark(active: subject, canPractice: .random(), for: user, on: req)

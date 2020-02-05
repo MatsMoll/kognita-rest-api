@@ -68,13 +68,7 @@ public struct KognitaAPIProvider: Provider {
         try KognitaAPI.setupApi(with: env, in: &services)
 
         if env == .testing {
-            var middlewares = MiddlewareConfig()
-
-            middlewares.use(SessionsMiddleware.self)
-            middlewares.use(ErrorMiddleware.self)
-            services.register(middlewares)
-
-            services.register(DatabaseConnectionPoolConfig(maxConnections: 2))
+            try KognitaAPI.setupForTesting(env: env, services: &services)
         }
     }
 
@@ -120,7 +114,7 @@ public class KognitaAPI {
         }
     }
 
-    static func setupForTesting(env: Environment, services: inout Services, config: inout Config) throws {
+    static func setupForTesting(env: Environment, services: inout Services) throws {
         var middlewares = MiddlewareConfig()
 
         middlewares.use(SessionsMiddleware.self)
@@ -128,8 +122,6 @@ public class KognitaAPI {
         services.register(middlewares)
 
         services.register(DatabaseConnectionPoolConfig(maxConnections: 2))
-
-        config.prefer(MemoryKeyedCache.self, for: KeyedCache.self)
     }
 
     /// Configures the mailing service

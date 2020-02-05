@@ -69,10 +69,36 @@ class TestSessionTests: VaporTestCase {
             let session = try setupSession(for: user)
 
             let submitUri = try uri(for: session.requireID()) + "/results"
-            let response = try app.sendRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user)
+            let responses = try [
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
+                app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user)
+            ]
+                .flatten(on: conn)
+                .wait()
 
-            response.has(statusCode: .ok)
-            response.has(content: TestSession.Results.self)
+            responses.forEach { response in
+                response.has(statusCode: .ok)
+                response.has(content: TestSession.Results.self)
+            }
 
             let logEntry = try XCTUnwrap(TestSessionRepositoryMock.Logger.shared.lastEntry)
 

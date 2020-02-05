@@ -4,7 +4,7 @@ import KognitaCore
 public protocol UpdateModelAPIController {
     associatedtype UpdateData: Codable
     associatedtype UpdateResponse: Content
-    associatedtype Model: Parameter
+    associatedtype Model: ModelParameterRepresentable
     associatedtype Repository: UpdateModelRepository
 
     static func update(on req: Request) throws -> EventLoopFuture<UpdateResponse>
@@ -22,7 +22,7 @@ extension UpdateModelAPIController where
     Repository.UpdateData       == UpdateData,
     Repository.UpdateResponse   == UpdateResponse,
     Repository.Model            == Model,
-    Model.ResolvedParameter     == EventLoopFuture<Model>
+    Model.ParameterModel        == Model
 {
     public static func update(on req: Request) throws -> EventLoopFuture<UpdateResponse> {
 
@@ -32,8 +32,8 @@ extension UpdateModelAPIController where
             .decode(UpdateData.self)
             .flatMap { data in
 
-                try req.parameters
-                    .next(Model.self)
+                req.parameters
+                    .model(Model.self, on: req)
                     .flatMap { model in
 
                         try Repository.update(model: model, to: data, by: user, on: req)
