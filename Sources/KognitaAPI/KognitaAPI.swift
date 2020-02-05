@@ -140,7 +140,7 @@ public class KognitaAPI {
         if Environment.get("STRICT_DATABASE").isDefined {
             services.register(DatabaseConnectionPoolConfig(maxConnections: 2))
         } else {
-            services.register(DatabaseConnectionPoolConfig(maxConnections: 1))
+            services.register(DatabaseConnectionPoolConfig(maxConnections: 3))
         }
 
         // Configure a PostgreSQL database
