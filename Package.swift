@@ -7,7 +7,7 @@ var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
     .package(url: "https://github.com/vapor/vapor.git", from: "3.3.1"),
 
-    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0")
+    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0"),
 ]
 
 #if os(macOS) // Local development
@@ -17,13 +17,16 @@ dependencies.append(contentsOf: [
 )
 #else
 dependencies.append(contentsOf: [
-        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "1.0.0"),
+        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
     ]
 )
 #endif
 
 let package = Package(
     name: "KognitaAPI",
+    platforms: [
+        .macOS(.v10_15),
+    ],
     products: [
         // Products define the executables and libraries produced by a package, and make them visible to other packages.
         .library(
@@ -43,6 +46,9 @@ let package = Package(
         ]),
         .testTarget(
             name: "KognitaAPITests",
-            dependencies: ["KognitaAPI"]),
+            dependencies: [
+                "KognitaAPI",
+                "KognitaCoreTestable"
+        ]),
     ]
 )

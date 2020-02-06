@@ -4,7 +4,7 @@ import KognitaCore
 import Mailgun
 
 public protocol ResetPasswordMailRenderable: Service {
-    func render(with token: User.ResetPassword.Token.Create.Response, for user: User) throws -> String
+    func render(with token: User.ResetPassword.Token.Data, for user: User) throws -> String
 }
 
 extension User.ResetPassword {
@@ -21,7 +21,7 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
     }
 
     /// Logs a user in, returning a token for accessing protected endpoints.
-    public static func login(_ req: Request) throws -> EventLoopFuture<UserToken> {
+    public static func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
         // get user auth'd by basic auth middleware
         let user = try req.requireAuthenticated(User.self)
 
@@ -37,6 +37,18 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
             .flatMap { content in
                 try User.DatabaseRepository
                     .create(from: content, by: nil, on: req)
+        }
+        .flatMap { userResponse in
+            try sendVerifyEmail(to: userResponse, on: req)
+                .transform(to: userResponse)
+        }
+    }
+
+    static func sendVerifyEmail(to user: User.Response, on req: Request) throws -> EventLoopFuture<Void> {
+        let sender = try req.make(VerifyEmailSendable.self)
+        return try Repository.verifyToken(for: user.userId, on: req)
+            .flatMap { token in
+                try sender.sendEmail(with: token.content(with: user.email), on: req)
         }
     }
 
@@ -88,6 +100,35 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                             .reset(to: data, with: token.token, on: req)
                             .transform(to: .ok)
                 }
+        }
+    }
+
+
+    public static func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        // For Web
+        if let request = try? req.query.decode(User.VerifyEmail.Request.self) {
+            return req.parameters
+                .model(User.self, on: req)
+                .flatMap { user in
+
+                    try Repository.verify(user: user, with: request, on: req)
+                        .transform(to: .ok)
+            }
+        } else {
+            // For API
+            return try req.content
+                .decode(User.VerifyEmail.Request.self)
+                .flatMap { request in
+
+                    req.parameters
+                        .model(User.self, on: req)
+                        .flatMap { user in
+
+                            try Repository.verify(user: user, with: request, on: req)
+                                .transform(to: .ok)
+                    }
+            }
         }
     }
 }
