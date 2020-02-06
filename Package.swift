@@ -2,6 +2,7 @@
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
+import Foundation
 
 var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
@@ -10,17 +11,23 @@ var dependencies: [Package.Dependency] = [
     .package(url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0"),
 ]
 
-#if os(macOS) // Local development
-dependencies.append(contentsOf: [
-        .package(path: "../KognitaCore"),
-    ]
-)
-#else
-dependencies.append(contentsOf: [
-        .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
-    ]
-)
-#endif
+switch ProcessInfo.processInfo.environment["BUILD_TYPE"] {
+case "LOCAL":
+    dependencies.append(contentsOf: [
+            .package(path: "../KognitaCore"),
+        ]
+    )
+case "DEV":
+    dependencies.append(contentsOf: [
+            .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
+        ]
+    )
+default:
+    dependencies.append(contentsOf: [
+            .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
+        ]
+    )
+}
 
 let package = Package(
     name: "KognitaAPI",
