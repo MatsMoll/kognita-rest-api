@@ -122,8 +122,51 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
         .transform(to: .ok)
     }
+
+    static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.content
+            .decode(Subject.ModeratorPrivilegeRequest.self)
+            .flatMap { content in
+
+                req.parameters
+                    .model(Subject.self, on: req)
+                    .flatMap { subject in
+
+                        try Repository.grantModeratorPrivilege(for: content.userID, in: subject.requireID(), by: user, on: req)
+                }
+        }
+        .transform(to: .ok)
+    }
+
+    static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try req.content
+            .decode(Subject.ModeratorPrivilegeRequest.self)
+            .flatMap { content in
+
+                req.parameters
+                    .model(Subject.self, on: req)
+                    .flatMap { subject in
+
+                        try Repository.revokeModeratorPrivilege(for: content.userID, in: subject.requireID(), by: user, on: req)
+                }
+        }
+        .transform(to: .ok)
+    }
 }
 
 extension Subject {
     public typealias DefaultAPIController = SubjectAPIController<Subject.DatabaseRepository>
+}
+
+
+extension Subject {
+    struct ModeratorPrivilegeRequest: Codable {
+        let userID: User.ID
+    }
 }
