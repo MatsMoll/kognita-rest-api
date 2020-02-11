@@ -137,10 +137,13 @@ public class KognitaAPI {
     /// Configures the database
     private static func setupDatabase(for enviroment: Environment, in services: inout Services) {
 
-        if Environment.get("STRICT_DATABASE").isDefined {
-            services.register(DatabaseConnectionPoolConfig(maxConnections: 2))
+        if
+            let maxConnectionsEnv = Environment.get("MAX_CONNECTIONS"),
+            let maxConnections = Int(maxConnectionsEnv)
+        {
+            services.register(DatabaseConnectionPoolConfig(maxConnections: maxConnections))
         } else {
-            services.register(DatabaseConnectionPoolConfig(maxConnections: 3))
+            services.register(DatabaseConnectionPoolConfig(maxConnections: 4))
         }
 
         // Configure a PostgreSQL database
