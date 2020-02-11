@@ -115,4 +115,8 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
             )
         )
     }
+
+    static func currentlyOpenTest(in subject: Subject, user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest?> {
+        conn.future(nil)
+    }
 }

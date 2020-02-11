@@ -18,29 +18,35 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
             .model(Subject.self, on: req)
             .flatMap { subject in
 
-                try Topic.DatabaseRepository
-                    .getTopicsWithTaskCount(in: subject, conn: req)
-                    .flatMap { topics in
+                try SubjectTest.DatabaseRepository
+                    .currentlyOpenTest(in: subject, user: user, on: req)
+                    .flatMap { test in
 
-                        try TaskResult.DatabaseRepository
-                            .getUserLevel(for: user.requireID(), in: topics.map { try $0.topic.requireID() }, on: req)
-                            .flatMap { levels in
+                        try Topic.DatabaseRepository
+                            .getTopicsWithTaskCount(in: subject, conn: req)
+                            .flatMap { topics in
 
-                                try Repository.active(subject: subject, for: user, on: req)
-                                    .map { activeSubject in
+                                try TaskResult.DatabaseRepository
+                                    .getUserLevel(for: user.requireID(), in: topics.map { try $0.topic.requireID() }, on: req)
+                                    .flatMap { levels in
 
-                                        var canPractice = activeSubject?.canPractice ?? false
-                                        if user.isAdmin {
-                                            canPractice = true
+                                        try Repository.active(subject: subject, for: user, on: req)
+                                            .map { activeSubject in
+
+                                                var canPractice = activeSubject?.canPractice ?? false
+                                                if user.isAdmin {
+                                                    canPractice = true
+                                                }
+
+                                                return Subject.Details(
+                                                    subject: subject,
+                                                    topics: topics,
+                                                    levels: levels,
+                                                    isActive: activeSubject != nil,
+                                                    canPractice: canPractice,
+                                                    openTest: test?.response(with: subject)
+                                                )
                                         }
-
-                                        return Subject.Details(
-                                            subject: subject,
-                                            topics: topics,
-                                            levels: levels,
-                                            isActive: activeSubject != nil,
-                                            canPractice: canPractice
-                                        )
                                 }
                         }
                 }
