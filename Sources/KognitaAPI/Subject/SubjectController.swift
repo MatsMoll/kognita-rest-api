@@ -27,20 +27,31 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                             .flatMap { levels in
 
                                 try Repository.active(subject: subject, for: user, on: req)
-                                    .map { activeSubject in
+                                    .flatMap { activeSubject in
 
                                         var canPractice = activeSubject?.canPractice ?? false
                                         if user.isAdmin {
                                             canPractice = true
                                         }
 
-                                        return Subject.Details(
-                                            subject: subject,
-                                            topics: topics,
-                                            levels: levels,
-                                            isActive: activeSubject != nil,
-                                            canPractice: canPractice
-                                        )
+                                        return try User.DatabaseRepository
+                                            .isModerator(user: user, subjectID: subject.requireID(), on: req)
+                                            .map {
+                                                return true
+                                            }
+                                            .catchMap { _ in
+                                                return false
+                                            }
+                                            .map { isModerator in
+                                                Subject.Details(
+                                                    subject: subject,
+                                                    topics: topics,
+                                                    levels: levels,
+                                                    isActive: activeSubject != nil,
+                                                    canPractice: canPractice,
+                                                    isModerator: isModerator
+                                                )
+                                        }
                                 }
                         }
                 }
