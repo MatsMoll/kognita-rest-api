@@ -88,7 +88,7 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
         return conn.future(model.update(with: data))
     }
 
-    static func currentlyOpenTest(for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest?> {
+    static func currentlyOpenTest(for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest.OverviewResponse?> {
         conn.future(nil)
     }
 
@@ -116,7 +116,7 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
         )
     }
 
-    static func currentlyOpenTest(in subject: Subject, user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest?> {
+    static func currentlyOpenTest(in subject: Subject, user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<SubjectTest.OverviewResponse?> {
         conn.future(nil)
     }
 }
