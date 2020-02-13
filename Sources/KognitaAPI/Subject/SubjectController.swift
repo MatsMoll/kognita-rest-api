@@ -54,7 +54,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                                                             isActive: activeSubject != nil,
                                                             canPractice: canPractice,
                                                             isModerator: isModerator,
-                                                            openTest: test?.response(with: subject)
+                                                            openTest: test
                                                         )
                                                 }
                                         }
@@ -117,11 +117,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                             subjects: subjects,
                             ongoingPracticeSession: nil,
                             ongoingTestSession: nil,
-                            openedTest: subjects
-                                .first(where: { $0.id == test?.subjectID })
-                                .flatMap {
-                                    test?.response(with: $0)
-                            }
+                            openedTest: test
                         )
                 }
         }
