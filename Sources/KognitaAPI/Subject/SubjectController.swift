@@ -31,21 +31,32 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                                     .flatMap { levels in
 
                                         try Repository.active(subject: subject, for: user, on: req)
-                                            .map { activeSubject in
+                                            .flatMap { activeSubject in
 
                                                 var canPractice = activeSubject?.canPractice ?? false
                                                 if user.isAdmin {
                                                     canPractice = true
                                                 }
 
-                                                return Subject.Details(
-                                                    subject: subject,
-                                                    topics: topics,
-                                                    levels: levels,
-                                                    isActive: activeSubject != nil,
-                                                    canPractice: canPractice,
-                                                    openTest: test?.response(with: subject)
-                                                )
+                                                return try User.DatabaseRepository
+                                                    .isModerator(user: user, subjectID: subject.requireID(), on: req)
+                                                    .map {
+                                                        return true
+                                                    }
+                                                    .catchMap { _ in
+                                                        return false
+                                                    }
+                                                    .map { isModerator in
+                                                        Subject.Details(
+                                                            subject: subject,
+                                                            topics: topics,
+                                                            levels: levels,
+                                                            isActive: activeSubject != nil,
+                                                            canPractice: canPractice,
+                                                            isModerator: isModerator,
+                                                            openTest: test
+                                                        )
+                                                }
                                         }
                                 }
                         }
@@ -106,11 +117,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                             subjects: subjects,
                             ongoingPracticeSession: nil,
                             ongoingTestSession: nil,
-                            openedTest: subjects
-                                .first(where: { $0.id == test?.subjectID })
-                                .flatMap {
-                                    test?.response(with: $0)
-                            }
+                            openedTest: test
                         )
                 }
         }
