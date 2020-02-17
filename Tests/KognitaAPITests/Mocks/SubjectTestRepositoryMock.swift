@@ -51,7 +51,14 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
             .map { conn in
 
                 try SubjectTest.MultipleChoiseTaskContent(
-                    test: SubjectTest(scheduledAt: .now, duration: 0, password: "T", title: "Test", subjectID: session.testID),
+                    test: SubjectTest(
+                        scheduledAt: .now,
+                        duration: 0,
+                        password: "T",
+                        title: "Test",
+                        subjectID: session.testID,
+                        isTeamBasedLearning: false
+                    ),
                     task: Task.create(on: conn),
                     multipleChoiseTask: MultipleChoiseTask.create(on: conn),
                     choises: [],

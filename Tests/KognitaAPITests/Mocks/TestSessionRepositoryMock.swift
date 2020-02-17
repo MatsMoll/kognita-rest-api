@@ -41,7 +41,14 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
         try conn.future(
             TestSession.Overview(
                 sessionID: session.requireID(),
-                test: SubjectTest(scheduledAt: .now, duration: 0, password: "", title: "Test", subjectID: 0),
+                test: SubjectTest(
+                    scheduledAt: .now,
+                    duration: 0,
+                    password: "",
+                    title: "Test",
+                    subjectID: 0,
+                    isTeamBasedLearning: false
+                ),
                 tasks: []
             )
         )
