@@ -26,7 +26,8 @@ final class SubjectTestTests: VaporTestCase {
                 duration:       .minutes(10),
                 scheduledAt:    Date().addingTimeInterval(.minutes(50)),
                 password:       "testing",
-                title:          "Testing"
+                title:          "Testing",
+                isTeamBasedLearning: false
             )
             let response = try app.sendRequest(to: rootUri, method: .POST, headers: standardHeaders, body: createTest, loggedInUser: user)
 
@@ -69,7 +70,8 @@ final class SubjectTestTests: VaporTestCase {
                 duration:       .minutes(15),
                 scheduledAt:    Date().addingTimeInterval(.minutes(50)),
                 password:       "testing",
-                title:          "Update Test"
+                title:          "Update Test",
+                isTeamBasedLearning: false
             )
 
             let response = try app.sendRequest(to: uri(for: test), method: .PUT, headers: standardHeaders, body: updateTest, loggedInUser: user)
@@ -156,7 +158,8 @@ final class SubjectTestTests: VaporTestCase {
             duration:       duration,
             scheduledAt:    scheduledAt,
             password:       "password",
-            title:          "Testing"
+            title:          "Testing",
+            isTeamBasedLearning: false
         )
 
         if scheduledAt.timeIntervalSinceNow < 0 {

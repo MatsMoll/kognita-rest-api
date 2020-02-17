@@ -30,6 +30,7 @@ import Vapor
 import Authentication
 import FluentPostgreSQL
 import KognitaCore
+import Mailgun
 @testable import KognitaAPI
 
 extension Application {
@@ -50,6 +51,8 @@ extension Application {
         try services.register(KognitaAPIProvider(env: env))
 
         services.register(router, as: Router.self)
+        services.register(MailgunProviderMock(), as: MailgunProvider.self)
+        services.register(ResetPasswordMailRendererMock(), as: ResetPasswordMailRenderable.self)
         services.register(APIControllerCollection.self) { _ in
             APIControllerCollection(
                 authControllers: [

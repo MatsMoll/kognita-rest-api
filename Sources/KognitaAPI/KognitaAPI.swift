@@ -131,7 +131,7 @@ public class KognitaAPI {
                 fatalError("Mailgun is NOT activated")
         }
         let mailgun = Mailgun(apiKey: mailgunKey, domain: mailgunDomain, region: .eu)
-        services.register(mailgun, as: Mailgun.self)
+        services.register(mailgun, as: MailgunProvider.self)
     }
 
     /// Configures the database

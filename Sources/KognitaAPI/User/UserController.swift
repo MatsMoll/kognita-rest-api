@@ -59,8 +59,10 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
             .decode(User.ResetPassword.Email.self)
             .flatMap { email in
 
-                Repository
-                    .first(with: email.email, on: req)
+                let userEmail = email.email.lowercased()
+
+                return Repository
+                    .first(with: userEmail, on: req)
                     .flatMap { user in
 
                         guard let user = user else {
@@ -71,11 +73,11 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                             .flatMap { token in
 
                                 let renderer = try req.make(ResetPasswordMailRenderable.self)
-                                let mailgun = try req.make(Mailgun.self)
+                                let mailgun = try req.make(MailgunProvider.self)
 
                                 let mail = try Mailgun.Message(
                                     from:       "kontakt@kognita.no",
-                                    to:         email.email,
+                                    to:         userEmail,
                                     subject:    "Kognita - Gjenopprett Passord",
                                     text:       "",
                                     html:       renderer.render(with: token, for: user)
