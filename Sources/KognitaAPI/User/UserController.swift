@@ -73,7 +73,7 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                             .flatMap { token in
 
                                 let renderer = try req.make(ResetPasswordMailRenderable.self)
-                                let mailgun = try req.make(Mailgun.self)
+                                let mailgun = try req.make(MailgunProvider.self)
 
                                 let mail = try Mailgun.Message(
                                     from:       "kontakt@kognita.no",
