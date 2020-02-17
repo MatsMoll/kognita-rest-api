@@ -46,4 +46,8 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
             )
         )
     }
+
+    static func getSessions(for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<[TestSession.HighOverview]> {
+        conn.future([])
+    }
 }
