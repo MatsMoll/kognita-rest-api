@@ -2,7 +2,9 @@ import XCTest
 import Vapor
 import FluentPostgreSQL
 @testable import KognitaCore
+@testable import KognitaAPI
 import KognitaCoreTestable
+import Mailgun
 
 class UserTests: VaporTestCase {
     
@@ -62,6 +64,20 @@ class UserTests: VaporTestCase {
         let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
         response.has(statusCode: .internalServerError)
     }
+
+    func testSendResetPasswordMail() throws {
+        _ = try User.create(username: "Mron", email: "test@test.no", isAdmin: false, isEmailVerified: false, on: conn)
+
+        let uppercasedEmail = "TEst@test.no"
+        let resetUri = uri + "/send-reset-mail"
+        let body = User.ResetPassword.Email(email: uppercasedEmail)
+        let response = try app.sendRequest(to: resetUri, method: .POST, body: body)
+
+        response.has(statusCode: .ok)
+
+        let mailMock = try app.make(MailgunProvider.self) as! MailgunProviderMock
+        XCTAssertEqual(mailMock.toEmail, uppercasedEmail.lowercased())
+    }
     
     static let allTests = [
         ("testLoginSuccess", testLoginSuccess),
@@ -69,5 +85,6 @@ class UserTests: VaporTestCase {
         ("testCreateUserSuccess", testCreateUserSuccess),
         ("testCreateUserExistingEmail", testCreateUserExistingEmail),
         ("testCreateUserPasswordMismatch", testCreateUserPasswordMismatch),
+        ("testSendResetPasswordMail", testSendResetPasswordMail)
     ]
 }
