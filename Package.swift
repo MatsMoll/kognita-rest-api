@@ -18,8 +18,9 @@ case "LOCAL":
         ]
     )
 case "DEV":
+    let coreBranch = ProcessInfo.processInfo.environment["KOGNITA_CORE"] ?? "develop"
     dependencies.append(contentsOf: [
-            .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
+            .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch(coreBranch)),
         ]
     )
 default:
