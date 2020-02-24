@@ -40,12 +40,18 @@ class UserTests: VaporTestCase {
 
         _ = try User.create(on: conn)
 
+        let jobQueue = try app.make(JobQueueable.self) as! JobQueueMock
+
         let newUser = User.Create.Data(username: "Mats", email: "test@ntnu.no", password: "password", verifyPassword: "password", acceptedTermsInput: "on")
         let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
+
+        wait(for: [jobQueue.expectation], timeout: .seconds(1))
 
         response.has(statusCode: .ok)
 
         let user = try response.content.syncDecode(User.Create.Response.self)
+
+        XCTAssertEqual(jobQueue.jobDelay, TimeAmount.seconds(30))
         XCTAssert(user.username == newUser.username, "The name is different: \(user.username)")
         XCTAssert(user.email == newUser.email, "The email is different: \(user.email)")
     }

@@ -79,7 +79,8 @@ class SubjectTestRepositoryMock: SubjectTestRepositoring {
                 taskResults: [],
                 averageScore: 0,
                 subjectID: test.subjectID,
-                subjectName: "Subject"
+                subjectName: "Subject",
+                userResults: []
             )
         )
     }

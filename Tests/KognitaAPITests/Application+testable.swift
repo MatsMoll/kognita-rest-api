@@ -53,6 +53,9 @@ extension Application {
         services.register(router, as: Router.self)
         services.register(MailgunProviderMock(), as: MailgunProvider.self)
         services.register(ResetPasswordMailRendererMock(), as: ResetPasswordMailRenderable.self)
+        services.register(JobQueueMock.self)
+        config.prefer(JobQueueMock.self, for: JobQueueable.self)
+
         services.register(APIControllerCollection.self) { _ in
             APIControllerCollection(
                 authControllers: [

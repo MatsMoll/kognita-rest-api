@@ -30,7 +30,7 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
     }
 
     /// Creates a new user.
-    public static func create(_ req: Request) throws -> EventLoopFuture<User.Response> {
+    public static func create(on req: Request) throws -> EventLoopFuture<User.Response> {
         // decode request content
         return try req.content
             .decode(User.Create.Data.self)
@@ -44,12 +44,17 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
         }
     }
 
+    /// Sends verification email and set this as a scheduled job, waiting 30 seconds before sending the email.
     static func sendVerifyEmail(to user: User.Response, on req: Request) throws -> EventLoopFuture<Void> {
-        let sender = try req.make(VerifyEmailSendable.self)
-        return try Repository.verifyToken(for: user.userId, on: req)
-            .flatMap { token in
-                try sender.sendEmail(with: token.content(with: user.email), on: req)
+        let jobQueue = try req.make(JobQueueable.self)
+        jobQueue.scheduleFutureJob(after: .seconds(30)) { (container, conn) -> EventLoopFuture<Void> in
+            let sender = try container.make(VerifyEmailSendable.self)
+            return try Repository.verifyToken(for: user.userId, on: conn)
+                .flatMap { token in
+                    try sender.sendEmail(with: token.content(with: user.email), on: container)
+            }
         }
+        return req.future()
     }
 
 
