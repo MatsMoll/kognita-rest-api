@@ -97,8 +97,7 @@ public class KognitaAPI {
 
         services.register(NIOServerConfig.default(maxBodySize: 20_000_000))
 
-        let migrations = DatabaseMigrations.migrationConfig(enviroment: env)
-        services.register(migrations)
+        KognitaCore.config(enviroment: env, in: &services)
 
         setupDatabase(for: env, in: &services)
         services.register(User.VerifyEmailSender(), as: VerifyEmailSendable.self)
