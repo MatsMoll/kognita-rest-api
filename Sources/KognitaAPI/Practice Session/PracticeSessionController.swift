@@ -109,7 +109,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 return try PracticeSession.DatabaseRepository
                     .taskID(index: index, in: session.requireID(), on: req)
                     .flatMap { taskID in
-                        TaskSolution.Repository.solutions(for: taskID, on: req)
+                        TaskSolution.DatabaseRepository.solutions(for: taskID, on: req)
                 }
         }
     }

@@ -48,7 +48,8 @@ public final class APIControllerCollection: Service {
             PracticeSession     .DefaultAPIController(),
             TaskResult          .DefaultAPIController(),
             SubjectTest         .DefaultAPIController(),
-            TestSession         .DefaultAPIController()
+            TestSession         .DefaultAPIController(),
+            TaskSolution        .DefaultAPIController()
         ],
         unauthControllers: [
             User                .DefaultAPIController()
