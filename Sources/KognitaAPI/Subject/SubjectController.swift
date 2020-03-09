@@ -10,6 +10,28 @@ import KognitaCore
 
 public final class SubjectAPIController<Repository: SubjectRepositoring>: SubjectAPIControlling {
 
+
+    static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        guard user.isAdmin else { throw Abort(.notFound) }
+
+        return try req.content
+            .decode([Task.PeerWise].self)
+            .flatMap { data in
+
+                req.parameters
+                    .model(Subject.self, on: req)
+                    .flatMap { subject in
+
+                        try Subject.DatabaseRepository.importContent(in: subject, peerWise: data, user: user, on: req)
+                }
+        }
+        .transform(to: .ok)
+    }
+
+
     public static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
 
         let user = try req.requireAuthenticated(User.self)

@@ -19,6 +19,7 @@ protocol SubjectAPIControlling:
 {
     static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
     static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func getListContent(_ req: Request) throws -> EventLoopFuture<Subject.ListContent>
     static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent>
     static func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -45,5 +46,6 @@ extension SubjectAPIControlling {
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
         router.post ("subjects/import",                     use: Self.importContent)
+        subjectInstance.post ("import-peer",                use: Self.importContentPeerWise)
     }
 }
