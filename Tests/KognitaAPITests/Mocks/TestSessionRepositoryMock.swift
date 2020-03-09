@@ -32,6 +32,8 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
                 testTitle: "Testing",
                 executedAt: .now,
                 shouldPresentDetails: true,
+                subjectID: 0,
+                canPractice: true,
                 topicResults: []
             )
         )
