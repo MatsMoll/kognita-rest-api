@@ -50,7 +50,8 @@ public final class APIControllerCollection: Service {
             SubjectTest                     .DefaultAPIController(),
             TestSession                     .DefaultAPIController(),
             TaskDiscussion                  .DefaultAPIController(),
-            TaskDiscussion.Pivot.Response   .DefaultAPIController()
+            TaskDiscussion.Pivot.Response   .DefaultAPIController(),
+            TaskSolution                    .DefaultAPIController(),
         ],
         unauthControllers: [
             User                .DefaultAPIController()
