@@ -18,6 +18,7 @@ public protocol TaskSolutionAPIControlling:
 {
     static func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
     static func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
+    static func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 
@@ -33,5 +34,6 @@ extension TaskSolutionAPIControlling {
 
         solution.post("upvote", use: Self.upvote(on: ))
         solution.post("revoke-vote", use: Self.revokeVote(on: ))
+        solution.post("approve", use: Self.approve(on: ))
     }
 }
