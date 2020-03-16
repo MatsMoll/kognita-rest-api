@@ -127,7 +127,8 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
     public static func getListContent(_ req: Request) throws -> EventLoopFuture<Subject.ListContent> {
         let user = try req.requireAuthenticated(User.self)
 
-        return try Repository.all(on: req)
+        return try Repository
+            .allSubjects(for: user, on: req)
             .flatMap { subjects in
 
                 try SubjectTest.DatabaseRepository
