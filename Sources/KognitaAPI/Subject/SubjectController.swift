@@ -154,7 +154,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
             .model(Subject.self, on: req)
             .flatMap { subject in
 
-                try Repository.mark(active: subject, canPractice: .random(), for: user, on: req)
+                try Repository.mark(active: subject, canPractice: true, for: user, on: req)
         }
         .transform(to: .ok)
     }
