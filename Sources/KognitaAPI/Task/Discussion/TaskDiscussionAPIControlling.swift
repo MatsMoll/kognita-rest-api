@@ -12,7 +12,9 @@ public protocol TaskDiscussionAPIControlling:
     CreateData        == TaskDiscussion.Create.Data,
     CreateResponse    == TaskDiscussion.Create.Response,
     Model             == TaskDiscussion
-{}
+{
+    static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
+}
 
 extension TaskDiscussionAPIControlling {
 
@@ -20,5 +22,7 @@ extension TaskDiscussionAPIControlling {
         let discussion = router.grouped("task-discussion")
         register(create: discussion)
         register(update: discussion)
+
+        router.get("tasks", Task.parameter, "discussions", use: Self.get(discussions: ))
     }
 }
