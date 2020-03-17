@@ -40,16 +40,18 @@ public final class APIControllerCollection: Service {
 
     public static let defaultControllers = APIControllerCollection(
         authControllers: [
-            Subject             .DefaultAPIController(),
-            Topic               .DefaultAPIController(),
-            Subtopic            .DefaultAPIController(),
-            MultipleChoiseTask  .DefaultAPIController(),
-            FlashCardTask       .DefaultAPIController(),
-            PracticeSession     .DefaultAPIController(),
-            TaskResult          .DefaultAPIController(),
-            SubjectTest         .DefaultAPIController(),
-            TestSession         .DefaultAPIController(),
-            TaskSolution        .DefaultAPIController()
+            Subject                         .DefaultAPIController(),
+            Topic                           .DefaultAPIController(),
+            Subtopic                        .DefaultAPIController(),
+            MultipleChoiseTask              .DefaultAPIController(),
+            FlashCardTask                   .DefaultAPIController(),
+            PracticeSession                 .DefaultAPIController(),
+            TaskResult                      .DefaultAPIController(),
+            SubjectTest                     .DefaultAPIController(),
+            TestSession                     .DefaultAPIController(),
+            TaskDiscussion                  .DefaultAPIController(),
+            TaskDiscussion.Pivot.Response   .DefaultAPIController(),
+            TaskSolution                    .DefaultAPIController(),
         ],
         unauthControllers: [
             User                .DefaultAPIController()
