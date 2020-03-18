@@ -146,6 +146,19 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
     }
 
+    public static func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return req.parameters
+            .model(Subject.self, on: req)
+            .flatMap { subject in
+
+                try Repository.mark(inactive: subject, for: user, on: req)
+        }
+        .transform(to: .ok)
+    }
+
     public static func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)
