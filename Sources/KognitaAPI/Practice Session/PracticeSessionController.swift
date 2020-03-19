@@ -133,7 +133,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
     /// - Parameter req: The HTTP request
     /// - Returns: A rendered view
     /// - Throws: If unauth or any other error
-    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<[PSTaskResult]> {
+    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<[PracticeSession.TaskResult]> {
 
         let user = try req.requireAuthenticated(User.self)
 
