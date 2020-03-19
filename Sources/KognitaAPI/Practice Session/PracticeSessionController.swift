@@ -104,7 +104,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                     throw Abort(.forbidden)
                 }
 
-                let index = try req.parameters.first(Int.self, on: req)
+                let index = try req.first(Int.self)
 
                 return try PracticeSession.DatabaseRepository
                     .taskID(index: index, in: session.requireID(), on: req)
@@ -158,7 +158,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .model(TaskSession.PracticeParameter.self, on: req)
             .flatMap { session in
 
-                let index = try req.parameters.first(Int.self, on: req)
+                let index = try req.first(Int.self)
 
                 guard session.userID == user.id else {
                     throw Abort(.forbidden)
