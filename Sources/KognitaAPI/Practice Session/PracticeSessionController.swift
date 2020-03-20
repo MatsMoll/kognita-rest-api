@@ -104,7 +104,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                     throw Abort(.forbidden)
                 }
 
-                let index = try req.parameters.first(Int.self, on: req)
+                let index = try req.first(Int.self)
 
                 return try PracticeSession.DatabaseRepository
                     .taskID(index: index, in: session.requireID(), on: req)
@@ -133,7 +133,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
     /// - Parameter req: The HTTP request
     /// - Returns: A rendered view
     /// - Throws: If unauth or any other error
-    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<[PSTaskResult]> {
+    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<[PracticeSession.TaskResult]> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -158,7 +158,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .model(TaskSession.PracticeParameter.self, on: req)
             .flatMap { session in
 
-                let index = try req.parameters.first(Int.self, on: req)
+                let index = try req.first(Int.self)
 
                 guard session.userID == user.id else {
                     throw Abort(.forbidden)
