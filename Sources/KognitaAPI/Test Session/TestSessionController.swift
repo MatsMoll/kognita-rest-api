@@ -60,6 +60,36 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
                 try Repository.overview(in: session, for: user, on: req)
         }
     }
+
+    public static func solutions(on req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return req.parameters
+            .model(TaskSession.TestParameter.self, on: req)
+            .flatMap { session in
+
+                let pivotID = try req.first(Int.self)
+
+                return try Repository.solutions(for: user, in: session, pivotID: pivotID, on: req)
+        }
+    }
+
+    public static func detailedTaskResult(on req: Request) throws -> EventLoopFuture<TestSession.DetailedTaskResult> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return req.parameters
+            .model(TaskSession.TestParameter.self, on: req)
+            .flatMap { session in
+
+                guard try session.userID == user.requireID() else { throw Abort(.forbidden) }
+
+                let pivotID = try req.first(Int.self)
+
+                return try Repository.results(in: session, pivotID: pivotID, on: req)
+        }
+    }
 }
 
 

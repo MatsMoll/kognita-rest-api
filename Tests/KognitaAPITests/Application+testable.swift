@@ -65,6 +65,9 @@ extension Application {
                     FlashCardTask       .DefaultAPIController(),
                     PracticeSession     .DefaultAPIController(),
                     TaskResult          .DefaultAPIController(),
+                    TaskDiscussion                  .DefaultAPIController(),
+                    TaskDiscussion.Pivot.Response   .DefaultAPIController(),
+                    TaskSolution                    .DefaultAPIController(),
 
                     TestSessionAPIController    <TestSessionRepositoryMock>(),
                     SubjectTestAPIController    <SubjectTestRepositoryMock>(),
