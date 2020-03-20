@@ -3,6 +3,23 @@ import Vapor
 
 class TestSessionRepositoryMock: TestSessionRepositoring {
 
+    static func solutions(for user: User, in session: TestSessionRepresentable, pivotID: SubjectTest.Pivot.Task.ID, on conn: DatabaseConnectable) throws -> EventLoopFuture<[TaskSolution.Response]> {
+        conn.future([])
+    }
+
+    static func results(in session: TestSessionRepresentable, pivotID: SubjectTest.Pivot.Task.ID, on conn: DatabaseConnectable) throws -> EventLoopFuture<TestSession.DetailedTaskResult> {
+        conn.future(TestSession.DetailedTaskResult(
+            taskID: 1,
+            description: nil,
+            question: "Test",
+            isMultipleSelect: false,
+            testSessionID: session.testID,
+            choises: [],
+            selectedChoises: []
+            )
+        )
+    }
+
     class Logger: TestLogger {
         enum Entry {
             case finnish(session: TestSessionRepresentable, user: User)
@@ -30,6 +47,7 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
         return conn.future(
             TestSession.Results(
                 testTitle: "Testing",
+                testIsOpen: false,
                 executedAt: .now,
                 shouldPresentDetails: true,
                 subjectID: 0,
