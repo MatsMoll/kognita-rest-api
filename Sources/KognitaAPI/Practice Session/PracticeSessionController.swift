@@ -183,6 +183,19 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 }
         }
     }
+
+    static func extend(session req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return req.parameters
+            .model(TaskSession.PracticeParameter.self, on: req)
+            .flatMap { session in
+
+                try Repository.extend(session: session, for: user, on: req)
+                    .transform(to: .ok)
+        }
+    }
 }
 
 extension PracticeSession {
