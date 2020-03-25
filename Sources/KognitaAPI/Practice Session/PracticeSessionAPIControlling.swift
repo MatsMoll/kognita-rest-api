@@ -15,6 +15,7 @@ protocol PracticeSessionAPIControlling:
     static func get(amountHistogram req: Request)       throws -> EventLoopFuture<[TaskResult.History]>
     static func get(solutions req: Request)             throws -> EventLoopFuture<[TaskSolution.Response]>
     static func get(sessions req: Request)              throws -> EventLoopFuture<PracticeSession.HistoryList>
+    static func extend(session req: Request)            throws -> EventLoopFuture<HTTPResponseStatus>
 }
 
 extension PracticeSessionAPIControlling {
@@ -33,5 +34,6 @@ extension PracticeSessionAPIControlling {
         sessionInstance.post("/",                                   use: Self.end(session: ))
         sessionInstance.post("submit/multiple-choise",              use: Self.submit(multipleTaskAnswer: ))
         sessionInstance.post("submit/flash-card",                   use: Self.submit(flashCardKnowledge: ))
+        sessionInstance.post("extend",                              use: Self.extend(session: ))
     }
 }
