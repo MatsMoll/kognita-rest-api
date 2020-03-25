@@ -10,8 +10,21 @@ import KognitaCore
 
 public final class SubjectAPIController<Repository: SubjectRepositoring>: SubjectAPIControlling {
 
+    public static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
+        _ = try req.requireAuthenticated(User.self)
+        return req.parameters
+            .model(Subject.self, on: req)
+            .flatMap { subject in
 
-    static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+                let filter = try req.query.decode(SubjectCompendiumFilter.self)
+
+                return try Subject.DatabaseRepository
+                    .compendium(for: subject.requireID(), filter: filter, on: req)
+        }
+    }
+
+
+    public static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -87,7 +100,8 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
     }
 
     public static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent> {
-        _ = try req.requireAuthenticated(User.self)
+        let user = try req.requireAuthenticated(User.self)
+        guard user.isAdmin else { throw Abort(.notFound) }
         return req.parameters.model(Subject.self, on: req).flatMap { subject in
             try Topic.DatabaseRepository
                 .exportTopics(in: subject, on: req)
@@ -172,7 +186,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         .transform(to: .ok)
     }
 
-    static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -190,7 +204,7 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         .transform(to: .ok)
     }
 
-    static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)
 

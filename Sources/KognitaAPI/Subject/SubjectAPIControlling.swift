@@ -1,7 +1,7 @@
 import Vapor
 import KognitaCore
 
-protocol SubjectAPIControlling:
+public protocol SubjectAPIControlling:
     CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
@@ -26,6 +26,7 @@ protocol SubjectAPIControlling:
     static func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
 }
 
 extension SubjectAPIControlling {
@@ -40,11 +41,12 @@ extension SubjectAPIControlling {
         register(retrive:       subjects)
         register(retriveAll:    subjects)
 
-        subjectInstance.get("export",  use: Self.export)
-        subjectInstance.post("active", use: Self.makeSubject(active: ))
-        subjectInstance.post("inactive", use: Self.makeSubject(inactive: ))
-        subjectInstance.post("grant-moderator", use: Self.grantPriveleges(on: ))
-        subjectInstance.post("revoke-moderator", use: Self.revokePriveleges(on: ))
+        subjectInstance.get("export",               use: Self.export)
+        subjectInstance.get("compendium",           use: Self.compendium(on: ))
+        subjectInstance.post("active",              use: Self.makeSubject(active: ))
+        subjectInstance.post("inactive",            use: Self.makeSubject(inactive: ))
+        subjectInstance.post("grant-moderator",     use: Self.grantPriveleges(on: ))
+        subjectInstance.post("revoke-moderator",    use: Self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
         router.post ("subjects/import",                     use: Self.importContent)
