@@ -1,4 +1,4 @@
-// swift-tools-version:5.1
+// swift-tools-version:5.2
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,9 +6,9 @@ import Foundation
 
 var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
-    .package(url: "https://github.com/vapor/vapor.git", from: "3.3.1"),
+    .package(name: "Vapor", url: "https://github.com/vapor/vapor.git", from: "3.3.1"),
 
-    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0"),
+    .package(name: "Mailgun", url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0"),
 ]
 
 switch ProcessInfo.processInfo.environment["BUILD_TYPE"] {
@@ -19,12 +19,12 @@ case "LOCAL":
     )
 case "DEV":
     dependencies.append(contentsOf: [
-            .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
+            .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
         ]
     )
 default:
     dependencies.append(contentsOf: [
-            .package(url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
+            .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
         ]
     )
 }
@@ -54,8 +54,8 @@ let package = Package(
         .testTarget(
             name: "KognitaAPITests",
             dependencies: [
-                "KognitaAPI",
-                "KognitaCoreTestable"
+                .target(name: "KognitaAPI"),
+                .product(name: "KognitaCoreTestable", package: "KognitaCore")
         ]),
     ]
 )
