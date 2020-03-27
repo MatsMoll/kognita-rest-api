@@ -14,6 +14,7 @@ public protocol TaskDiscussionAPIControlling:
     Model             == TaskDiscussion
 {
     static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
+    static func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
 }
 
 extension TaskDiscussionAPIControlling {
@@ -24,5 +25,6 @@ extension TaskDiscussionAPIControlling {
         register(update: discussion)
 
         router.get("tasks", Task.parameter, "discussions", use: Self.get(discussions: ))
+        discussion.get("user", use: Self.getDiscussionsForUser(on: ))
     }
 }
