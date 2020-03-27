@@ -26,9 +26,9 @@ extension TaskSolutionAPIControlling {
 
     public func boot(router: Router) throws {
 
-        let solution = router.grouped("task-solutions", TaskSolution.parameter)
+        let solution = router.grouped("task-solutions")
 
-        register(create: router.grouped("task-solutions"))
+        register(create: solution)
         register(update: solution)
         register(delete: solution)
 
