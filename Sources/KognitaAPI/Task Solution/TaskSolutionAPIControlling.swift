@@ -26,14 +26,15 @@ extension TaskSolutionAPIControlling {
 
     public func boot(router: Router) throws {
 
-        let solution = router.grouped("task-solutions", TaskSolution.parameter)
+        let solutions = router.grouped("task-solutions")
+        let solution = solutions.grouped(TaskSolution.parameter)
 
-        register(create: router.grouped("task-solutions"))
-        register(update: solution)
-        register(delete: solution)
+        register(create: solutions)
+        register(update: solutions)
+        register(delete: solutions)
 
-        solution.post("upvote", use: Self.upvote(on: ))
-        solution.post("revoke-vote", use: Self.revokeVote(on: ))
-        solution.post("approve", use: Self.approve(on: ))
+        solution.post("upvote",         use: Self.upvote(on: ))
+        solution.post("revoke-vote",    use: Self.revokeVote(on: ))
+        solution.post("approve",        use: Self.approve(on: ))
     }
 }
