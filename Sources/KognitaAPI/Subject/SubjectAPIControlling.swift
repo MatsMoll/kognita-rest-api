@@ -27,6 +27,7 @@ public protocol SubjectAPIControlling:
     static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
+    static func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
 }
 
 extension SubjectAPIControlling {
@@ -41,6 +42,7 @@ extension SubjectAPIControlling {
         register(retrive:       subjects)
         register(retriveAll:    subjects)
 
+        subjectInstance.get("stats",                use: Self.testStats(on: ))
         subjectInstance.get("export",               use: Self.export)
         subjectInstance.get("compendium",           use: Self.compendium(on: ))
         subjectInstance.post("active",              use: Self.makeSubject(active: ))
