@@ -133,7 +133,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
     /// - Parameter req: The HTTP request
     /// - Returns: A rendered view
     /// - Throws: If unauth or any other error
-    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<[PracticeSession.TaskResult]> {
+    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<PracticeSession.Result> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -146,6 +146,20 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
                 return try PracticeSession.DatabaseRepository
                     .getResult(for: session.requireID(), on: req)
+                    .flatMap { results in
+                        
+                        guard let topicID = results.first?.topicID else { throw Abort(.internalServerError) }
+                        
+                        return Subject.DatabaseRepository
+                            .subjectFor(topicID: topicID, on: req)
+                            .map { subject in
+                         
+                                PracticeSession.Result(
+                                    subject: .init(subject: subject),
+                                    results: results
+                                )
+                        }
+                }
         }
     }
 
