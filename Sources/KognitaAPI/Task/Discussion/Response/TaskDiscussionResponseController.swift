@@ -39,6 +39,12 @@ public class TaskDiscussionResponseAPIController
                 try Repository.responses(to: discussion.requireID(), on: req)
         }
     }
+
+    public static func setRecentlyVisited(for user: User, on req: Request) throws -> EventLoopFuture<Bool> {
+        let user = try req.requireAuthenticated(User.self)
+
+        return try Repository.setRecentlyVisited(for: user, on: req)
+    }
     
 }
 
