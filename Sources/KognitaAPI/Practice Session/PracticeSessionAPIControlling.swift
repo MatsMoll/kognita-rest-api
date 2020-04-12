@@ -17,7 +17,7 @@ protocol PracticeSessionAPIControlling:
     static func get(sessions req: Request)              throws -> EventLoopFuture<PracticeSession.HistoryList>
     static func getSessionResult(_ req: Request)        throws -> EventLoopFuture<PracticeSession.Result>
     static func extend(session req: Request)            throws -> EventLoopFuture<HTTPResponseStatus>
-    static func estimatedScore(on req: Request)         throws -> EventLoopFuture<HTTPResponse>
+    static func estimatedScore(on req: Request)         throws -> EventLoopFuture<Response>
 }
 
 extension PracticeSessionAPIControlling {
