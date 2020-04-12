@@ -122,34 +122,21 @@ public class KognitaAPI {
     static func setupTextClient(env: Environment, services: inout Services) {
 
         // Localhost testing config
-        var textClientHttpSchema: HTTPScheme = .http
-        var textClientHostname = "localhost"
-        var textClientPort: Int? = 5000
+        var baseUrl = "localhost:5000"
 
         if
-            let portString = Environment.get("TEXT_CLIENT_PORT"),
-            let port = Int(portString)
+            let baseURL = Environment.get("TEXT_CLIENT_BASE_URL")
         {
-            textClientPort = port
-        } else if env != .testing {
-            textClientPort = nil
+            baseUrl = baseURL
         }
 
-        if let hostname = Environment.get("TEXT_CLIENT_HOSTNAME") {
-            textClientHostname = hostname
-        }
-        if Environment.get("TEXT_CLIENT_HTTPS").isDefined {
-            textClientHttpSchema = .https
-        }
-
-        services.register(
+        services.register(TextMiningClienting.self) { container in
             PythonTextClient(
-                httpSchema: textClientHttpSchema,
-                hostname: textClientHostname,
-                port: textClientPort
-            ),
-            as: TextMiningClienting.self
-        )
+                client: try container.make(),
+                baseUrl: baseUrl,
+                logger: try container.make()
+            )
+        }
     }
 
     static func setupForTesting(env: Environment, services: inout Services) throws {

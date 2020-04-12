@@ -215,7 +215,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         let answer: String
     }
 
-    static func estimatedScore(on req: Request) throws -> EventLoopFuture<HTTPResponse> {
+    static func estimatedScore(on req: Request) throws -> EventLoopFuture<Response> {
 
         return try req.content
             .decode(EstimateScore.self)
