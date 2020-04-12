@@ -210,6 +210,31 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                     .transform(to: .ok)
         }
     }
+
+    struct EstimateScore: Codable {
+        let answer: String
+    }
+
+    static func estimatedScore(on req: Request) throws -> EventLoopFuture<HTTPResponse> {
+
+        return try req.content
+            .decode(EstimateScore.self)
+            .flatMap { submit in
+
+                try get(solutions: req)
+                    .flatMap { solutions in
+
+                        let textClient = try req.make(TextMiningClienting.self)
+
+                        guard let solution = solutions.first?.solution else {
+                            throw Abort(.internalServerError)
+                        }
+
+                        return try textClient.similarity(between: solution, and: submit.answer, on: req)
+                }
+        }
+    }
+
 }
 
 extension PracticeSession {

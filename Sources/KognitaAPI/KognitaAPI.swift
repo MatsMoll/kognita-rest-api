@@ -78,6 +78,7 @@ public struct KognitaAPIProvider: Provider {
     public func didBoot(_ container: Container) throws -> EventLoopFuture<Void> {
         let router      = try container.make(Router.self)
         let controllers = try container.make(APIControllerCollection.self)
+        _               = try container.make(TextMiningClienting.self)
 
         let apiRouter = router.grouped("api")
 
@@ -114,6 +115,41 @@ public class KognitaAPI {
         } else {
             setupMailgun(in: &services)
         }
+
+        setupTextClient(env: env, services: &services)
+    }
+
+    static func setupTextClient(env: Environment, services: inout Services) {
+
+        // Localhost testing config
+        var textClientHttpSchema: HTTPScheme = .http
+        var textClientHostname = "localhost"
+        var textClientPort: Int? = 5000
+
+        if
+            let portString = Environment.get("TEXT_CLIENT_PORT"),
+            let port = Int(portString)
+        {
+            textClientPort = port
+        } else if env != .testing {
+            textClientPort = nil
+        }
+
+        if let hostname = Environment.get("TEXT_CLIENT_HOSTNAME") {
+            textClientHostname = hostname
+        }
+        if Environment.get("TEXT_CLIENT_HTTPS").isDefined {
+            textClientHttpSchema = .https
+        }
+
+        services.register(
+            PythonTextClient(
+                httpSchema: textClientHttpSchema,
+                hostname: textClientHostname,
+                port: textClientPort
+            ),
+            as: TextMiningClienting.self
+        )
     }
 
     static func setupForTesting(env: Environment, services: inout Services) throws {
