@@ -33,10 +33,12 @@ public class TaskDiscussionResponseAPIController
 
     public static func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussion.Pivot.Response.Details]> {
 
+        let user = try req.requireAuthenticated(User.self)
+
         return req.parameters
             .model(TaskDiscussion.self, on: req)
             .flatMap { discussion in
-                try Repository.responses(to: discussion.requireID(), on: req)
+                try Repository.responses(to: discussion.requireID(), for: user, on: req)
         }
     }
 
