@@ -78,6 +78,7 @@ public struct KognitaAPIProvider: Provider {
     public func didBoot(_ container: Container) throws -> EventLoopFuture<Void> {
         let router      = try container.make(Router.self)
         let controllers = try container.make(APIControllerCollection.self)
+        _               = try container.make(TextMiningClienting.self)
 
         let apiRouter = router.grouped("api")
 
@@ -113,6 +114,28 @@ public class KognitaAPI {
             services.register(commandConfig)
         } else {
             setupMailgun(in: &services)
+        }
+
+        setupTextClient(env: env, services: &services)
+    }
+
+    static func setupTextClient(env: Environment, services: inout Services) {
+
+        // Localhost testing config
+        var baseUrl = "localhost:5000"
+
+        if
+            let baseURL = Environment.get("TEXT_CLIENT_BASE_URL")
+        {
+            baseUrl = baseURL
+        }
+
+        services.register(TextMiningClienting.self) { container in
+            PythonTextClient(
+                client: try container.make(),
+                baseUrl: baseUrl,
+                logger: try container.make()
+            )
         }
     }
 

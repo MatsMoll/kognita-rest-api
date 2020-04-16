@@ -133,7 +133,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
     /// - Parameter req: The HTTP request
     /// - Returns: A rendered view
     /// - Throws: If unauth or any other error
-    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<[PracticeSession.TaskResult]> {
+    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<PracticeSession.Result> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -146,6 +146,20 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
                 return try PracticeSession.DatabaseRepository
                     .getResult(for: session.requireID(), on: req)
+                    .flatMap { results in
+                        
+                        guard let topicID = results.first?.topicID else { throw Abort(.internalServerError) }
+                        
+                        return Subject.DatabaseRepository
+                            .subjectFor(topicID: topicID, on: req)
+                            .map { subject in
+                         
+                                PracticeSession.Result(
+                                    subject: .init(subject: subject),
+                                    results: results
+                                )
+                        }
+                }
         }
     }
 
@@ -196,6 +210,31 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                     .transform(to: .ok)
         }
     }
+
+    struct EstimateScore: Codable {
+        let answer: String
+    }
+
+    static func estimatedScore(on req: Request) throws -> EventLoopFuture<Response> {
+
+        return try req.content
+            .decode(EstimateScore.self)
+            .flatMap { submit in
+
+                try get(solutions: req)
+                    .flatMap { solutions in
+
+                        let textClient = try req.make(TextMiningClienting.self)
+
+                        guard let solution = solutions.first?.solution else {
+                            throw Abort(.internalServerError)
+                        }
+
+                        return try textClient.similarity(between: solution, and: submit.answer, on: req)
+                }
+        }
+    }
+
 }
 
 extension PracticeSession {
