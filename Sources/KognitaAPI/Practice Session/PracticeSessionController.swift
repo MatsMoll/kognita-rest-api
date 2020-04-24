@@ -148,10 +148,8 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                     .getResult(for: session.requireID(), on: req)
                     .flatMap { results in
                         
-                        guard let topicID = results.first?.topicID else { throw Abort(.internalServerError) }
-                        
                         return Subject.DatabaseRepository
-                            .subjectFor(topicID: topicID, on: req)
+                            .subject(for: session, on: req)
                             .map { subject in
                          
                                 PracticeSession.Result(
