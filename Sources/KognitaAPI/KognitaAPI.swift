@@ -124,9 +124,7 @@ public class KognitaAPI {
         // Localhost testing config
         var baseUrl = "localhost:5000"
 
-        if
-            let baseURL = Environment.get("TEXT_CLIENT_BASE_URL")
-        {
+        if let baseURL = Environment.get("TEXT_CLIENT_BASE_URL") {
             baseUrl = baseURL
         }
 
