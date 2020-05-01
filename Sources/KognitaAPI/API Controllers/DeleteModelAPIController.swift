@@ -18,8 +18,7 @@ extension DeleteModelAPIController {
 
 extension DeleteModelAPIController where
     Repository.Model == Model,
-    Model.ParameterModel == Model
-{
+    Model.ParameterModel == Model {
     public static func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.authenticated(User.self)

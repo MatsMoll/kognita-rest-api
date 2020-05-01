@@ -1,8 +1,7 @@
 import Vapor
 import KognitaCore
 
-public protocol TaskDiscussionAPIControlling:
-    CreateModelAPIController,
+public protocol TaskDiscussionAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     RouteCollection
     where
@@ -11,8 +10,7 @@ public protocol TaskDiscussionAPIControlling:
     UpdateResponse    == TaskDiscussion.Update.Response,
     CreateData        == TaskDiscussion.Create.Data,
     CreateResponse    == TaskDiscussion.Create.Response,
-    Model             == TaskDiscussion
-{
+    Model             == TaskDiscussion {
     static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
 }
 

@@ -38,7 +38,6 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
     }
 
-
     public static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)
@@ -58,7 +57,6 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
         .transform(to: .ok)
     }
-
 
     public static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
 
@@ -241,7 +239,6 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
 extension Subject {
     public typealias DefaultAPIController = SubjectAPIController<Subject.DatabaseRepository>
 }
-
 
 extension Subject {
     struct ModeratorPrivilegeRequest: Codable {

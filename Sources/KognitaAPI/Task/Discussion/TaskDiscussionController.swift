@@ -11,8 +11,7 @@ import FluentPostgreSQL
 
 public class TaskDiscussionAPIController
     <Repository: TaskDiscussionRepositoring>:
-    TaskDiscussionAPIControlling
-{
+    TaskDiscussionAPIControlling {
     public static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]> {
         return req.parameters
             .model(Task.self, on: req)

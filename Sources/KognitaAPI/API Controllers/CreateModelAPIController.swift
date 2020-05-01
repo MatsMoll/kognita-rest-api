@@ -20,8 +20,7 @@ extension CreateModelAPIController {
 extension CreateModelAPIController
     where
     Repository.CreateData       == CreateData,
-    Repository.CreateResponse   == CreateResponse
-{
+    Repository.CreateResponse   == CreateResponse {
 
     public static func create(on req: Request) throws -> EventLoopFuture<CreateResponse> {
 

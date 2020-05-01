@@ -9,7 +9,7 @@ import Vapor
 import KognitaCore
 
 public final class SubtopicController<Repository: SubtopicRepositoring>: SubtopicAPIControlling {
-    
+
     public static func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
         return req.parameters
             .model(Topic.self, on: req)

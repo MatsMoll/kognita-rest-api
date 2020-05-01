@@ -1,7 +1,6 @@
 import Vapor
 import KognitaCore
 
-
 public final class TestSessionAPIController<Repository: TestSessionRepositoring>: TestSessionAPIControlling {
 
     public init() {}
@@ -91,7 +90,6 @@ public final class TestSessionAPIController<Repository: TestSessionRepositoring>
         }
     }
 }
-
 
 extension TestSession {
     public typealias DefaultAPIController = TestSessionAPIController<TestSession.DatabaseRepository>

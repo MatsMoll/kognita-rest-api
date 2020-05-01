@@ -11,8 +11,7 @@ import FluentPostgreSQL
 
 public class TaskDiscussionResponseAPIController
     <Repository: TaskDiscussionRepositoring>:
-    TaskDiscussionResponseAPIControlling
-{
+    TaskDiscussionResponseAPIControlling {
     public static func create(on req: Request) throws -> EventLoopFuture<TaskDiscussion.Pivot.Response.Create.Response> {
 
         let user = try req.requireAuthenticated(User.self)
@@ -39,7 +38,7 @@ public class TaskDiscussionResponseAPIController
                 try Repository.responses(to: discussion.requireID(), on: req)
         }
     }
-    
+
 }
 
 extension TaskDiscussion.Pivot.Response {

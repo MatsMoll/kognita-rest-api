@@ -3,8 +3,7 @@ import Vapor
 
 extension TaskSolution: ModelParameterRepresentable {}
 
-public protocol TaskSolutionAPIControlling:
-    CreateModelAPIController,
+public protocol TaskSolutionAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RouteCollection
@@ -14,16 +13,18 @@ public protocol TaskSolutionAPIControlling:
     CreateData        == TaskSolution.Create.Data,
     UpdateResponse    == TaskSolution.Update.Response,
     CreateResponse    == TaskSolution.Create.Response,
-    Model             == TaskSolution
-{
+    Model             == TaskSolution {
     static func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
     static func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
     static func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
-
 extension TaskSolutionAPIControlling {
 
+    /// Registers routes to the incoming router.
+    ///
+    /// - parameters:
+    ///     - router: `Router` to register any new routes to.
     public func boot(router: Router) throws {
 
         let solutions = router.grouped("task-solutions")
@@ -33,8 +34,8 @@ extension TaskSolutionAPIControlling {
         register(update: solutions)
         register(delete: solutions)
 
-        solution.post("upvote",         use: Self.upvote(on: ))
-        solution.post("revoke-vote",    use: Self.revokeVote(on: ))
-        solution.post("approve",        use: Self.approve(on: ))
+        solution.post("upvote", use: Self.upvote(on: ))
+        solution.post("revoke-vote", use: Self.revokeVote(on: ))
+        solution.post("approve", use: Self.approve(on: ))
     }
 }
