@@ -1,14 +1,12 @@
 import Vapor
 import KognitaCore
 
-public protocol TaskDiscussionResponseAPIControlling:
-    CreateModelAPIController,
+public protocol TaskDiscussionResponseAPIControlling: CreateModelAPIController,
     RouteCollection
     where
     Repository: TaskDiscussionRepositoring,
     CreateData        == TaskDiscussion.Pivot.Response.Create.Data,
-    CreateResponse    == TaskDiscussion.Pivot.Response.Create.Response
-{
+    CreateResponse    == TaskDiscussion.Pivot.Response.Create.Response {
     static func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussion.Pivot.Response.Details]>
 }
 

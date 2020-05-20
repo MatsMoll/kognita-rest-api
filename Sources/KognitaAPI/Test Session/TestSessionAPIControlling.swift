@@ -13,15 +13,19 @@ public protocol TestSessionAPIControlling: RouteCollection {
 
 extension TestSessionAPIControlling {
 
+    /// Registers routes to the incoming router.
+    ///
+    /// - parameters:
+    ///     - router: `Router` to register any new routes to.
     public func boot(router: Router) throws {
-        
+
         let session = router.grouped("test-sessions", TaskSession.TestParameter.parameter)
 
-        session.post("finnish",                             use: Self.submit(test: ))
-        session.post("save",                                use: Self.submit(multipleChoiseTask: ))
-        session.get("results",                              use: Self.results(on: ))
-        session.get("tasks", Int.parameter, "results",      use: Self.detailedTaskResult(on: ))
-        session.get("overview",                             use: Self.overview(on: ))
-        session.get("tasks", Int.parameter, "solutions",    use: Self.solutions(on: ))
+        session.post("finnish", use: Self.submit(test: ))
+        session.post("save", use: Self.submit(multipleChoiseTask: ))
+        session.get("results", use: Self.results(on: ))
+        session.get("tasks", Int.parameter, "results", use: Self.detailedTaskResult(on: ))
+        session.get("overview", use: Self.overview(on: ))
+        session.get("tasks", Int.parameter, "solutions", use: Self.solutions(on: ))
     }
 }

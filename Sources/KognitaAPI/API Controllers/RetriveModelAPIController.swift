@@ -19,8 +19,7 @@ extension RetriveModelAPIController {
 
 extension RetriveModelAPIController where
     Model == ModelResponse,
-    Model.ParameterModel == Model
-{
+    Model.ParameterModel == Model {
     public static func retrive(on req: Request) throws -> EventLoopFuture<ModelResponse> {
         req.parameters.model(Model.self, on: req)
     }

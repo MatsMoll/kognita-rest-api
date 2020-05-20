@@ -41,6 +41,6 @@ public final class TaskSolutionAPIController<Repository: TaskSolutionRepositorin
 }
 
 extension TaskSolution {
-
+    /// A `TaskSolutionAPIController` using the `TaskSolution.DatabaseRepository`
     public typealias DefaultAPIController = TaskSolutionAPIController<TaskSolution.DatabaseRepository>
 }
