@@ -19,6 +19,13 @@ public class TaskDiscussionAPIController
                 try Repository.getDiscussions(in: task.requireID(), on: req)
         }
     }
+
+    public static func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        return try Repository.getUserDiscussions(for: user, on: req)
+    }
 }
 
 extension TaskDiscussion {
