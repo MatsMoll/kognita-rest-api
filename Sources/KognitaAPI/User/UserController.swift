@@ -8,7 +8,7 @@ public protocol ResetPasswordMailRenderable: Service {
 }
 
 extension User.ResetPassword {
-    public struct Email : Content {
+    public struct Email: Content {
         public let email: String
     }
 }
@@ -57,7 +57,6 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
         return req.future()
     }
 
-
     public static func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         return try req.content
@@ -81,11 +80,11 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                                 let mailgun = try req.make(MailgunProvider.self)
 
                                 let mail = try Mailgun.Message(
-                                    from:       "kontakt@kognita.no",
-                                    to:         userEmail,
-                                    subject:    "Kognita - Gjenopprett Passord",
-                                    text:       "",
-                                    html:       renderer.render(with: token, for: user)
+                                    from: "kontakt@kognita.no",
+                                    to: userEmail,
+                                    subject: "Kognita - Gjenopprett Passord",
+                                    text: "",
+                                    html: renderer.render(with: token, for: user)
                                 )
                                 return try mailgun.send(mail, on: req)
                                     .transform(to: .ok)
@@ -109,7 +108,6 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                 }
         }
     }
-
 
     public static func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 

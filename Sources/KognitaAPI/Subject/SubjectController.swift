@@ -10,6 +10,21 @@ import KognitaCore
 
 public final class SubjectAPIController<Repository: SubjectRepositoring>: SubjectAPIControlling {
 
+    public static func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]> {
+
+        let user = try req.requireAuthenticated(User.self)
+
+        guard user.isAdmin else { throw Abort(.notFound) }
+
+        return req.parameters
+            .model(Subject.self, on: req)
+            .flatMap { subject in
+
+                try SubjectTest.DatabaseRepository
+                    .stats(for: subject, on: req)
+        }
+    }
+
     public static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
         _ = try req.requireAuthenticated(User.self)
         return req.parameters
@@ -22,7 +37,6 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
                     .compendium(for: subject.requireID(), filter: filter, on: req)
         }
     }
-
 
     public static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
@@ -43,7 +57,6 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
         .transform(to: .ok)
     }
-
 
     public static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
 
@@ -226,7 +239,6 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
 extension Subject {
     public typealias DefaultAPIController = SubjectAPIController<Subject.DatabaseRepository>
 }
-
 
 extension Subject {
     struct ModeratorPrivilegeRequest: Codable {

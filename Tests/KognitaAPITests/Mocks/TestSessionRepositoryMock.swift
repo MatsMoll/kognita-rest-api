@@ -47,6 +47,7 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
         return conn.future(
             TestSession.Results(
                 testTitle: "Testing",
+                endedAt: .now,
                 testIsOpen: false,
                 executedAt: .now,
                 shouldPresentDetails: true,

@@ -10,7 +10,7 @@ import Vapor
 import KognitaCore
 
 public final class TopicAPIController<Repository: TopicRepository>: TopicAPIControlling {
-    
+
     public static func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
         return req.parameters
             .model(Subject.self, on: req)

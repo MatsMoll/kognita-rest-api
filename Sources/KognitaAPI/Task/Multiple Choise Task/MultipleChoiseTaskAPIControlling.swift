@@ -2,8 +2,7 @@ import Vapor
 import FluentPostgreSQL
 import KognitaCore
 
-public protocol MultipleChoiseTaskAPIControlling:
-    CreateModelAPIController,
+public protocol MultipleChoiseTaskAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RouteCollection
@@ -13,8 +12,7 @@ public protocol MultipleChoiseTaskAPIControlling:
     UpdateResponse    == MultipleChoiseTask.Edit.Response,
     CreateData        == MultipleChoiseTask.Create.Data,
     CreateResponse    == MultipleChoiseTask.Create.Response,
-    Model             == MultipleChoiseTask
-{}
+    Model             == MultipleChoiseTask {}
 
 extension MultipleChoiseTaskAPIControlling {
 

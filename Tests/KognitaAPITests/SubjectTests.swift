@@ -44,7 +44,6 @@ class SubjectTests: VaporTestCase {
 
         let requestBody = Subject.Create.Data(
             name: "OS",
-            colorClass: .primary,
             description: "Operativstystemer",
             category: "Tech"
         )
@@ -66,7 +65,6 @@ class SubjectTests: VaporTestCase {
     func testCreateSubjectWhenNotLoggedInError() throws {
         let requestBody = Subject.Create.Data(
             name: "OS",
-            colorClass: .primary,
             description: "Operativstystemer",
             category: "Something"
         )

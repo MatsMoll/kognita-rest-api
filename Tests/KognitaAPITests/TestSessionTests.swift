@@ -114,6 +114,20 @@ class TestSessionTests: VaporTestCase {
         }
     }
 
+    func testVoteForSolution() {
+        failableTest {
+            let user = try User.create(on: conn)
+            let task = try Task.create(on: conn)
+            let solution = try XCTUnwrap(TaskSolution.query(on: conn).filter(\TaskSolution.taskID, .equal, task.requireID()).first().wait())
+
+            let uri = try "/api/task-solutions/\(solution.requireID())/upvote"
+            let unauthorizedResponse = try app.sendRequest(to: uri, method: .POST)
+            unauthorizedResponse.has(statusCode: .unauthorized)
+            let response = try app.sendRequest(to: uri, method: .POST, loggedInUser: user)
+            response.has(statusCode: .ok)
+        }
+    }
+
 
     // MARK: - Helper functions
 
@@ -193,6 +207,7 @@ class TestSessionTests: VaporTestCase {
     static let allTests = [
         ("testSavingAnswer", testSavingAnswer),
         ("testFinnishSession", testFinnishSession),
-        ("testResults", testResults)
+        ("testResults", testResults),
+        ("testVoteForSolution", testVoteForSolution),
     ]
 }

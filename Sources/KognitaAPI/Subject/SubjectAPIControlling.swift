@@ -1,8 +1,7 @@
 import Vapor
 import KognitaCore
 
-public protocol SubjectAPIControlling:
-    CreateModelAPIController,
+public protocol SubjectAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RetriveModelAPIController,
@@ -15,8 +14,7 @@ public protocol SubjectAPIControlling:
     CreateData      == Subject.Create.Data,
     CreateResponse  == Subject.Create.Response,
     UpdateData      == Subject.Edit.Data,
-    UpdateResponse  == Subject.Edit.Response
-{
+    UpdateResponse  == Subject.Edit.Response {
     static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
     static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -27,6 +25,7 @@ public protocol SubjectAPIControlling:
     static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
+    static func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
 }
 
 extension SubjectAPIControlling {
@@ -35,21 +34,22 @@ extension SubjectAPIControlling {
         let subjects = router.grouped("subjects")
         let subjectInstance = subjects.grouped(Subject.parameter)
 
-        register(create:        subjects)
-        register(delete:        subjects)
-        register(update:        subjects)
-        register(retrive:       subjects)
-        register(retriveAll:    subjects)
+        register(create: subjects)
+        register(delete: subjects)
+        register(update: subjects)
+        register(retrive: subjects)
+        register(retriveAll: subjects)
 
-        subjectInstance.get("export",               use: Self.export)
-        subjectInstance.get("compendium",           use: Self.compendium(on: ))
-        subjectInstance.post("active",              use: Self.makeSubject(active: ))
-        subjectInstance.post("inactive",            use: Self.makeSubject(inactive: ))
-        subjectInstance.post("grant-moderator",     use: Self.grantPriveleges(on: ))
-        subjectInstance.post("revoke-moderator",    use: Self.revokePriveleges(on: ))
+        subjectInstance.get("stats", use: Self.testStats(on: ))
+        subjectInstance.get("export", use: Self.export)
+        subjectInstance.get("compendium", use: Self.compendium(on: ))
+        subjectInstance.post("active", use: Self.makeSubject(active: ))
+        subjectInstance.post("inactive", use: Self.makeSubject(inactive: ))
+        subjectInstance.post("grant-moderator", use: Self.grantPriveleges(on: ))
+        subjectInstance.post("revoke-moderator", use: Self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
-        router.post ("subjects/import",                     use: Self.importContent)
-        subjectInstance.post ("import-peer",                use: Self.importContentPeerWise)
+        router.post("subjects/import", use: Self.importContent)
+        subjectInstance.post("import-peer", use: Self.importContentPeerWise)
     }
 }
