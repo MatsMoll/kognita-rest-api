@@ -2,9 +2,13 @@ import NIO
 import Vapor
 
 public protocol TextMiningClienting: Service {
+    /// Estimates how similar two text are to each other
+    /// - Parameters:
+    ///   - first: The first text to compare
+    ///   - second: The second text to compare
+    ///   - worker: The worker handeling the request
     func similarity(between first: String, and second: String, on worker: Worker) throws -> EventLoopFuture<Response>
 }
-
 
 struct PythonTextClient: TextMiningClienting {
 

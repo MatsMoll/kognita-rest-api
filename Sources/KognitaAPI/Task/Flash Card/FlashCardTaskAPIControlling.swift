@@ -1,8 +1,7 @@
 import Vapor
 import KognitaCore
 
-public protocol FlashCardTaskAPIControlling:
-    CreateModelAPIController,
+public protocol FlashCardTaskAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RouteCollection
@@ -12,8 +11,7 @@ public protocol FlashCardTaskAPIControlling:
     UpdateResponse    == FlashCardTask.Edit.Response,
     CreateData        == FlashCardTask.Create.Data,
     CreateResponse    == FlashCardTask.Create.Response,
-    Model             == FlashCardTask
-{}
+    Model             == FlashCardTask {}
 
 extension FlashCardTaskAPIControlling {
 

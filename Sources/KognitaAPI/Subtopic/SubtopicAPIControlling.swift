@@ -1,8 +1,7 @@
 import Vapor
 import KognitaCore
 
-public protocol SubtopicAPIControlling:
-    CreateModelAPIController,
+public protocol SubtopicAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RetriveModelAPIController,
@@ -13,8 +12,7 @@ public protocol SubtopicAPIControlling:
     UpdateResponse    == Subtopic.Edit.Response,
     CreateData        == Subtopic.Create.Data,
     CreateResponse    == Subtopic.Create.Response,
-    Model             == Subtopic
-{
+    Model             == Subtopic {
     static func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]>
 }
 
@@ -23,10 +21,10 @@ extension SubtopicAPIControlling {
 
         let subtopics = router.grouped("subtopics")
 
-        register(create:    subtopics)
-        register(delete:    subtopics)
-        register(update:    subtopics)
-        register(retrive:   subtopics)
+        register(create: subtopics)
+        register(delete: subtopics)
+        register(update: subtopics)
+        register(retrive: subtopics)
 
         router.get("topics", Topic.parameter, "subtopics", use: Self.getAllIn(topic: ))
     }

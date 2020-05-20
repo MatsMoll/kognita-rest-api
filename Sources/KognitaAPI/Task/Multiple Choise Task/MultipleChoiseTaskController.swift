@@ -9,8 +9,7 @@ import KognitaCore
 
 public final class MultipleChoiseTaskAPIController
     <Repository: MultipleChoiseTaskRepository>:
-    MultipleChoiseTaskAPIControlling
-{}
+    MultipleChoiseTaskAPIControlling {}
 
 extension MultipleChoiseTask {
     public typealias DefaultAPIController = MultipleChoiseTaskAPIController<MultipleChoiseTask.DatabaseRepository>

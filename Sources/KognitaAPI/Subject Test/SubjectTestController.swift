@@ -122,7 +122,6 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
     }
 }
 
-
 extension SubjectTest {
     public typealias DefaultAPIController = SubjectTestAPIController<SubjectTest.DatabaseRepository>
 }

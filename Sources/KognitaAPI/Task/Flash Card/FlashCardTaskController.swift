@@ -10,8 +10,7 @@ import KognitaCore
 
 public final class FlashCardTaskAPIController
     <Repository: FlashCardTaskRepository>:
-    FlashCardTaskAPIControlling
-{}
+    FlashCardTaskAPIControlling {}
 
 extension FlashCardTask {
     public typealias DefaultAPIController = FlashCardTaskAPIController<FlashCardTask.DatabaseRepository>

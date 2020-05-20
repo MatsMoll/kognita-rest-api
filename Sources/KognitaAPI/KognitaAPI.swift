@@ -51,7 +51,7 @@ public final class APIControllerCollection: Service {
             TestSession                     .DefaultAPIController(),
             TaskDiscussion                  .DefaultAPIController(),
             TaskDiscussion.Pivot.Response   .DefaultAPIController(),
-            TaskSolution                    .DefaultAPIController(),
+            TaskSolution                    .DefaultAPIController()
         ],
         unauthControllers: [
             User                .DefaultAPIController()
@@ -207,7 +207,6 @@ public class KognitaAPI {
         services.register(databases)
     }
 }
-
 
 class HTTPSRedirectMiddleware: Middleware {
     func respond(to request: Request, chainingTo next: Responder) throws -> EventLoopFuture<Response> {

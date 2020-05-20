@@ -127,7 +127,6 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         }
     }
 
-
     /// Get the statistics of a session
     ///
     /// - Parameter req: The HTTP request
@@ -147,11 +146,11 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 return try PracticeSession.DatabaseRepository
                     .getResult(for: session.requireID(), on: req)
                     .flatMap { results in
-                        
+
                         return Subject.DatabaseRepository
                             .subject(for: session, on: req)
                             .map { subject in
-                         
+
                                 PracticeSession.Result(
                                     subject: .init(subject: subject),
                                     results: results
@@ -160,7 +159,6 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 }
         }
     }
-
 
     public static func getCurrentTask(on req: Request) throws -> EventLoopFuture<PracticeSession.CurrentTask> {
 

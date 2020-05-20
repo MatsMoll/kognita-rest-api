@@ -19,8 +19,7 @@ extension RetriveAllModelsAPIController {
 
 extension RetriveAllModelsAPIController where
     Repository: RetriveAllModelsRepository,
-    Repository.ResponseModel == ModelResponse
-{
+    Repository.ResponseModel == ModelResponse {
     public static func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]> {
         return try Repository.all(on: req)
     }

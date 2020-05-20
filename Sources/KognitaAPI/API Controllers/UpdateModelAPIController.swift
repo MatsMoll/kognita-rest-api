@@ -22,8 +22,7 @@ extension UpdateModelAPIController where
     Repository.UpdateData       == UpdateData,
     Repository.UpdateResponse   == UpdateResponse,
     Repository.Model            == Model,
-    Model.ParameterModel        == Model
-{
+    Model.ParameterModel        == Model {
     public static func update(on req: Request) throws -> EventLoopFuture<UpdateResponse> {
 
         let user = try req.requireAuthenticated(User.self)

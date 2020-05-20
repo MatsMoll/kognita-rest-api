@@ -1,8 +1,6 @@
-
 import Vapor
 import FluentPostgreSQL
 import KognitaCore
-
 
 public final class TaskResultAPIController<Repository: TaskResultRepositoring>: TaskResultAPIControlling {
 
