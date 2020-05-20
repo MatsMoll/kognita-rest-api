@@ -39,6 +39,11 @@ jobs:
       run: swift test
     - name: Run unit tests master
       if: github.ref == 'refs/heads/master'
+      env:
+        DATABASE_USER: postgres
+        DATABASE_PASSWORD: postgres
+        DATABASE_DB: postgres
+        DATABASE_HOSTNAME: localhost
       run: swift test
     - name: Build library in release mode
       run: swift build -c release
