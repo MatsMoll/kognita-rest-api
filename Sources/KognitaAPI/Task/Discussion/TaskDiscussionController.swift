@@ -9,25 +9,21 @@ import Vapor
 import KognitaCore
 import FluentPostgreSQL
 
-public class TaskDiscussionAPIController
-    <Repository: TaskDiscussionRepositoring>:
-    TaskDiscussionAPIControlling {
-    public static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]> {
-        return req.parameters
-            .model(Task.self, on: req)
-            .flatMap { task in
-                try Repository.getDiscussions(in: task.requireID(), on: req)
-        }
+public struct TaskDiscussionAPIController: TaskDiscussionAPIControlling {
+
+    let conn: DatabaseConnectable
+
+    public var repository: some TaskDiscussionRepositoring { TaskDiscussion.DatabaseRepository(conn: conn) }
+
+    public func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion]> {
+        try repository.getDiscussions(in: req.parameters.modelID(TaskDiscussion.self))
     }
 
-    public static func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]> {
-
-        let user = try req.requireAuthenticated(User.self)
-
-        return try Repository.getUserDiscussions(for: user, on: req)
+    public func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion]> {
+        try repository.getUserDiscussions(for: req.requireAuthenticated())
     }
 }
 
 extension TaskDiscussion {
-    public typealias DefaultAPIController = TaskDiscussionAPIController<TaskDiscussion.DatabaseRepository>
+    public typealias DefaultAPIController = TaskDiscussionAPIController
 }

@@ -1,13 +1,17 @@
 import Vapor
 import KognitaCore
 
+extension TaskDiscussionResponse.Create.Response: Content {}
+extension TaskDiscussion: ModelParameterRepresentable {}
+extension TaskDiscussionResponse: Content {}
+
 public protocol TaskDiscussionResponseAPIControlling: CreateModelAPIController,
     RouteCollection
     where
     Repository: TaskDiscussionRepositoring,
-    CreateData        == TaskDiscussion.Pivot.Response.Create.Data,
-    CreateResponse    == TaskDiscussion.Pivot.Response.Create.Response {
-    static func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussion.Pivot.Response.Details]>
+    CreateData        == TaskDiscussionResponse.Create.Data,
+    CreateResponse    == TaskDiscussionResponse.Create.Response {
+    func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussionResponse]>
 }
 
 extension TaskDiscussionResponseAPIControlling {
@@ -16,6 +20,6 @@ extension TaskDiscussionResponseAPIControlling {
         let discussionResponse = router.grouped("task-discussion-response")
         register(create: discussionResponse)
 
-        router.get("task-discussions", TaskDiscussion.parameter, "responses", use: Self.get(responses: ))
+        router.get("task-discussions", TaskDiscussion.parameter, "responses", use: self.get(responses: ))
     }
 }

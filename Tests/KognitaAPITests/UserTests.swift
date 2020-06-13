@@ -6,6 +6,8 @@ import FluentPostgreSQL
 import KognitaCoreTestable
 import Mailgun
 
+extension User.Create.Data: Content {}
+
 class UserTests: VaporTestCase {
     
     private let uri = "api/users"
@@ -42,7 +44,7 @@ class UserTests: VaporTestCase {
 
         let jobQueue = try app.make(JobQueueable.self) as! JobQueueMock
 
-        let newUser = User.Create.Data(username: "Mats", email: "test@ntnu.no", password: "password", verifyPassword: "password", acceptedTermsInput: "on")
+        let newUser = User.Create.Data(username: "Mats", email: "test@ntnu.no", password: "password", verifyPassword: "password", acceptedTerms: .accepted)
         let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
 
         wait(for: [jobQueue.expectation], timeout: .seconds(1))
@@ -59,13 +61,13 @@ class UserTests: VaporTestCase {
     func testCreateUserExistingEmail() throws {
 
         let user = try User.create(on: conn)
-        let newUser = User.Create.Data(username: "Mats", email: user.email, password: "password", verifyPassword: "password", acceptedTermsInput: "on")
+        let newUser = User.Create.Data(username: "Mats", email: user.email, password: "password", verifyPassword: "password", acceptedTerms: .accepted)
         let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
         response.has(statusCode: .internalServerError)
     }
     
     func testCreateUserPasswordMismatch() throws {
-        let newUser = User.Create.Data(username: "Mats", email: "test@3.com", password: "password1", verifyPassword: "not matching", acceptedTermsInput: "on")
+        let newUser = User.Create.Data(username: "Mats", email: "test@3.com", password: "password1", verifyPassword: "not matching", acceptedTerms: .accepted)
 
         let response = try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser)
         response.has(statusCode: .internalServerError)

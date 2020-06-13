@@ -14,42 +14,43 @@ extension User.ResetPassword {
 }
 
 /// Creates new users and logs them in.
-public final class UserAPIController<Repository: UserRepository>: UserAPIControlling {
+public struct UserAPIController<Repository: UserRepository>: UserAPIControlling {
 
     public enum Errors: Error {
         case userNotFound
     }
 
-    /// Logs a user in, returning a token for accessing protected endpoints.
-    public static func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
-        // get user auth'd by basic auth middleware
-        let user = try req.requireAuthenticated(User.self)
+    let conn: DatabaseConnectable
 
-        return try User.DatabaseRepository
-            .login(with: user, conn: req)
+    public var repository: some UserRepository { User.DatabaseRepository(conn: conn) }
+    var resetPasswordRepository: some ResetPasswordRepositoring { User.DatabaseRepository(conn: conn) }
+
+    /// Logs a user in, returning a token for accessing protected endpoints.
+    public func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
+        // get user auth'd by basic auth middleware
+        try repository.login(with: req.requireAuthenticated())
     }
 
     /// Creates a new user.
-    public static func create(on req: Request) throws -> EventLoopFuture<User.Response> {
+    public func create(on req: Request) throws -> EventLoopFuture<User> {
         // decode request content
         return try req.content
             .decode(User.Create.Data.self)
             .flatMap { content in
-                try User.DatabaseRepository
-                    .create(from: content, by: nil, on: req)
+                try self.repository.create(from: content, by: nil)
         }
-        .flatMap { userResponse in
-            try sendVerifyEmail(to: userResponse, on: req)
-                .transform(to: userResponse)
+        .flatMap { user in
+            try self.sendVerifyEmail(to: user, on: req)
+                .transform(to: user)
         }
     }
 
     /// Sends verification email and set this as a scheduled job, waiting 30 seconds before sending the email.
-    static func sendVerifyEmail(to user: User.Response, on req: Request) throws -> EventLoopFuture<Void> {
+    func sendVerifyEmail(to user: User, on req: Request) throws -> EventLoopFuture<Void> {
         let jobQueue = try req.make(JobQueueable.self)
         jobQueue.scheduleFutureJob(after: .seconds(30)) { (container, conn) -> EventLoopFuture<Void> in
             let sender = try container.make(VerifyEmailSendable.self)
-            return try Repository.verifyToken(for: user.userId, on: conn)
+            return try self.repository.verifyToken(for: user.id)
                 .flatMap { token in
                     try sender.sendEmail(with: token.content(with: user.email), on: container)
             }
@@ -57,7 +58,7 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
         return req.future()
     }
 
-    public static func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         return try req.content
             .decode(User.ResetPassword.Email.self)
@@ -65,15 +66,15 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
 
                 let userEmail = email.email.lowercased()
 
-                return Repository
-                    .first(with: userEmail, on: req)
+                return self.repository
+                    .first(with: userEmail)
                     .flatMap { user in
 
                         guard let user = user else {
                             return req.future(.ok)
                         }
-                        return try User.ResetPassword.Token.Repository
-                            .create(by: user, on: req)
+                        return try self.resetPasswordRepository
+                            .startReset(for: user)
                             .flatMap { token in
 
                                 let renderer = try req.make(ResetPasswordMailRenderable.self)
@@ -93,7 +94,9 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
         }
     }
 
-    public static func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+
         return try req.content
             .decode(User.ResetPassword.Token.Data.self)
             .flatMap { token in
@@ -102,22 +105,22 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                     .decode(User.ResetPassword.Data.self)
                     .flatMap { data in
 
-                        try User.ResetPassword.Token.Repository
-                            .reset(to: data, with: token.token, on: req)
+                        try self.resetPasswordRepository
+                            .reset(to: data, with: token.token)
                             .transform(to: .ok)
                 }
         }
     }
 
-    public static func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         // For Web
         if let request = try? req.query.decode(User.VerifyEmail.Request.self) {
-            return req.parameters
-                .model(User.self, on: req)
+
+            return try repository.find(req.parameters.modelID(User.self), or: Abort(.badRequest))
                 .flatMap { user in
 
-                    try Repository.verify(user: user, with: request, on: req)
+                    try self.repository.verify(user: user, with: request)
                         .transform(to: .ok)
             }
         } else {
@@ -126,11 +129,10 @@ public final class UserAPIController<Repository: UserRepository>: UserAPIControl
                 .decode(User.VerifyEmail.Request.self)
                 .flatMap { request in
 
-                    req.parameters
-                        .model(User.self, on: req)
+                    try self.repository.find(req.parameters.modelID(User.self), or: Abort(.badRequest))
                         .flatMap { user in
 
-                            try Repository.verify(user: user, with: request, on: req)
+                            try self.repository.verify(user: user, with: request)
                                 .transform(to: .ok)
                     }
             }

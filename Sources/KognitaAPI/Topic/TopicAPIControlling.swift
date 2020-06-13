@@ -2,6 +2,8 @@ import FluentPostgreSQL
 import Vapor
 import KognitaCore
 
+extension Topic: ModelParameterRepresentable {}
+
 public protocol TopicAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
@@ -13,10 +15,10 @@ public protocol TopicAPIControlling: CreateModelAPIController,
     Model           == Topic,
     CreateData      == Topic.Create.Data,
     CreateResponse  == Topic.Create.Response,
-    UpdateData      == Topic.Edit.Data,
-    UpdateResponse  == Topic.Edit.Response,
+    UpdateData      == Topic.Update.Data,
+    UpdateResponse  == Topic.Update.Response,
     ModelResponse   == Topic {
-    static func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]>
+    func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]>
 }
 
 extension TopicAPIControlling {
@@ -24,7 +26,7 @@ extension TopicAPIControlling {
 
         let topics = router.grouped("topics")
 
-        router.get("subjects", Subject.parameter, "topics", use: Self.getAllIn(subject: ))
+        router.get("subjects", Subject.parameter, "topics", use: self.getAllIn(subject: ))
 
         register(create: topics)
         register(delete: topics)

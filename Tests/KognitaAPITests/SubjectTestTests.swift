@@ -3,26 +3,30 @@ import XCTest
 import KognitaCoreTestable
 import Vapor
 
+extension SubjectTest.Create.Data: Content {}
+
 final class SubjectTestTests: VaporTestCase {
+
+    lazy var subjectTestRepository: some SubjectTestRepositoring = SubjectTestRepositoryMock(eventLoop: conn.eventLoop)
+    var mock: SubjectTestRepositoryMock { subjectTestRepository as! SubjectTestRepositoryMock }
 
     private let rootUri = "api/subject-tests"
 
     func testCreateTest() throws {
         do {
-            SubjectTestRepositoryMock.Logger.shared.clear()
+            mock.logger.clear()
 
             let user = try User.create(on: conn)
             let topic = try Topic.create(on: conn)
             let subtopic = try Subtopic.create(topic: topic, on: conn)
             let numberOfTasks = 4
             let taskIds = try (0..<numberOfTasks).map { _ in
-                try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                    .requireID()
+                try MultipleChoiceTask.create(subtopic: subtopic, on: conn).id
             }
 
             let createTest = SubjectTest.Create.Data(
                 tasks:          taskIds,
-                subjectID:      topic.subjectId,
+                subjectID:      topic.subjectID,
                 duration:       .minutes(10),
                 scheduledAt:    Date().addingTimeInterval(.minutes(50)),
                 password:       "testing",
@@ -34,11 +38,11 @@ final class SubjectTestTests: VaporTestCase {
             response.has(statusCode: .ok)
             response.has(content: SubjectTest.Create.Response.self)
 
-            let logEntry = try XCTUnwrap(SubjectTestRepositoryMock.Logger.shared.logs.last)
+            let logEntry = try XCTUnwrap(mock.logger.logs.last)
 
             switch logEntry {
             case .create(let data, let loggedUser):
-                XCTAssertEqual(try user.requireID(), loggedUser?.id)
+                XCTAssertEqual(user.id, loggedUser?.id)
 
                 XCTAssertEqual(data.title, createTest.title)
                 XCTAssertEqual(data.duration, createTest.duration)
@@ -54,15 +58,14 @@ final class SubjectTestTests: VaporTestCase {
 
     func testUpdateTest() throws {
         do {
-            SubjectTestRepositoryMock.Logger.shared.clear()
+            mock.logger.clear()
 
             let user = try User.create(on: conn)
             let test = try setupTestWithTasks()
             let subtopic = try Subtopic.create(on: conn)
             let numberOfTasks = 4
             let taskIds = try (0..<numberOfTasks).map { _ in
-                try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                    .requireID()
+                try MultipleChoiceTask.create(subtopic: subtopic, on: conn).id
             }
             let updateTest = SubjectTest.Update.Data(
                 tasks:          taskIds,
@@ -79,11 +82,11 @@ final class SubjectTestTests: VaporTestCase {
             response.has(statusCode: .ok)
             response.has(content: SubjectTest.Update.Response.self)
 
-            let logEntry = try XCTUnwrap(SubjectTestRepositoryMock.Logger.shared.logs.last)
+            let logEntry = try XCTUnwrap(mock.logger.logs.last)
 
             switch logEntry {
             case .update(let data, let loggedUser):
-                XCTAssertEqual(try loggedUser.requireID(), user.id)
+                XCTAssertEqual(loggedUser.id, user.id)
 
                 XCTAssertEqual(data.title, updateTest.title)
                 XCTAssertEqual(data.duration, updateTest.duration)
@@ -111,7 +114,7 @@ final class SubjectTestTests: VaporTestCase {
 
     func testOpeningTest() throws {
         do {
-            SubjectTestRepositoryMock.Logger.shared.clear()
+            mock.logger.clear()
 
             let user = try User.create(on: conn)
             let test = try setupTestWithTasks()
@@ -120,7 +123,7 @@ final class SubjectTestTests: VaporTestCase {
             let response = try app.sendRequest(to: openUri, method: .POST, headers: standardHeaders, loggedInUser: user)
             response.has(statusCode: .ok)
 
-            let logEntry = try XCTUnwrap(SubjectTestRepositoryMock.Logger.shared.logs.last)
+            let logEntry = try XCTUnwrap(mock.logger.logs.last)
 
             switch logEntry {
             case .open(let loggedTest, let loggedUser):
@@ -136,25 +139,24 @@ final class SubjectTestTests: VaporTestCase {
     }
 
     func uri(for test: SubjectTest) -> String {
-        try! "\(rootUri)/\(test.requireID())"
+        "\(rootUri)/\(test.id)"
     }
 
     func setupTestWithTasks(scheduledAt: Date = .now, duration: TimeInterval = .minutes(10), numberOfTasks: Int = 3) throws -> SubjectTest {
         let topic = try Topic.create(on: conn)
         let subtopic = try Subtopic.create(topic: topic, on: conn)
         let taskIds = try (0..<numberOfTasks).map { _ in
-            try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                .requireID()
+            try MultipleChoiceTask.create(subtopic: subtopic, on: conn).id
         }
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
 
         let user = try User.create(on: conn)
 
         let data = SubjectTest.Create.Data(
             tasks:          taskIds,
-            subjectID:      topic.subjectId,
+            subjectID:      topic.subjectID,
             duration:       duration,
             scheduledAt:    scheduledAt,
             password:       "password",
@@ -163,10 +165,10 @@ final class SubjectTestTests: VaporTestCase {
         )
 
         if scheduledAt.timeIntervalSinceNow < 0 {
-            let test = try SubjectTest.DatabaseRepository.create(from: data, by: user, on: conn).wait()
-            return try SubjectTest.DatabaseRepository.open(test: test, by: user, on: conn).wait()
+            let test = try subjectTestRepository.create(from: data, by: user).wait()
+            return try subjectTestRepository.open(test: test, by: user).wait()
         } else {
-            return try SubjectTest.DatabaseRepository.create(from: data, by: user, on: conn).wait()
+            return try subjectTestRepository.create(from: data, by: user).wait()
         }
     }
 

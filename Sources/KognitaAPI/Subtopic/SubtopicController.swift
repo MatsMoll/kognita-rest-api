@@ -8,19 +8,26 @@
 import Vapor
 import KognitaCore
 
-public final class SubtopicController<Repository: SubtopicRepositoring>: SubtopicAPIControlling {
+public struct SubtopicController: SubtopicAPIControlling {
 
-    public static func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
-        return req.parameters
-            .model(Topic.self, on: req)
-            .flatMap { topic in
+    let conn: DatabaseConnectable
 
-                try Repository
-                    .getSubtopics(in: topic, with: req)
-        }
+    public var repository: some SubtopicRepositoring { Subtopic.DatabaseRepository(conn: conn) }
+
+    public func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
+
+        // FIXME: -- Add implementation
+        throw Abort(.notImplemented)
+//        return req.parameters
+//            .model(Topic.self, on: req)
+//            .flatMap { topic in
+//
+//                try Repository
+//                    .getSubtopics(in: topic, with: req)
+//        }
     }
 }
 
 extension Subtopic {
-    public typealias DefaultAPIController = SubtopicController<Subtopic.DatabaseRepository>
+    public typealias DefaultAPIController = SubtopicController
 }

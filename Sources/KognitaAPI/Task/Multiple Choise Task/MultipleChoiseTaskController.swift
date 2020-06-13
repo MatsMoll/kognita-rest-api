@@ -6,11 +6,15 @@
 //
 
 import KognitaCore
+import FluentPostgreSQL
 
-public final class MultipleChoiseTaskAPIController
-    <Repository: MultipleChoiseTaskRepository>:
-    MultipleChoiseTaskAPIControlling {}
+public struct MultipleChoiceTaskAPIController: MultipleChoiseTaskAPIControlling {
 
-extension MultipleChoiseTask {
-    public typealias DefaultAPIController = MultipleChoiseTaskAPIController<MultipleChoiseTask.DatabaseRepository>
+    let conn: DatabaseConnectable
+
+    public var repository: some MultipleChoiseTaskRepository { MultipleChoiceTask.DatabaseRepository(conn: conn) }
+}
+
+extension MultipleChoiceTask {
+    public typealias DefaultAPIController = MultipleChoiceTaskAPIController
 }

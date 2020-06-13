@@ -8,7 +8,7 @@
 import Vapor
 import XCTest
 import FluentPostgreSQL
-import KognitaCore
+@testable import KognitaCore
 import KognitaCoreTestable
 
 class MultipleChoiseTaskTests: VaporTestCase {
@@ -21,15 +21,15 @@ class MultipleChoiseTaskTests: VaporTestCase {
         let user                = try User.create(on: conn)
         let subtopic            = try Subtopic.create(on: conn)
         _                       = try Task.create(on: conn)
-        let task                = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _                       = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
+        let task                = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
+        _                       = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
 
-        let uri                 = try self.uri + "/\(task.requireID())"
+        let uri                 = try self.uri + "/\(task.id)"
         let response            = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders, loggedInUser: user)
         XCTAssert(response.http.status  == .ok,     "Expexted a ok response, but got \(response.http.status)")
 
-        let databaseTask        = try Task.find(task.requireID(), on: conn).wait()
-        let databaseMultiple    = try MultipleChoiseTask.find(task.requireID(), on: conn).wait()
+        let databaseTask        = try Task.find(task.id, on: conn).wait()
+        let databaseMultiple    = try MultipleChoiceTask.DatabaseModel.find(task.id, on: conn).wait()
 
         XCTAssert(databaseTask == nil, "The Task instance was not marked as outdated")
         XCTAssert(databaseMultiple != nil, "The MultipleChoiseTask instance was deleted")
@@ -38,15 +38,15 @@ class MultipleChoiseTaskTests: VaporTestCase {
     func testDeleteTaskInstanceNotLoggedInError() throws {
         let subtopic            = try Subtopic.create(on: conn)
         _                       = try Task.create(on: conn)
-        let task                = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _                       = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
+        let task                = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
+        _                       = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
 
-        let uri                 = try self.uri + "/\(task.requireID())"
+        let uri                 = try self.uri + "/\(task.id)"
         let response = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
         response.has(statusCode: .unauthorized)
         
-        let databaseTask        = try Task.find(task.requireID(), on: conn).wait()
-        let databaseMultiple    = try MultipleChoiseTask.find(task.requireID(), on: conn).wait()
+        let databaseTask        = try Task.find(task.id, on: conn).wait()
+        let databaseMultiple    = try MultipleChoiceTask.DatabaseModel.find(task.id, on: conn).wait()
 
         XCTAssert(databaseTask          != nil,             "The Task instance was deleted")
         XCTAssert(databaseMultiple      != nil,             "The MultipleChoiseTask instance was deleted")

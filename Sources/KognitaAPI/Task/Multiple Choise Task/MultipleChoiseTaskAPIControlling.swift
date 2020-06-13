@@ -8,11 +8,11 @@ public protocol MultipleChoiseTaskAPIControlling: CreateModelAPIController,
     RouteCollection
     where
     Repository: MultipleChoiseTaskRepository,
-    UpdateData        == MultipleChoiseTask.Edit.Data,
-    UpdateResponse    == MultipleChoiseTask.Edit.Response,
-    CreateData        == MultipleChoiseTask.Create.Data,
-    CreateResponse    == MultipleChoiseTask.Create.Response,
-    Model             == MultipleChoiseTask {}
+    UpdateData        == MultipleChoiceTask.Update.Data,
+    UpdateResponse    == MultipleChoiceTask.Update.Response,
+    CreateData        == MultipleChoiceTask.Create.Data,
+    CreateResponse    == MultipleChoiceTask.Create.Response,
+    Model             == TaskDiscussion {}
 
 extension MultipleChoiseTaskAPIControlling {
 

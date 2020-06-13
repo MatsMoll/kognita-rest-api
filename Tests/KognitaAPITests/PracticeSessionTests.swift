@@ -10,13 +10,15 @@ import XCTest
 import KognitaCoreTestable
 
 final class PracticeSessionTests: VaporTestCase {
-    
+
+    lazy var practiceSessionRepository: some PracticeSessionRepository = PracticeSession.DatabaseRepository(conn: conn)
+
     func testResultsWithNoAnswers() {
         failableTest {
             let user = try User.create(on: conn)
             let task = try Task.create(on: conn)
             let session = try PracticeSession.create(in: [task.subtopicID], for: user, on: conn)
-            _ = try PracticeSession.DatabaseRepository.end(session, for: user, on: conn).wait()
+            _ = try practiceSessionRepository.end(session, for: user).wait()
 
             let uri = try "/api/practice-sessions/\(session.requireID())/result"
             let response = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)

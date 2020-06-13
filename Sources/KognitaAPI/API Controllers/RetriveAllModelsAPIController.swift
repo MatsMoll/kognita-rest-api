@@ -4,23 +4,24 @@ import KognitaCore
 public protocol RetriveAllModelsAPIController {
 
     associatedtype ModelResponse: Content
-    associatedtype Repository
+    associatedtype Repository: RetriveAllModelsRepository
 
-    static func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]>
+    var repository: Repository { get }
+
+    func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]>
 
     func register(retriveAll router: Router)
 }
 
 extension RetriveAllModelsAPIController {
     public func register(retriveAll router: Router) {
-        router.get("/", use: Self.retriveAll)
+        router.get("/", use: self.retriveAll)
     }
 }
 
 extension RetriveAllModelsAPIController where
-    Repository: RetriveAllModelsRepository,
     Repository.ResponseModel == ModelResponse {
-    public static func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]> {
-        return try Repository.all(on: req)
+    public func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]> {
+        return try repository.all()
     }
 }

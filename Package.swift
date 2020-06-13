@@ -15,16 +15,19 @@ switch ProcessInfo.processInfo.environment["BUILD_TYPE"] {
 case "LOCAL":
     dependencies.append(contentsOf: [
             .package(path: "../KognitaCore"),
+            .package(path: "../KognitaContent"),
         ]
     )
 case "DEV":
     dependencies.append(contentsOf: [
             .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
+            .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaContent", .branch("develop")),
         ]
     )
 default:
     dependencies.append(contentsOf: [
             .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
+            .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaContent", from: "2.0.0"),
         ]
     )
 }
@@ -48,6 +51,7 @@ let package = Package(
             name: "KognitaAPI",
             dependencies: [
                 "KognitaCore",
+                "KognitaContent",
                 "Mailgun",
                 "Vapor"
         ]),

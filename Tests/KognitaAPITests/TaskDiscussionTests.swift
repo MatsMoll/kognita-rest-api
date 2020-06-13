@@ -7,8 +7,12 @@
 
 import Foundation
 import XCTest
+import Vapor
 @testable import KognitaCore
 import KognitaCoreTestable
+
+extension TaskDiscussion.Create.Data: Content {}
+extension TaskDiscussionResponse.Create.Data: Content {}
 
 class TaskDiscussionTests: VaporTestCase {
 
@@ -37,7 +41,7 @@ class TaskDiscussionTests: VaporTestCase {
             let user = try User.create(on: conn)
             let discussion = try TaskDiscussion.create(on: conn)
 
-            let data = TaskDiscussion.Pivot.Response.Create.Data(
+            let data = TaskDiscussionResponse.Create.Data(
                 response: "test",
                 discussionID: try discussion.requireID()
             )
@@ -46,7 +50,7 @@ class TaskDiscussionTests: VaporTestCase {
             let response = try app.sendRequest(to: "/api/task-discussion-response", method: .POST, headers: standardHeaders, body: data, loggedInUser: user)
 
             response.has(statusCode: .ok)
-            response.has(content: TaskDiscussion.Pivot.Response.Create.Response.self)
+            response.has(content: TaskDiscussionResponse.Create.Response.self)
 
         } catch {
             XCTFail(error.localizedDescription)

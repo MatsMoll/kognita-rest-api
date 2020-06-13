@@ -2,6 +2,7 @@ import KognitaCore
 import Vapor
 
 extension TaskSolution: ModelParameterRepresentable {}
+extension TaskSolution: Content {}
 
 public protocol TaskSolutionAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
@@ -11,12 +12,12 @@ public protocol TaskSolutionAPIControlling: CreateModelAPIController,
     Repository: TaskSolutionRepositoring,
     UpdateData        == TaskSolution.Update.Data,
     CreateData        == TaskSolution.Create.Data,
-    UpdateResponse    == TaskSolution.Update.Response,
-    CreateResponse    == TaskSolution.Create.Response,
+    UpdateResponse    == TaskSolution,
+    CreateResponse    == TaskSolution,
     Model             == TaskSolution {
-    static func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
-    static func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
-    static func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
+    func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
+    func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension TaskSolutionAPIControlling {
@@ -34,8 +35,8 @@ extension TaskSolutionAPIControlling {
         register(update: solutions)
         register(delete: solutions)
 
-        solution.post("upvote", use: Self.upvote(on: ))
-        solution.post("revoke-vote", use: Self.revokeVote(on: ))
-        solution.post("approve", use: Self.approve(on: ))
+        solution.post("upvote", use: self.upvote(on: ))
+        solution.post("revoke-vote", use: self.revokeVote(on: ))
+        solution.post("approve", use: self.approve(on: ))
     }
 }

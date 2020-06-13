@@ -16,9 +16,12 @@ class TopicTests: VaporTestCase {
     
     private let path = "api/topics/"
 
+    lazy var topicRepository: some TopicRepository = TopicRepositoryMock(eventLoop: conn.eventLoop)
+    var mock: TopicRepositoryMock { topicRepository as! TopicRepositoryMock }
+
     override func setUp() {
         super.setUp()
-        TopicRepositoryMock.Logger.shared.clear()
+        mock.logger.clear()
     }
     
     func testGetAllTopics() throws {
@@ -26,17 +29,17 @@ class TopicTests: VaporTestCase {
         let user                = try User.create(on: conn)
         let topic               = try Topic.create(on: conn)
 
-        let uri                 = "api/subjects/\(topic.subjectId)/topics"
+        let uri                 = "api/subjects/\(topic.subjectID)/topics"
         let response            = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)
 
         response.has(statusCode: .ok)
         response.has(content: [Topic].self)
 
-        let latestLog = try XCTUnwrap(TopicRepositoryMock.Logger.shared.lastEntry)
+        let latestLog = try XCTUnwrap(mock.logger.lastEntry)
 
         switch latestLog {
         case .getTopics(let subject):
-            XCTAssertEqual(subject.id, topic.subjectId)
+            XCTAssertEqual(subject.id, topic.subjectID)
         default:
             XCTFail("Incorrect log entry")
         }
@@ -46,7 +49,7 @@ class TopicTests: VaporTestCase {
     func testGetTopicsWhenNotLoggedInError() throws {
 
         let topic       = try Topic.create(on: conn)
-        _               = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
+        _               = try Topic.create(chapter: 2, subjectId: topic.subjectID, on: conn)
         _               = try Topic.create(on: conn)
 
         let response = try app.sendRequest(to: path, method: .GET, headers: standardHeaders)
@@ -59,9 +62,9 @@ class TopicTests: VaporTestCase {
 
         let user            = try User.create(on: conn)
         let topic           = try Topic.create(on: conn)
-        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
+        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectID, on: conn)
 
-        let uri             = try path + "\(topic.requireID())"
+        let uri             = path + "\(topic.id)"
         let response        = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)
 
         response.has(statusCode: .ok)
@@ -72,9 +75,9 @@ class TopicTests: VaporTestCase {
     func testGetTopicWithIdWhenNotLoggedInError() throws {
 
         let topic           = try Topic.create(on: conn)
-        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
+        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectID, on: conn)
 
-        let uri             = try path + "\(topic.requireID())"
+        let uri             = path + "\(topic.id)"
         let response = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders)
         response.has(statusCode: .unauthorized)
     }
@@ -85,17 +88,17 @@ class TopicTests: VaporTestCase {
     func testDeleteingTopic() throws {
         let user            = try User.create(on: conn)
         let topic           = try Topic.create(creator: user, on: conn)
-        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
+        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectID, on: conn)
 
-        let uri             = try path + "\(topic.requireID())"
+        let uri             = path + "\(topic.id)"
         let response        = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders, loggedInUser: user)
         response.has(statusCode: .ok)
 
-        let latestLog = try XCTUnwrap(TopicRepositoryMock.Logger.shared.lastEntry)
+        let latestLog = try XCTUnwrap(mock.logger.lastEntry)
 
         switch latestLog {
         case .delete(let loggedTopic):
-            XCTAssertEqual(try topic.requireID(), loggedTopic.id)
+            XCTAssertEqual(topic.id, loggedTopic.id)
         default:
             XCTFail("Incorrect log entry")
         }
@@ -116,14 +119,14 @@ class TopicTests: VaporTestCase {
     
     func testDeleteingTopicWhenNotLoggedInError() throws {
         let topic           = try Topic.create(on: conn)
-        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectId, on: conn)
+        _                   = try Topic.create(chapter: 2, subjectId: topic.subjectID, on: conn)
 
-        let uri             = try path + "\(topic.requireID())"
+        let uri             = path + "\(topic.id)"
 
         let response = try app.sendRequest(to: uri, method: .DELETE, headers: standardHeaders)
         response.has(statusCode: .unauthorized)
 
-        XCTAssertTrue(TopicRepositoryMock.Logger.shared.isEmpty)
+        XCTAssertTrue(mock.logger.isEmpty)
     }
     
     static let allTests = [

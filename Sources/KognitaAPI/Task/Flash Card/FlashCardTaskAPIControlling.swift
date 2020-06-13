@@ -11,7 +11,7 @@ public protocol FlashCardTaskAPIControlling: CreateModelAPIController,
     UpdateResponse    == FlashCardTask.Edit.Response,
     CreateData        == FlashCardTask.Create.Data,
     CreateResponse    == FlashCardTask.Create.Response,
-    Model             == FlashCardTask {}
+    Model             == TaskDiscussion {}
 
 extension FlashCardTaskAPIControlling {
 

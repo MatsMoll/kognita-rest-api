@@ -1,6 +1,10 @@
 import Vapor
 import KognitaCore
 
+extension Task: Parameter {}
+extension NoData: Content {}
+extension TaskDiscussion: Content {}
+
 public protocol TaskDiscussionAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     RouteCollection
@@ -11,8 +15,8 @@ public protocol TaskDiscussionAPIControlling: CreateModelAPIController,
     CreateData        == TaskDiscussion.Create.Data,
     CreateResponse    == TaskDiscussion.Create.Response,
     Model             == TaskDiscussion {
-    static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
-    static func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
+    func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion]>
+    func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion]>
 }
 
 extension TaskDiscussionAPIControlling {
@@ -22,7 +26,7 @@ extension TaskDiscussionAPIControlling {
         register(create: discussion)
         register(update: discussion)
 
-        router.get("tasks", Task.parameter, "discussions", use: Self.get(discussions: ))
-        discussion.get("user", use: Self.getDiscussionsForUser(on: ))
+        router.get("tasks", Task.parameter, "discussions", use: self.get(discussions: ))
+        discussion.get("user", use: self.getDiscussionsForUser(on: ))
     }
 }

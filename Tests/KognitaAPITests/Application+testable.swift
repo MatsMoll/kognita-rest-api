@@ -56,26 +56,27 @@ extension Application {
         services.register(JobQueueMock.self)
         config.prefer(JobQueueMock.self, for: JobQueueable.self)
 
-        services.register(APIControllerCollection.self) { _ in
-            APIControllerCollection(
-                authControllers: [
-                    Subject             .DefaultAPIController(),
-                    Subtopic            .DefaultAPIController(),
-                    MultipleChoiseTask  .DefaultAPIController(),
-                    FlashCardTask       .DefaultAPIController(),
-                    PracticeSession     .DefaultAPIController(),
-                    TaskResult          .DefaultAPIController(),
-                    TaskDiscussion                  .DefaultAPIController(),
-                    TaskDiscussion.Pivot.Response   .DefaultAPIController(),
-                    TaskSolution                    .DefaultAPIController(),
 
-                    TestSessionAPIController    <TestSessionRepositoryMock>(),
-                    SubjectTestAPIController    <SubjectTestRepositoryMock>(),
-                    TopicAPIController          <TopicRepositoryMock>()
+        services.register(APIControllerCollection.self) { container in
+            try APIControllerCollection(
+                authControllers: [
+                    Subject             .DefaultAPIController(conn: container.make()),
+                    Subtopic            .DefaultAPIController(conn: container.make()),
+                    MultipleChoiceTask  .DefaultAPIController(conn: container.make()),
+                    FlashCardTask       .DefaultAPIController(conn: container.make()),
+                    PracticeSession     .DefaultAPIController(conn: container.make()),
+                    TaskResult          .DefaultAPIController(conn: container.make()),
+                    TaskDiscussion                  .DefaultAPIController(conn: container.make()),
+                    TaskDiscussionResponse          .DefaultAPIController(conn: container.make()),
+                    TaskSolution                    .DefaultAPIController(conn: container.make()),
+
+                    TestSessionAPIController(conn: container.make()),
+                    SubjectTestAPIController(conn: container.make()),
+                    TopicAPIController(conn: container.make())
                 ],
                 unauthControllers: [
                     // Needs to be used in order to authenticate users
-                    User                .DefaultAPIController()
+                    User                .DefaultAPIController(conn: container.make())
                 ]
             )
         }

@@ -9,19 +9,18 @@ import FluentPostgreSQL
 import Vapor
 import KognitaCore
 
-public final class TopicAPIController<Repository: TopicRepository>: TopicAPIControlling {
+public struct TopicAPIController: TopicAPIControlling {
 
-    public static func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
-        return req.parameters
-            .model(Subject.self, on: req)
-            .flatMap { (subject) in
+    let conn: DatabaseConnectable
 
-                try Repository
-                    .getTopics(in: subject, conn: req)
-        }
+    public var repository: some TopicRepository { Topic.DatabaseRepository(conn: conn) }
+
+    public func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
+        // FIXME: -- Add imp.
+        throw Abort(.notImplemented)
     }
 }
 
 extension Topic {
-    public typealias DefaultAPIController = TopicAPIController<Topic.DatabaseRepository>
+    public typealias DefaultAPIController = TopicAPIController
 }

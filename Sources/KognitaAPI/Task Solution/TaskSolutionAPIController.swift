@@ -1,46 +1,41 @@
 import KognitaCore
 import Vapor
 
-public final class TaskSolutionAPIController<Repository: TaskSolutionRepositoring>: TaskSolutionAPIControlling {
+public struct TaskSolutionAPIController: TaskSolutionAPIControlling {
 
-    public static func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
-        let user = try req.requireAuthenticated(User.self)
+    let conn: DatabaseConnectable
 
-        return req.parameters
-            .model(TaskSolution.self, on: req)
-            .flatMap { solution in
-                try Repository.upvote(for: solution.requireID(), by: user, on: req)
-                    .transform(to: .ok)
-        }
+    public var repository: some TaskSolutionRepositoring { TaskSolution.DatabaseRepository(conn: conn) }
+
+    public func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+
+        return try repository.upvote(
+            for: req.parameters.modelID(TaskSolution.self),
+            by: req.requireAuthenticated()
+        )
+        .transform(to: .ok)
     }
 
-    public static func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+    public func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
-
-        return req.parameters
-            .model(TaskSolution.self, on: req)
-            .flatMap { solution in
-                try Repository.revokeVote(for: solution.requireID(), by: user, on: req)
-                    .transform(to: .ok)
-        }
+        return try repository.revokeVote(
+            for: req.parameters.modelID(TaskSolution.self),
+            by: req.requireAuthenticated()
+        )
+            .transform(to: .ok)
     }
 
-    public static func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
-
-        return req.parameters
-            .model(TaskSolution.self, on: req)
-            .flatMap { solution in
-
-                try Repository.approve(for: solution.requireID(), by: user, on: req)
-                    .transform(to: .ok)
-        }
+        return try repository.approve(
+            for: req.parameters.modelID(TaskSolution.self),
+            by: req.requireAuthenticated()
+        )
+            .transform(to: .ok)
     }
 }
 
 extension TaskSolution {
     /// A `TaskSolutionAPIController` using the `TaskSolution.DatabaseRepository`
-    public typealias DefaultAPIController = TaskSolutionAPIController<TaskSolution.DatabaseRepository>
+    public typealias DefaultAPIController = TaskSolutionAPIController
 }

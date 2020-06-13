@@ -38,25 +38,39 @@ public final class APIControllerCollection: Service {
         }
     }
 
-    public static let defaultControllers = APIControllerCollection(
-        authControllers: [
-            Subject                         .DefaultAPIController(),
-            Topic                           .DefaultAPIController(),
-            Subtopic                        .DefaultAPIController(),
-            MultipleChoiseTask              .DefaultAPIController(),
-            FlashCardTask                   .DefaultAPIController(),
-            PracticeSession                 .DefaultAPIController(),
-            TaskResult                      .DefaultAPIController(),
-            SubjectTest                     .DefaultAPIController(),
-            TestSession                     .DefaultAPIController(),
-            TaskDiscussion                  .DefaultAPIController(),
-            TaskDiscussion.Pivot.Response   .DefaultAPIController(),
-            TaskSolution                    .DefaultAPIController()
-        ],
-        unauthControllers: [
-            User                .DefaultAPIController()
-        ]
-    )
+    public static func defaultControllers(with conn: DatabaseConnectable) -> APIControllerCollection {
+        APIControllerCollection(
+            authControllers: [
+                Subject                         .DefaultAPIController(conn: conn, repositories: Repositories(conn: conn)),
+                Topic                           .DefaultAPIController(conn: conn),
+                Subtopic                        .DefaultAPIController(conn: conn),
+                MultipleChoiceTask              .DefaultAPIController(conn: conn),
+                FlashCardTask                   .DefaultAPIController(conn: conn),
+                PracticeSession                 .DefaultAPIController(conn: conn),
+                TaskResult                      .DefaultAPIController(conn: conn),
+                SubjectTest                     .DefaultAPIController(conn: conn),
+                TestSession                     .DefaultAPIController(conn: conn),
+                TaskDiscussion                  .DefaultAPIController(conn: conn),
+                TaskDiscussionResponse          .DefaultAPIController(conn: conn),
+                TaskSolution                    .DefaultAPIController(conn: conn)
+            ],
+            unauthControllers: [
+                User                .DefaultAPIController(conn: conn)
+            ]
+        )
+    }
+}
+
+public class Repositories: Service {
+
+    internal init(conn: DatabaseConnectable) {
+        self.conn = conn
+    }
+
+    let conn: DatabaseConnectable
+
+    lazy var subjectRepository: some SubjectRepositoring = Subject.DatabaseRepository(conn: conn)
+    lazy var topicRepository: some TopicRepository = Topic.DatabaseRepository(conn: conn)
 }
 
 public struct KognitaAPIProvider: Provider {
@@ -122,7 +136,7 @@ public class KognitaAPI {
     static func setupTextClient(env: Environment, services: inout Services) {
 
         // Localhost testing config
-        var baseUrl = "localhost:5000"
+        var baseUrl = "http://127.0.0.1:5000"
 
         if let baseURL = Environment.get("TEXT_CLIENT_BASE_URL") {
             baseUrl = baseURL

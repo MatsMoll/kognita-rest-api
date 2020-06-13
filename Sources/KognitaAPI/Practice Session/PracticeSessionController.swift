@@ -9,36 +9,41 @@ import Vapor
 import FluentPostgreSQL
 import KognitaCore
 
-public final class PracticeSessionAPIController<Repository: PracticeSessionRepository>: PracticeSessionAPIControlling {
+public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
     public enum Errors: Error {
         case unableToFindTask(PracticeSessionRepresentable, User)
     }
+
+    let conn: DatabaseConnectable
+
+    public var repository: some PracticeSessionRepository { PracticeSession.DatabaseRepository(conn: conn) }
+    var solutionRepository: some TaskSolutionRepositoring { TaskSolution.DatabaseRepository(conn: conn) }
+    var subjectRepository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
 
     /// Submits an answer to a session
     ///
     /// - Parameter req: The http request
     /// - Returns: A response containing the result
     /// - Throws: if unautorized, database errors ext.
-    public static func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<TaskSessionResult<[MultipleChoiseTaskChoise.Result]>> {
+    public func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<TaskSessionResult<[MultipleChoiseTaskChoise.Result]>> {
 
         let user = try req.requireAuthenticated(User.self)
 
         return try req.content
-            .decode(MultipleChoiseTask.Submit.self)
+            .decode(MultipleChoiceTask.Submit.self)
             .flatMap { submit in
 
-                req.parameters
-                    .model(TaskSession.PracticeParameter.self, on: req)
+                try self.repository.find(req.parameters.modelID(PracticeSession.self))
                     .flatMap { (session) in
 
-                        try PracticeSession.DatabaseRepository
-                            .submit(submit, in: session, by: user, on: req)
+                        try self.repository
+                            .submit(submit, in: session, by: user)
                 }
         }
     }
 
-    public static func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<TaskSessionResult<FlashCardTask.Submit>> {
+    public func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<TaskSessionResult<FlashCardTask.Submit>> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -46,26 +51,24 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
             .decode(FlashCardTask.Submit.self)
             .flatMap { submit in
 
-                req.parameters
-                    .model(TaskSession.PracticeParameter.self, on: req)
+                try self.repository
+                    .find(req.parameters.modelID(PracticeSession.self))
                     .flatMap { session in
 
-                        try PracticeSession.DatabaseRepository
-                            .submit(submit, in: session, by: user, on: req)
+                        try self.repository.submit(submit, in: session, by: user)
                 }
         }
     }
 
-    public static func end(session req: Request) throws -> EventLoopFuture<TaskSession.PracticeParameter> {
+    public func end(session req: Request) throws -> EventLoopFuture<PracticeSession> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(TaskSession.PracticeParameter.self, on: req)
+        return try repository.find(req.parameters.modelID(PracticeSession.self))
             .flatMap { session in
-                try PracticeSession.DatabaseRepository
-                    .end(session, for: user, on: req)
-                    .transform(to: session)
+                try self.repository
+                    .end(session, for: user)
+                    .transform(to: session.content())
         }
     }
 
@@ -74,7 +77,7 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         let subjectId: Subject.ID?
     }
 
-    public static func get(amountHistogram req: Request) throws -> EventLoopFuture<[TaskResult.History]> {
+    public func get(amountHistogram req: Request) throws -> EventLoopFuture<[TaskResult.History]> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -92,13 +95,12 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         }
     }
 
-    public static func get(solutions req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
+    public func get(solutions req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(TaskSession.PracticeParameter.self, on: req)
-            .flatMap { (session) in
+        return try repository.find(req.parameters.modelID(PracticeSession.self))
+            .flatMap { session in
 
                 guard session.userID == user.id else {
                     throw Abort(.forbidden)
@@ -106,16 +108,17 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 
                 let index = try req.first(Int.self)
 
-                return try PracticeSession.DatabaseRepository
-                    .taskID(index: index, in: session.requireID(), on: req)
+                return try self.repository
+                    .taskID(index: index, in: session.requireID())
                     .flatMap { taskID in
-                        TaskSolution.DatabaseRepository.solutions(for: taskID, for: user, on: req)
+
+                        self.solutionRepository.solutions(for: taskID, for: user)
                 }
         }
     }
 
     /// Returns a session history
-    public static func get(sessions req: Request) throws -> EventLoopFuture<PracticeSession.HistoryList> {
+    public func get(sessions req: Request) throws -> EventLoopFuture<PracticeSession.HistoryList> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -132,27 +135,26 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
     /// - Parameter req: The HTTP request
     /// - Returns: A rendered view
     /// - Throws: If unauth or any other error
-    public static func getSessionResult(_ req: Request) throws -> EventLoopFuture<PracticeSession.Result> {
+    public func getSessionResult(_ req: Request) throws -> EventLoopFuture<PracticeSession.Result> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(TaskSession.PracticeParameter.self, on: req)
+        return try repository.find(req.parameters.modelID(PracticeSession.self))
             .flatMap { session in
                 guard user.id == session.userID else {
                     throw Abort(.forbidden)
                 }
 
-                return try PracticeSession.DatabaseRepository
-                    .getResult(for: session.requireID(), on: req)
+                return try self.repository
+                    .getResult(for: session.requireID())
                     .flatMap { results in
 
-                        return Subject.DatabaseRepository
-                            .subject(for: session, on: req)
+                        return self.subjectRepository
+                            .subject(for: session)
                             .map { subject in
 
                                 PracticeSession.Result(
-                                    subject: .init(subject: subject),
+                                    subject: subject,
                                     results: results
                                 )
                         }
@@ -160,12 +162,11 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         }
     }
 
-    public static func getCurrentTask(on req: Request) throws -> EventLoopFuture<PracticeSession.CurrentTask> {
+    public func getCurrentTask(on req: Request) throws -> EventLoopFuture<PracticeSession.CurrentTask> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(TaskSession.PracticeParameter.self, on: req)
+        return try repository.find(req.parameters.modelID(PracticeSession.self))
             .flatMap { session in
 
                 let index = try req.first(Int.self)
@@ -176,15 +177,15 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
                 return req.databaseConnection(to: .psql)
                     .flatMap { conn in
 
-                        try PracticeSession.DatabaseRepository
-                            .taskAt(index: index, in: session.requireID(), on: conn)
+                        try self.repository
+                            .taskAt(index: index, in: session.requireID())
                             .map { taskType in
 
-                                try PracticeSession.CurrentTask(
-                                    session: session,
+                                PracticeSession.CurrentTask(
+                                    session: session.content(),
                                     task: taskType,
                                     index: index,
-                                    user: user.content()
+                                    user: user
                                 )
                         }
                         .catchMap { _ in
@@ -194,30 +195,28 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
         }
     }
 
-    static func extend(session req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+    func extend(session req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(TaskSession.PracticeParameter.self, on: req)
-            .flatMap { session in
-
-                try Repository.extend(session: session, for: user, on: req)
-                    .transform(to: .ok)
-        }
+        return try repository
+            .find(req.parameters.modelID(PracticeSession.self))
+            .and(result: user)
+            .flatMap(repository.extend(session: for: ))
+            .transform(to: .ok)
     }
 
     struct EstimateScore: Codable {
         let answer: String
     }
 
-    static func estimatedScore(on req: Request) throws -> EventLoopFuture<Response> {
+    func estimatedScore(on req: Request) throws -> EventLoopFuture<Response> {
 
         return try req.content
             .decode(EstimateScore.self)
             .flatMap { submit in
 
-                try get(solutions: req)
+                try self.get(solutions: req)
                     .flatMap { solutions in
 
                         let textClient = try req.make(TextMiningClienting.self)
@@ -234,5 +233,5 @@ public final class PracticeSessionAPIController<Repository: PracticeSessionRepos
 }
 
 extension PracticeSession {
-    public typealias DefaultAPIController = PracticeSessionAPIController<PracticeSession.DatabaseRepository>
+    public typealias DefaultAPIController = PracticeSessionAPIController
 }

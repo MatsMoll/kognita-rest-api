@@ -7,9 +7,13 @@ class TestSessionTests: VaporTestCase {
 
     let rootUri = "api/test-sessions"
 
+    lazy var subjectTestRepository: some SubjectTestRepositoring = SubjectTest.DatabaseRepository(conn: conn)
+    lazy var testSessionRepository: some TestSessionRepositoring = TestSessionRepositoryMock(eventLoop: conn.eventLoop)
+    var mock: TestSessionRepositoryMock { testSessionRepository as! TestSessionRepositoryMock }
+
     override func setUp() {
         super.setUp()
-        TestSessionRepositoryMock.Logger.shared.clear()
+        mock.logger.clear()
     }
 
     func testSavingAnswer() throws {
@@ -18,16 +22,16 @@ class TestSessionTests: VaporTestCase {
             let session = try setupSession(for: user)
             let firstSubmission = try submissionAt(index: 1, for: session.testID)
 
-            let submitUri = try uri(for: session.requireID()) + "/save"
+            let submitUri = uri(for: session.id) + "/save"
             let response = try app.sendRequest(to: submitUri, method: .POST, headers: standardHeaders, body: firstSubmission, loggedInUser: user)
             response.has(statusCode: .ok)
 
-            let logEntry = try XCTUnwrap(TestSessionRepositoryMock.Logger.shared.lastEntry)
+            let logEntry = try XCTUnwrap(mock.logger.lastEntry)
 
             switch logEntry {
             case .answer(let data, let loggedSession, let loggedUser):
-                try XCTAssertEqual(session.requireID(), loggedSession.requireID())
-                try XCTAssertEqual(user.requireID(), loggedUser.requireID())
+                try XCTAssertEqual(session.id, loggedSession.requireID())
+                XCTAssertEqual(user.id, loggedUser.id)
 
                 XCTAssertEqual(firstSubmission.choises, data.choises)
                 XCTAssertEqual(firstSubmission.taskIndex, data.taskIndex)
@@ -45,16 +49,16 @@ class TestSessionTests: VaporTestCase {
             let user = try User.create(on: conn)
             let session = try setupSession(for: user)
 
-            let submitUri = try uri(for: session.requireID()) + "/finnish"
+            let submitUri = uri(for: session.id) + "/finnish"
             let response = try app.sendRequest(to: submitUri, method: .POST, headers: standardHeaders, loggedInUser: user)
             response.has(statusCode: .ok)
 
-            let logEntry = try XCTUnwrap(TestSessionRepositoryMock.Logger.shared.lastEntry)
+            let logEntry = try XCTUnwrap(mock.logger.lastEntry)
 
             switch logEntry {
             case .finnish(let loggedSession, let loggedUser):
-                try XCTAssertEqual(session.requireID(), loggedSession.requireID())
-                try XCTAssertEqual(user.requireID(), loggedUser.requireID())
+                try XCTAssertEqual(session.id, loggedSession.requireID())
+                XCTAssertEqual(user.id, loggedUser.id)
             default:
                 XCTFail("Incorect log entry")
             }
@@ -68,7 +72,7 @@ class TestSessionTests: VaporTestCase {
             let user = try User.create(on: conn)
             let session = try setupSession(for: user)
 
-            let submitUri = try uri(for: session.requireID()) + "/results"
+            let submitUri = uri(for: session.id) + "/results"
             let responses = try [
                 app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
                 app.sendFutureRequest(to: submitUri, method: .GET, headers: standardHeaders, loggedInUser: user),
@@ -100,12 +104,12 @@ class TestSessionTests: VaporTestCase {
                 response.has(content: TestSession.Results.self)
             }
 
-            let logEntry = try XCTUnwrap(TestSessionRepositoryMock.Logger.shared.lastEntry)
+            let logEntry = try XCTUnwrap(mock.logger.lastEntry)
 
             switch logEntry {
             case .results(let loggedSession, let loggedUser):
-                try XCTAssertEqual(session.requireID(), loggedSession.requireID())
-                try XCTAssertEqual(user.requireID(), loggedUser.requireID())
+                try XCTAssertEqual(session.id, loggedSession.requireID())
+                XCTAssertEqual(user.id, loggedUser.id)
             default:
                 XCTFail("Incorect log entry")
             }
@@ -118,7 +122,7 @@ class TestSessionTests: VaporTestCase {
         failableTest {
             let user = try User.create(on: conn)
             let task = try Task.create(on: conn)
-            let solution = try XCTUnwrap(TaskSolution.query(on: conn).filter(\TaskSolution.taskID, .equal, task.requireID()).first().wait())
+            let solution = try XCTUnwrap(TaskSolution.DatabaseModel.query(on: conn).filter(\TaskSolution.taskID, .equal, task.requireID()).first().wait())
 
             let uri = try "/api/task-solutions/\(solution.requireID())/upvote"
             let unauthorizedResponse = try app.sendRequest(to: uri, method: .POST)
@@ -135,25 +139,24 @@ class TestSessionTests: VaporTestCase {
         let test = try setupTestWithTasks()
         let enterRequest = SubjectTest.Enter.Request(password: defaultTestPassword)
 
-        return try SubjectTest.DatabaseRepository.enter(test: test, with: enterRequest, by: user, on: conn).wait()
+        return try subjectTestRepository.enter(test: test, with: enterRequest, by: user).wait()
     }
 
     func setupTestWithTasks(scheduledAt: Date = .now, duration: TimeInterval = .minutes(10), numberOfTasks: Int = 3) throws -> SubjectTest {
         let topic = try Topic.create(on: conn)
         let subtopic = try Subtopic.create(topic: topic, on: conn)
         let taskIds = try (0..<numberOfTasks).map { _ in
-            try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                .requireID()
+            try MultipleChoiceTask.create(subtopic: subtopic, on: conn).id
         }
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: conn)
 
         let user = try User.create(on: conn)
 
         let data = SubjectTest.Create.Data(
             tasks:          taskIds,
-            subjectID:      topic.subjectId,
+            subjectID:      topic.subjectID,
             duration:       duration,
             scheduledAt:    scheduledAt,
             password:       defaultTestPassword,
@@ -162,10 +165,10 @@ class TestSessionTests: VaporTestCase {
         )
 
         if scheduledAt.timeIntervalSinceNow < 0 {
-            let test = try SubjectTest.DatabaseRepository.create(from: data, by: user, on: conn).wait()
-            return try SubjectTest.DatabaseRepository.open(test: test, by: user, on: conn).wait()
+            let test = try subjectTestRepository.create(from: data, by: user).wait()
+            return try subjectTestRepository.open(test: test, by: user).wait()
         } else {
-            return try SubjectTest.DatabaseRepository.create(from: data, by: user, on: conn).wait()
+            return try subjectTestRepository.create(from: data, by: user).wait()
         }
     }
 
@@ -175,9 +178,9 @@ class TestSessionTests: VaporTestCase {
         "\(rootUri)/\(sessionID)"
     }
 
-    func submissionAt(index: Int, for testID: SubjectTest.ID, isCorrect: Bool = true) throws -> MultipleChoiseTask.Submit {
+    func submissionAt(index: Int, for testID: SubjectTest.ID, isCorrect: Bool = true) throws -> MultipleChoiceTask.Submit {
         let choises = try choisesAt(index: index, for: testID)
-        return try MultipleChoiseTask.Submit(
+        return try MultipleChoiceTask.Submit(
             timeUsed: .seconds(20),
             choises: choises.filter { $0.isCorrect == isCorrect }.map { try $0.requireID() },
             taskIndex: index
@@ -196,7 +199,7 @@ class TestSessionTests: VaporTestCase {
             .wait()
     }
 
-    func multipleChoiseAnswer(with choises: [MultipleChoiseTaskChoise.ID]) -> MultipleChoiseTask.Submit {
+    func multipleChoiseAnswer(with choises: [MultipleChoiseTaskChoise.ID]) -> MultipleChoiceTask.Submit {
         .init(
             timeUsed: .seconds(20),
             choises: choises,

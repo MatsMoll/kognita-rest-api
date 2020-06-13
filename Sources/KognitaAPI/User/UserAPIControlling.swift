@@ -2,16 +2,19 @@ import Vapor
 import KognitaCore
 import Crypto
 
+extension User: Content {}
+extension User: ModelParameterRepresentable {}
+
 public protocol UserAPIControlling: CreateModelAPIController,
     RouteCollection
     where
     Repository: UserRepository,
     CreateData      == User.Create.Data,
     CreateResponse  == User.Create.Response {
-    static func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token>
-    static func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token>
+    func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension UserAPIControlling {
@@ -22,12 +25,12 @@ extension UserAPIControlling {
         // public routes
         register(create: users)
 
-        users.post(User.parameter, "verify", use: Self.verify(on: ))
-        users.post("send-reset-mail", use: Self.startResetPassword)
-        users.post("reset-password", use: Self.resetPassword)
+        users.post(User.parameter, "verify", use: self.verify(on: ))
+        users.post("send-reset-mail", use: self.startResetPassword)
+        users.post("reset-password", use: self.resetPassword)
 
         // basic / password auth protected routes
         let basic = router.grouped(User.basicAuthMiddleware(using: BCryptDigest()))
-        basic.post("users/login", use: Self.login)
+        basic.post("users/login", use: self.login)
     }
 }

@@ -1,74 +1,73 @@
 import Vapor
 import KognitaCore
 
-public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>: SubjectTestAPIControlling {
+public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
-    public init() {}
+    let conn: DatabaseConnectable
 
-    public static func open(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public var repository: some SubjectTestRepositoring { SubjectTest.DatabaseRepository(conn: conn) }
+    public var subjectRepository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
+
+    public func open(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(SubjectTest.self, on: req)
+
+        return try repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
             .flatMap { test in
-                try Repository.open(test: test, by: user, on: req)
+                try self.repository.open(test: test, by: user)
         }
         .transform(to: .ok)
     }
 
-    public static func enter(on req: Request) throws -> EventLoopFuture<TestSession> {
+    public func enter(on req: Request) throws -> EventLoopFuture<TestSession> {
         let user = try req.requireAuthenticated(User.self)
 
         return try req.content
             .decode(SubjectTest.Enter.Request.self)
             .flatMap { request in
 
-                req.parameters
-                    .model(SubjectTest.self, on: req)
+                try self.repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
                     .flatMap { test in
 
-                        try Repository.enter(test: test, with: request, by: user, on: req)
+                        try self.repository.enter(test: test, with: request, by: user)
                 }
         }
     }
 
-    public static func userCompletionStatus(on req: Request) throws -> EventLoopFuture<SubjectTest.CompletionStatus> {
+    public func userCompletionStatus(on req: Request) throws -> EventLoopFuture<SubjectTest.CompletionStatus> {
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(SubjectTest.self, on: req)
+        return try repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
             .flatMap { test in
 
-                try Repository.userCompletionStatus(in: test, user: user, on: req)
+                try self.repository.userCompletionStatus(in: test, user: user)
         }
     }
 
-    public static func taskForID(on req: Request) throws -> EventLoopFuture<SubjectTest.MultipleChoiseTaskContent> {
+    public func taskForID(on req: Request) throws -> EventLoopFuture<SubjectTest.MultipleChoiseTaskContent> {
         throw Abort(.notImplemented)
     }
 
-    public static func results(on req: Request) throws -> EventLoopFuture<SubjectTest.Results> {
+    public func results(on req: Request) throws -> EventLoopFuture<SubjectTest.Results> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(SubjectTest.self, on: req)
+        return try repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
             .flatMap { test in
 
-                try Repository.results(for: test, user: user, on: req)
+                try self.repository.results(for: test, user: user)
         }
     }
 
-    public static func allInSubject(on req: Request) throws -> EventLoopFuture<SubjectTest.ListReponse> {
+    public func allInSubject(on req: Request) throws -> EventLoopFuture<SubjectTest.ListReponse> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(Subject.self, on: req)
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .flatMap { subject in
 
-                try Repository.all(in: subject, for: user, on: req)
+                try self.repository.all(in: subject, for: user)
                     .map { tests in
 
                         SubjectTest.ListReponse(
@@ -79,15 +78,14 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
         }
     }
 
-    public static func test(withID req: Request) throws -> EventLoopFuture<SubjectTest.ModifyResponse> {
+    public func test(withID req: Request) throws -> EventLoopFuture<SubjectTest.ModifyResponse> {
 
         _ = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(SubjectTest.self, on: req)
+        return try repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
             .flatMap { test in
 
-                return try Repository.taskIDsFor(testID: test.requireID(), on: req)
+                return try self.repository.taskIDsFor(testID: test.id)
                     .map { taskIDs in
 
                         SubjectTest.ModifyResponse(
@@ -98,30 +96,28 @@ public final class SubjectTestAPIController<Repository: SubjectTestRepositoring>
         }
     }
 
-    public static func end(req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func end(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(SubjectTest.self, on: req)
+        return try repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
             .flatMap { test in
-                try Repository.end(test: test, by: user, on: req)
+                try self.repository.end(test: test, by: user)
         }
         .transform(to: .ok)
     }
 
-    public static func scoreHistogram(req: Request) throws -> EventLoopFuture<SubjectTest.ScoreHistogram> {
+    public func scoreHistogram(req: Request) throws -> EventLoopFuture<SubjectTest.ScoreHistogram> {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return req.parameters
-            .model(SubjectTest.self, on: req)
+        return try repository.find(req.parameters.modelID(SubjectTest.self), or: Abort(.badRequest))
             .flatMap { test in
 
-                try Repository.scoreHistogram(for: test, user: user, on: req)
+                try self.repository.scoreHistogram(for: test, user: user)
         }
     }
 }
 
 extension SubjectTest {
-    public typealias DefaultAPIController = SubjectTestAPIController<SubjectTest.DatabaseRepository>
+    public typealias DefaultAPIController = SubjectTestAPIController
 }

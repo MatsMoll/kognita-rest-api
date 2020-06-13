@@ -8,10 +8,13 @@
 import Vapor
 import KognitaCore
 
-public final class FlashCardTaskAPIController
-    <Repository: FlashCardTaskRepository>:
-    FlashCardTaskAPIControlling {}
+public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
+
+    let conn: DatabaseConnectable
+
+    public var repository: some FlashCardTaskRepository { FlashCardTask.DatabaseRepository(conn: conn) }
+}
 
 extension FlashCardTask {
-    public typealias DefaultAPIController = FlashCardTaskAPIController<FlashCardTask.DatabaseRepository>
+    public typealias DefaultAPIController = FlashCardTaskAPIController
 }
