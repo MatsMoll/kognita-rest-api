@@ -15,6 +15,14 @@ public struct TaskDiscussionAPIController: TaskDiscussionAPIControlling {
 
     public var repository: some TaskDiscussionRepositoring { TaskDiscussion.DatabaseRepository(conn: conn) }
 
+    public func create(on req: Request) throws -> EventLoopFuture<NoData> {
+        try createImplementation(
+            TaskDiscussion.Create.Data.self,
+            from: req,
+            repository: repository.create(from: by: )
+        )
+    }
+
     public func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion]> {
         try repository.getDiscussions(in: req.parameters.modelID(TaskDiscussion.self))
     }

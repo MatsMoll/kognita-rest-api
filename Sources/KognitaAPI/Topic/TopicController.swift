@@ -15,6 +15,10 @@ public struct TopicAPIController: TopicAPIControlling {
 
     public var repository: some TopicRepository { Topic.DatabaseRepository(conn: conn) }
 
+    public func create(on req: Request) throws -> EventLoopFuture<Topic> {
+        try req.create(in: repository.create(from:  by: ))
+    }
+
     public func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
         // FIXME: -- Add imp.
         throw Abort(.notImplemented)
