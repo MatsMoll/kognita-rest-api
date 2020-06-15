@@ -16,11 +16,11 @@ public struct TaskDiscussionAPIController: TaskDiscussionAPIControlling {
     public var repository: some TaskDiscussionRepositoring { TaskDiscussion.DatabaseRepository(conn: conn) }
 
     public func create(on req: Request) throws -> EventLoopFuture<NoData> {
-        try createImplementation(
-            TaskDiscussion.Create.Data.self,
-            from: req,
-            repository: repository.create(from: by: )
-        )
+        try req.create(in: repository.create(from: by: )) 
+    }
+
+    public func update(on req: Request) throws -> EventLoopFuture<TaskDiscussion.Update.Response> {
+        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: TaskDiscussion.self)
     }
 
     public func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion]> {

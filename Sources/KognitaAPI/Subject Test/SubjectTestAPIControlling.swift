@@ -8,17 +8,11 @@ extension SubjectTest.ScoreHistogram: Content {}
 extension SubjectTest.MultipleChoiseTaskContent: Content {}
 
 /// A definition of a API that can controll a SubjectTest
-public protocol SubjectTestAPIControlling: CreateModelAPIController,
-    UpdateModelAPIController,
-    DeleteModelAPIController,
-    RouteCollection
-    where
-    Repository: SubjectTestRepositoring,
-    CreateData      == SubjectTest.Create.Data,
-    CreateResponse  == SubjectTest.Create.Response,
-    UpdateData      == SubjectTest.Update.Data,
-    UpdateResponse  == SubjectTest.Update.Response,
-    Model           == SubjectTest {
+public protocol SubjectTestAPIControlling: CreateModelAPIController, UpdateModelAPIController, DeleteModelAPIController, RouteCollection {
+
+    func create(on req: Request) throws -> EventLoopFuture<SubjectTest.Create.Response>
+
+    func update(on req: Request) throws -> EventLoopFuture<SubjectTest.Update.Response>
 
     /// Opens the test for students to join
     /// - Parameter req: The HTTP request
@@ -56,9 +50,9 @@ extension SubjectTestAPIControlling {
         let test            = router.grouped("subject-tests")
         let testInstance    = router.grouped("subject-tests", SubjectTest.parameter)
 
-        register(create: test)
-        register(update: test)
-        register(delete: test)
+        register(create: create(on:), router: test)
+        register(update: update(on:), router: test, parameter: SubjectTest.self)
+        register(delete: test, parameter: SubjectTest.self)
 
         router.get("subjects", Subject.parameter, "subject-tests", use: self.allInSubject(on: ))
 

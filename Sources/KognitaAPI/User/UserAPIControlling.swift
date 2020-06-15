@@ -5,12 +5,8 @@ import Crypto
 extension User: Content {}
 extension User: ModelParameterRepresentable {}
 
-public protocol UserAPIControlling: CreateModelAPIController,
-    RouteCollection
-    where
-    Repository: UserRepository,
-    CreateData      == User.Create.Data,
-    CreateResponse  == User.Create.Response {
+public protocol UserAPIControlling: CreateModelAPIController, RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<User.Create.Response>
     func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token>
     func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -23,7 +19,7 @@ extension UserAPIControlling {
         let users = router.grouped("users")
 
         // public routes
-        register(create: users)
+        register(create: create(on:), router: users)
 
         users.post(User.parameter, "verify", use: self.verify(on: ))
         users.post("send-reset-mail", use: self.startResetPassword)

@@ -7,6 +7,18 @@ public struct TaskSolutionAPIController: TaskSolutionAPIControlling {
 
     public var repository: some TaskSolutionRepositoring { TaskSolution.DatabaseRepository(conn: conn) }
 
+    public func create(on req: Request) throws -> EventLoopFuture<TaskSolution> {
+        try req.create(in: repository.create(from: by: ))
+    }
+
+    public func update(on req: Request) throws -> EventLoopFuture<TaskSolution> {
+        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: TaskSolution.self)
+    }
+
+    public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: TaskSolution.self)
+    }
+
     public func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
 
         return try repository.upvote(

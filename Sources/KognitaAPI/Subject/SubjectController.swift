@@ -15,7 +15,6 @@ extension QueryContainer {
 public struct SubjectAPIController: SubjectAPIControlling {
 
     let conn: DatabaseConnectable
-    let repositories: Repositories
 
     lazy var test: some SubjectRepositoring = self.repositories.subjectRepository
     public var repository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
@@ -23,6 +22,26 @@ public struct SubjectAPIController: SubjectAPIControlling {
     var topicRepository: some TopicRepository { Topic.DatabaseRepository(conn: conn) }
     var taskResultRepository: TaskResultRepositoring.Type { TaskResult.DatabaseRepository.self }
     var userRepository: some UserRepository { User.DatabaseRepository(conn: conn) }
+
+    public func create(on req: Request) throws -> EventLoopFuture<Subject> {
+        try req.create(in: repository.create(from: by: ))
+    }
+
+    public func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response> {
+        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: Subject.self)
+    }
+
+    public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: Subject.self)
+    }
+
+    public func retrive(on req: Request) throws -> EventLoopFuture<Subject> {
+        try req.retrive(with: repository.find, parameter: Subject.self)
+    }
+
+    public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Subject]> {
+        try repository.all()
+    }
 
     public func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]> {
 

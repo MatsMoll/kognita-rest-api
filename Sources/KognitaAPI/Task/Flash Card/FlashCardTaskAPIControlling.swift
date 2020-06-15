@@ -1,24 +1,17 @@
 import Vapor
 import KognitaCore
 
-public protocol FlashCardTaskAPIControlling: CreateModelAPIController,
-    UpdateModelAPIController,
-    DeleteModelAPIController,
-    RouteCollection
-    where
-    Repository: FlashCardTaskRepository,
-    UpdateData        == FlashCardTask.Edit.Data,
-    UpdateResponse    == FlashCardTask.Edit.Response,
-    CreateData        == FlashCardTask.Create.Data,
-    CreateResponse    == FlashCardTask.Create.Response,
-    Model             == TaskDiscussion {}
+public protocol FlashCardTaskAPIControlling: CreateModelAPIController, UpdateModelAPIController, DeleteModelAPIController, RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<FlashCardTask.Create.Response>
+    func update(on req: Request) throws -> EventLoopFuture<FlashCardTask.Edit.Response>
+}
 
 extension FlashCardTaskAPIControlling {
 
     public func boot(router: Router) throws {
         let flashCard = router.grouped("tasks/flash-card")
-        register(create: flashCard)
-        register(delete: flashCard)
-        register(update: flashCard)
+        register(create: create(on:), router: flashCard)
+        register(update: update(on:), router: flashCard, parameter: TypingTask.self)
+        register(delete: flashCard, parameter: TypingTask.self)
     }
 }

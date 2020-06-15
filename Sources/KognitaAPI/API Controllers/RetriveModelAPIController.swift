@@ -3,27 +3,17 @@ import KognitaCore
 
 public protocol RetriveModelAPIController {
 
-    associatedtype Model: ModelParameterRepresentable
-    associatedtype ModelResponse: Content
-    associatedtype Repository: RetriveModelRepository
-
-    var repository: Repository { get }
-
-    func retrive(on req: Request) throws -> EventLoopFuture<ModelResponse>
-
-    func register(retrive router: Router)
+    func register<Model: ModelParameterRepresentable, Response: Content>(retrive: @escaping (Request) throws -> EventLoopFuture<Response>, router: Router, parameter: Model.Type)
 }
 
 extension RetriveModelAPIController {
-    public func register(retrive router: Router) {
-        router.get(Model.parameter, use: self.retrive)
+    public func register<Model: ModelParameterRepresentable, Response: Content>(retrive: @escaping (Request) throws -> EventLoopFuture<Response>, router: Router, parameter: Model.Type) {
+        router.get(Model.parameter, use: retrive)
     }
 }
 
-extension RetriveModelAPIController where
-    Model == ModelResponse,
-    Repository.Model == Model {
-    public func retrive(on req: Request) throws -> EventLoopFuture<ModelResponse> {
-        try repository.find(req.parameters.modelID(Model.self), or: Abort(.badRequest))
+extension Request {
+    public func retrive<Model: ModelParameterRepresentable, Response: Content>(with repository: @escaping (Model.ID, Error) throws -> EventLoopFuture<Response>, parameter: Model.Type) throws -> EventLoopFuture<Response> {
+        try repository(parameters.modelID(Model.self), Abort(.badRequest))
     }
 }

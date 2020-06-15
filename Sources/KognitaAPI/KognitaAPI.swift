@@ -14,63 +14,81 @@ extension Optional {
     }
 }
 
-public final class APIControllerCollection: Service {
+internal protocol APIControllerCollection: Service, RouteCollection {
+    var subjectController: SubjectAPIControlling { get }
+    var topicController: TopicAPIControlling { get }
+    var subtopicController: SubtopicAPIControlling { get }
+    var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling { get }
+    var typingTaskController: FlashCardTaskAPIControlling { get }
+    var practiceSessionController: PracticeSessionAPIControlling { get }
+    var taskResultController: TaskResultAPIControlling { get }
+    var subjectTestController: SubjectTestAPIControlling { get }
+    var testSessionController: TestSessionAPIControlling { get }
+    var taskDiscussionController: TaskDiscussionAPIControlling { get }
+    var taskDiscussionResponseController: TaskDiscussionResponseAPIControlling { get }
+    var taskSolutionController: TaskSolutionAPIControlling { get }
+    var userController: UserAPIControlling { get }
+}
 
-    let authControllers: [RouteCollection]
-    let unauthControllers: [RouteCollection]
+struct APIControllers: APIControllerCollection {
 
-    public init(authControllers: [RouteCollection], unauthControllers: [RouteCollection]) {
-        self.authControllers = authControllers
-        self.unauthControllers = unauthControllers
-    }
+    var subjectController: SubjectAPIControlling
+    var topicController: TopicAPIControlling
+    var subtopicController: SubtopicAPIControlling
+    var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling
+    var typingTaskController: FlashCardTaskAPIControlling
+    var practiceSessionController: PracticeSessionAPIControlling
+    var taskResultController: TaskResultAPIControlling
+    var subjectTestController: SubjectTestAPIControlling
+    var testSessionController: TestSessionAPIControlling
+    var taskDiscussionController: TaskDiscussionAPIControlling
+    var taskDiscussionResponseController: TaskDiscussionResponseAPIControlling
+    var taskSolutionController: TaskSolutionAPIControlling
+    var userController: UserAPIControlling
 
-    public func boot(router: Router) throws {
+    func boot(router: Router) throws {
+
+        try router.register(collection: userController)
+
         let auth = router.grouped(
             User.tokenAuthMiddleware(),
             User.authSessionsMiddleware(),
             User.guardAuthMiddleware()
         )
-        try unauthControllers.forEach { controller in
-            try router.register(collection: controller)
-        }
-        try authControllers.forEach { controller in
-            try auth.register(collection: controller)
-        }
-    }
-
-    public static func defaultControllers(with conn: DatabaseConnectable) -> APIControllerCollection {
-        APIControllerCollection(
-            authControllers: [
-                Subject                         .DefaultAPIController(conn: conn, repositories: Repositories(conn: conn)),
-                Topic                           .DefaultAPIController(conn: conn),
-                Subtopic                        .DefaultAPIController(conn: conn),
-                MultipleChoiceTask              .DefaultAPIController(conn: conn),
-                FlashCardTask                   .DefaultAPIController(conn: conn),
-                PracticeSession                 .DefaultAPIController(conn: conn),
-                TaskResult                      .DefaultAPIController(conn: conn),
-                SubjectTest                     .DefaultAPIController(conn: conn),
-                TestSession                     .DefaultAPIController(conn: conn),
-                TaskDiscussion                  .DefaultAPIController(conn: conn),
-                TaskDiscussionResponse          .DefaultAPIController(conn: conn),
-                TaskSolution                    .DefaultAPIController(conn: conn)
-            ],
-            unauthControllers: [
-                User                .DefaultAPIController(conn: conn)
-            ]
-        )
+        try auth.register(collection: subjectController)
+        try auth.register(collection: topicController)
+        try auth.register(collection: subtopicController)
+        try auth.register(collection: multipleChoiceTaskController)
+        try auth.register(collection: typingTaskController)
+        try auth.register(collection: practiceSessionController)
+        try auth.register(collection: testSessionController)
+        try auth.register(collection: subjectTestController)
+        try auth.register(collection: testSessionController)
+        try auth.register(collection: taskDiscussionController)
+        try auth.register(collection: taskDiscussionResponseController)
+        try auth.register(collection: taskSolutionController)
+        try auth.register(collection: taskResultController)
     }
 }
 
-public class Repositories: Service {
-
-    internal init(conn: DatabaseConnectable) {
-        self.conn = conn
+extension APIControllers {
+    static func databaseControllers(with container: Container) -> APIControllers {
+        .init(
+            subjectController: Subject.DatabaseRepository(conn: <#T##DatabaseConnectable#>),
+            topicController: <#T##TopicAPIControlling#>,
+            subtopicController: <#T##SubtopicAPIControlling#>,
+            multipleChoiceTaskController: <#T##MultipleChoiseTaskAPIControlling#>,
+            typingTaskController: <#T##FlashCardTaskAPIControlling#>,
+            practiceSessionController: <#T##PracticeSessionAPIControlling#>,
+            taskResultController: <#T##TaskResultAPIControlling#>,
+            subjectTestController: <#T##SubjectTestAPIControlling#>,
+            testSessionController: <#T##TestSessionAPIControlling#>,
+            taskDiscussionController: <#T##TaskDiscussionAPIControlling#>,
+            taskDiscussionResponseController: <#T##TaskDiscussionResponseAPIControlling#>,
+            taskSolutionController: <#T##TaskSolutionAPIControlling#>,
+            userController: <#T##UserAPIControlling#>
+        )
     }
-
-    let conn: DatabaseConnectable
-
-    lazy var subjectRepository: some SubjectRepositoring = Subject.DatabaseRepository(conn: conn)
-    lazy var topicRepository: some TopicRepository = Topic.DatabaseRepository(conn: conn)
 }
 
 public struct KognitaAPIProvider: Provider {

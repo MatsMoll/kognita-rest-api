@@ -21,6 +21,10 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
     var solutionRepository: some TaskSolutionRepositoring { TaskSolution.DatabaseRepository(conn: conn) }
     var subjectRepository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
 
+    public func create(on req: Request) throws -> EventLoopFuture<PracticeSession> {
+        try req.create(in: repository.create(from: by: ))
+    }
+
     /// Submits an answer to a session
     ///
     /// - Parameter req: The http request

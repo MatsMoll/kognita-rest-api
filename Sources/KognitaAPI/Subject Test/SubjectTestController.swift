@@ -8,6 +8,18 @@ public struct SubjectTestAPIController: SubjectTestAPIControlling {
     public var repository: some SubjectTestRepositoring { SubjectTest.DatabaseRepository(conn: conn) }
     public var subjectRepository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
 
+    public func create(on req: Request) throws -> EventLoopFuture<SubjectTest> {
+        try req.create(in: repository.create(from: by: ))
+    }
+
+    public func update(on req: Request) throws -> EventLoopFuture<SubjectTest.Update.Response> {
+        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: SubjectTest.self)
+    }
+
+    public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: SubjectTest.self)
+    }
+
     public func open(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.requireAuthenticated(User.self)

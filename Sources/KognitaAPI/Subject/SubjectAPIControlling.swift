@@ -8,15 +8,11 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     DeleteModelAPIController,
     RetriveModelAPIController,
     RetriveAllModelsAPIController,
-    RouteCollection
-    where
-    Repository: SubjectRepositoring,
-    Model           == Subject,
-    ModelResponse   == Subject,
-    CreateData      == Subject.Create.Data,
-    CreateResponse  == Subject.Create.Response,
-    UpdateData      == Subject.Update.Data,
-    UpdateResponse  == Subject.Update.Response {
+    RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<Subject.Create.Response>
+    func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response>
+    func retrive(on req: Request) throws -> EventLoopFuture<Subject>
+    func retriveAll(_ req: Request) throws -> EventLoopFuture<[Subject]>
     func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
     func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -36,11 +32,11 @@ extension SubjectAPIControlling {
         let subjects = router.grouped("subjects")
         let subjectInstance = subjects.grouped(Subject.parameter)
 
-        register(create: subjects)
-        register(delete: subjects)
-        register(update: subjects)
-        register(retrive: subjects)
-        register(retriveAll: subjects)
+        register(create: create(on:), router: subjects)
+        register(update: update(on:), router: subjects, parameter: Subject.self)
+        register(delete: subjects, parameter: Subject.self)
+        register(retrive: retrive(on:), router: subjects, parameter: Subject.self)
+        register(retriveAll: retriveAll(_:), router: subjects)
 
         subjectInstance.get("stats", use: self.testStats(on: ))
         subjectInstance.get("export", use: self.export)
