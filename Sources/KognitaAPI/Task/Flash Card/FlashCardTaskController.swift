@@ -12,9 +12,9 @@ extension TypingTask: ModelParameterRepresentable {}
 
 public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some FlashCardTaskRepository { FlashCardTask.DatabaseRepository(conn: conn) }
+    public var repository: FlashCardTaskRepository { repositories.typingTaskRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<Task> {
         try req.create(in: repository.create(from: by: ))

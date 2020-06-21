@@ -13,9 +13,9 @@ extension MultipleChoiceTask: ModelParameterRepresentable {}
 
 public struct MultipleChoiceTaskAPIController: MultipleChoiseTaskAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some MultipleChoiseTaskRepository { MultipleChoiceTask.DatabaseRepository(conn: conn) }
+    public var repository: MultipleChoiseTaskRepository { repositories.multipleChoiceTaskRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<MultipleChoiceTask> {
         try req.create(in: repository.create(from: by: ))

@@ -11,9 +11,9 @@ import FluentPostgreSQL
 
 public struct TaskDiscussionAPIController: TaskDiscussionAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some TaskDiscussionRepositoring { TaskDiscussion.DatabaseRepository(conn: conn) }
+    public var repository: TaskDiscussionRepositoring { repositories.taskDiscussionRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<NoData> {
         try req.create(in: repository.create(from: by: )) 

@@ -30,6 +30,7 @@ import Vapor
 import Authentication
 import FluentPostgreSQL
 import KognitaCore
+import KognitaCoreTestable
 import Mailgun
 @testable import KognitaAPI
 
@@ -56,30 +57,14 @@ extension Application {
         services.register(JobQueueMock.self)
         config.prefer(JobQueueMock.self, for: JobQueueable.self)
 
-
-        services.register(APIControllerCollection.self) { container in
-            try APIControllerCollection(
-                authControllers: [
-                    Subject             .DefaultAPIController(conn: container.make()),
-                    Subtopic            .DefaultAPIController(conn: container.make()),
-                    MultipleChoiceTask  .DefaultAPIController(conn: container.make()),
-                    FlashCardTask       .DefaultAPIController(conn: container.make()),
-                    PracticeSession     .DefaultAPIController(conn: container.make()),
-                    TaskResult          .DefaultAPIController(conn: container.make()),
-                    TaskDiscussion                  .DefaultAPIController(conn: container.make()),
-                    TaskDiscussionResponse          .DefaultAPIController(conn: container.make()),
-                    TaskSolution                    .DefaultAPIController(conn: container.make()),
-
-                    TestSessionAPIController(conn: container.make()),
-                    SubjectTestAPIController(conn: container.make()),
-                    TopicAPIController(conn: container.make())
-                ],
-                unauthControllers: [
-                    // Needs to be used in order to authenticate users
-                    User                .DefaultAPIController(conn: container.make())
-                ]
-            )
+        services.register(RepositoriesRepresentable.self) { (container: Container) in
+            try TestableRepositories.testable(with: container.connectionPool(to: .psql))
         }
+        services.register(APIControllerCollection.self) { (container: Container) -> TestableControllers in
+            try TestableControllers.testable(with: container.make())
+        }
+
+        config.prefer(TestableRepositories.self, for: RepositoriesRepresentable.self)
 
         return try Application(config: config, environment: env, services: services)
     }

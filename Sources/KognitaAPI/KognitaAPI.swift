@@ -14,7 +14,7 @@ extension Optional {
     }
 }
 
-internal protocol APIControllerCollection: Service, RouteCollection {
+public protocol APIControllerCollection: Service, RouteCollection {
     var subjectController: SubjectAPIControlling { get }
     var topicController: TopicAPIControlling { get }
     var subtopicController: SubtopicAPIControlling { get }
@@ -30,23 +30,23 @@ internal protocol APIControllerCollection: Service, RouteCollection {
     var userController: UserAPIControlling { get }
 }
 
-struct APIControllers: APIControllerCollection {
+public struct APIControllers: APIControllerCollection {
 
-    var subjectController: SubjectAPIControlling
-    var topicController: TopicAPIControlling
-    var subtopicController: SubtopicAPIControlling
-    var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling
-    var typingTaskController: FlashCardTaskAPIControlling
-    var practiceSessionController: PracticeSessionAPIControlling
-    var taskResultController: TaskResultAPIControlling
-    var subjectTestController: SubjectTestAPIControlling
-    var testSessionController: TestSessionAPIControlling
-    var taskDiscussionController: TaskDiscussionAPIControlling
-    var taskDiscussionResponseController: TaskDiscussionResponseAPIControlling
-    var taskSolutionController: TaskSolutionAPIControlling
-    var userController: UserAPIControlling
+    public var subjectController: SubjectAPIControlling
+    public var topicController: TopicAPIControlling
+    public var subtopicController: SubtopicAPIControlling
+    public var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling
+    public var typingTaskController: FlashCardTaskAPIControlling
+    public var practiceSessionController: PracticeSessionAPIControlling
+    public var taskResultController: TaskResultAPIControlling
+    public var subjectTestController: SubjectTestAPIControlling
+    public var testSessionController: TestSessionAPIControlling
+    public var taskDiscussionController: TaskDiscussionAPIControlling
+    public var taskDiscussionResponseController: TaskDiscussionResponseAPIControlling
+    public var taskSolutionController: TaskSolutionAPIControlling
+    public var userController: UserAPIControlling
 
-    func boot(router: Router) throws {
+    public func boot(router: Router) throws {
 
         try router.register(collection: userController)
 
@@ -72,21 +72,21 @@ struct APIControllers: APIControllerCollection {
 }
 
 extension APIControllers {
-    static func databaseControllers(with container: Container) -> APIControllers {
-        .init(
-            subjectController: Subject.DatabaseRepository(conn: <#T##DatabaseConnectable#>),
-            topicController: <#T##TopicAPIControlling#>,
-            subtopicController: <#T##SubtopicAPIControlling#>,
-            multipleChoiceTaskController: <#T##MultipleChoiseTaskAPIControlling#>,
-            typingTaskController: <#T##FlashCardTaskAPIControlling#>,
-            practiceSessionController: <#T##PracticeSessionAPIControlling#>,
-            taskResultController: <#T##TaskResultAPIControlling#>,
-            subjectTestController: <#T##SubjectTestAPIControlling#>,
-            testSessionController: <#T##TestSessionAPIControlling#>,
-            taskDiscussionController: <#T##TaskDiscussionAPIControlling#>,
-            taskDiscussionResponseController: <#T##TaskDiscussionResponseAPIControlling#>,
-            taskSolutionController: <#T##TaskSolutionAPIControlling#>,
-            userController: <#T##UserAPIControlling#>
+    public static func defaultControllers(with repositories: RepositoriesRepresentable) -> APIControllers {
+        APIControllers(
+            subjectController: Subject.DefaultAPIController(repositories: repositories),
+            topicController: Topic.DefaultAPIController(repositories: repositories),
+            subtopicController: Subtopic.DefaultAPIController(repositories: repositories),
+            multipleChoiceTaskController: MultipleChoiceTask.DefaultAPIController(repositories: repositories),
+            typingTaskController: FlashCardTask.DefaultAPIController(repositories: repositories),
+            practiceSessionController: PracticeSession.DefaultAPIController(repositories: repositories),
+            taskResultController: TaskResult.DefaultAPIController(),
+            subjectTestController: SubjectTest.DefaultAPIController(repositories: repositories),
+            testSessionController: TestSession.DefaultAPIController(repositories: repositories),
+            taskDiscussionController: TaskDiscussion.DefaultAPIController(repositories: repositories),
+            taskDiscussionResponseController: TaskDiscussionResponse.DefaultAPIController(repositories: repositories),
+            taskSolutionController: TaskSolution.DefaultAPIController(repositories: repositories),
+            userController: User.DefaultAPIController(repositories: repositories)
         )
     }
 }
@@ -104,6 +104,10 @@ public struct KognitaAPIProvider: Provider {
 
         if env == .testing {
             try KognitaAPI.setupForTesting(env: env, services: &services)
+        } else {
+            services.register(APIControllerCollection.self) { (container: Container) -> APIControllers in
+                try .defaultControllers(with: container.make())
+            }
         }
     }
 

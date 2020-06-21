@@ -14,33 +14,32 @@ extension QueryContainer {
 
 public struct SubjectAPIController: SubjectAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    lazy var test: some SubjectRepositoring = self.repositories.subjectRepository
-    public var repository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
-    var testReposistory: some SubjectTestRepositoring { SubjectTest.DatabaseRepository(conn: conn) }
-    var topicRepository: some TopicRepository { Topic.DatabaseRepository(conn: conn) }
+    var subjectRepository: SubjectRepositoring { repositories.subjectRepository }
+    var testReposistory: SubjectTestRepositoring { repositories.subjectTestRepository }
+    var topicRepository: TopicRepository { repositories.topicRepository }
     var taskResultRepository: TaskResultRepositoring.Type { TaskResult.DatabaseRepository.self }
-    var userRepository: some UserRepository { User.DatabaseRepository(conn: conn) }
+    var userRepository: UserRepository { repositories.userRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<Subject> {
-        try req.create(in: repository.create(from: by: ))
+        try req.create(in: subjectRepository.create(from: by: ))
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response> {
-        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: Subject.self)
+        try req.update(with: subjectRepository.updateModelWith(id: to: by: ), parameter: Subject.self)
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: Subject.self)
+        try req.delete(with: subjectRepository.deleteModelWith(id: by: ), parameter: Subject.self)
     }
 
     public func retrive(on req: Request) throws -> EventLoopFuture<Subject> {
-        try req.retrive(with: repository.find, parameter: Subject.self)
+        try req.retrive(with: subjectRepository.find, parameter: Subject.self)
     }
 
     public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Subject]> {
-        try repository.all()
+        try subjectRepository.all()
     }
 
     public func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]> {
@@ -49,14 +48,14 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         guard user.isAdmin else { throw Abort(.notFound) }
 
-        return try repository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .flatMap(self.testReposistory.stats)
     }
 
     public func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
         _ = try req.requireAuthenticated(User.self)
 
-        return try repository.compendium(
+        return try subjectRepository.compendium(
             for: req.parameters.modelID(Subject.self),
             filter: req.query.decode()
         )
@@ -69,10 +68,10 @@ public struct SubjectAPIController: SubjectAPIControlling {
         guard user.isAdmin else { throw Abort(.notFound) }
 
 
-        return try repository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .and(req.content.decode([Task.PeerWise].self))
             .flatMap { (subject, tasks) in
-                try self.repository.importContent(
+                try self.subjectRepository.importContent(
                     in: subject,
                     peerWise: tasks,
                     user: user
@@ -85,7 +84,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try repository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .flatMap { subject in
 
                 try self.testReposistory
@@ -100,7 +99,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
                                     .getUserLevel(for: user.id, in: topics.map { $0.topic.id }, on: req)
                                     .flatMap { levels in
 
-                                        try self.repository.active(subject: subject, for: user)
+                                        try self.subjectRepository.active(subject: subject, for: user)
                                             .flatMap { activeSubject in
 
                                                 var canPractice = activeSubject?.canPractice ?? false
@@ -135,14 +134,14 @@ public struct SubjectAPIController: SubjectAPIControlling {
         let user = try req.requireAuthenticated(User.self)
         guard user.isAdmin else { throw Abort(.notFound) }
 
-        return try repository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .flatMap(topicRepository.exportTopics(in:))
     }
 
     public func exportAll(on req: Request) throws -> EventLoopFuture<[SubjectExportContent]> {
         _ = try req.requireAuthenticated(User.self)
 
-        return try repository.all()
+        return try subjectRepository.all()
             .flatMap { subjects in
                 try subjects.map { try self.topicRepository
                     .exportTopics(in: $0)
@@ -161,7 +160,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
             .decode([SubjectExportContent].self)
             .flatMap { content in
                 content.map {
-                    self.repository.importContent($0)
+                    self.subjectRepository.importContent($0)
                 }
                 .flatten(on: req)
                 .transform(to: .ok)
@@ -171,7 +170,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
     public func getListContent(_ req: Request) throws -> EventLoopFuture<Dashboard> {
         let user = try req.requireAuthenticated(User.self)
 
-        return try repository
+        return try subjectRepository
             .allSubjects(for: user)
             .flatMap { subjects in
 
@@ -194,10 +193,10 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try repository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .flatMap { subject in
 
-                try self.repository.mark(inactive: subject, for: user)
+                try self.subjectRepository.mark(inactive: subject, for: user)
         }
         .transform(to: .ok)
     }
@@ -206,10 +205,10 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         let user = try req.requireAuthenticated(User.self)
 
-        return try repository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
+        return try subjectRepository.find(req.parameters.modelID(Subject.self), or: Abort(.badRequest))
             .flatMap { subject in
 
-                try self.repository.mark(active: subject, canPractice: true, for: user)
+                try self.subjectRepository.mark(active: subject, canPractice: true, for: user)
         }
         .transform(to: .ok)
     }
@@ -222,7 +221,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
             .decode(Subject.ModeratorPrivilegeRequest.self)
             .flatMap { content in
 
-                try self.repository.grantModeratorPrivilege(
+                try self.subjectRepository.grantModeratorPrivilege(
                     for: content.userID,
                     in: req.parameters.modelID(Subject.self),
                     by: user
@@ -239,7 +238,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
             .decode(Subject.ModeratorPrivilegeRequest.self)
             .flatMap { content in
 
-                try self.repository.revokeModeratorPrivilege(
+                try self.subjectRepository.revokeModeratorPrivilege(
                     for: content.userID,
                     in: req.parameters.modelID(Subject.self),
                     by: user

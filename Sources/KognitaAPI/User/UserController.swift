@@ -20,10 +20,9 @@ public struct UserAPIController<Repository: UserRepository>: UserAPIControlling 
         case userNotFound
     }
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some UserRepository { User.DatabaseRepository(conn: conn) }
-    var resetPasswordRepository: some ResetPasswordRepositoring { User.DatabaseRepository(conn: conn) }
+    public var repository: UserRepository { repositories.userRepository }
 
     /// Logs a user in, returning a token for accessing protected endpoints.
     public func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
@@ -73,7 +72,7 @@ public struct UserAPIController<Repository: UserRepository>: UserAPIControlling 
                         guard let user = user else {
                             return req.future(.ok)
                         }
-                        return try self.resetPasswordRepository
+                        return try self.repository
                             .startReset(for: user)
                             .flatMap { token in
 
@@ -105,7 +104,7 @@ public struct UserAPIController<Repository: UserRepository>: UserAPIControlling 
                     .decode(User.ResetPassword.Data.self)
                     .flatMap { data in
 
-                        try self.resetPasswordRepository
+                        try self.repository
                             .reset(to: data, with: token.token)
                             .transform(to: .ok)
                 }

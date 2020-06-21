@@ -3,9 +3,9 @@ import Vapor
 
 public struct TaskSolutionAPIController: TaskSolutionAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some TaskSolutionRepositoring { TaskSolution.DatabaseRepository(conn: conn) }
+    public var repository: TaskSolutionRepositoring { repositories.taskSolutionRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<TaskSolution> {
         try req.create(in: repository.create(from: by: ))

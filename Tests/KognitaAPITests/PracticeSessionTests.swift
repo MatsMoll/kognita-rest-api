@@ -11,7 +11,7 @@ import KognitaCoreTestable
 
 final class PracticeSessionTests: VaporTestCase {
 
-    lazy var practiceSessionRepository: some PracticeSessionRepository = PracticeSession.DatabaseRepository(conn: conn)
+    lazy var practiceSessionRepository: PracticeSessionRepository = self.repositories.practiceSessionRepository
 
     func testResultsWithNoAnswers() {
         failableTest {

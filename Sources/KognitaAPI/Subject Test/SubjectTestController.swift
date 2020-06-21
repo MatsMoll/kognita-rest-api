@@ -3,10 +3,10 @@ import KognitaCore
 
 public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some SubjectTestRepositoring { SubjectTest.DatabaseRepository(conn: conn) }
-    public var subjectRepository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
+    public var repository: SubjectTestRepositoring { repositories.subjectTestRepository }
+    public var subjectRepository: SubjectRepositoring { repositories.subjectRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<SubjectTest> {
         try req.create(in: repository.create(from: by: ))

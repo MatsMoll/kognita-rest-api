@@ -11,9 +11,9 @@ import KognitaCore
 
 public struct TopicAPIController: TopicAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some TopicRepository { Topic.DatabaseRepository(conn: conn) }
+    public var repository: TopicRepository { repositories.topicRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<Topic> {
         try req.create(in: repository.create(from:  by: ))

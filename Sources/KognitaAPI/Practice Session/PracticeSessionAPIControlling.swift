@@ -6,7 +6,7 @@ extension PracticeSession: ModelParameterRepresentable {}
 
 extension PracticeSession.Result: Content {}
 
-protocol PracticeSessionAPIControlling: CreateModelAPIController, RouteCollection {
+public protocol PracticeSessionAPIControlling: CreateModelAPIController, RouteCollection {
     func create(on req: Request)                 throws -> EventLoopFuture<PracticeSession.Create.Response>
     func submit(multipleTaskAnswer req: Request) throws -> EventLoopFuture<TaskSessionResult<[MultipleChoiseTaskChoise.Result]>>
     func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<TaskSessionResult<FlashCardTask.Submit>>

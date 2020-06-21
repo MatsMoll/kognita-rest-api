@@ -8,7 +8,9 @@
 import Vapor
 import XCTest
 import FluentPostgreSQL
-
+import KognitaAPI
+import KognitaCore
+import KognitaCoreTestable
 
 /// A class that setups a application in a testable enviroment and creates a connection to the database
 class VaporTestCase: XCTestCase {
@@ -18,11 +20,16 @@ class VaporTestCase: XCTestCase {
     }
     
     lazy var app: Application = try! Application.testable(envArgs: self.envArgs)
-    var conn: PostgreSQLConnection!
+    var connectionPool: DatabaseConnectionPool<ConfiguredDatabase<PostgreSQLDatabase>>!
+    var conn: PostgreSQLConnection { try! connectionPool.requestConnection().wait() }
+    var repositories: RepositoriesRepresentable { try! app.make() }
     
     let standardHeaders: HTTPHeaders = ["Content-Type" : "application/json"]
     
     var envArgs: [String]?
+
+    func modify(controllers: inout APIControllers) {}
+    func modify(repositories: inout TestableRepositories) {}
     
     
     override func setUp() {
@@ -30,16 +37,19 @@ class VaporTestCase: XCTestCase {
         print("Running setup")
         try! Application.reset()
         app = try! Application.testable()
-        conn = try! app.newConnection(to: .psql).wait()
+        connectionPool = try! app.connectionPool(to: .psql)
+        TestableRepositories.modifyRepositories(modify(repositories:))
+        TestableControllers.modifyControllers(modify(controllers:))
     }
     
     override func tearDown() {
         super.tearDown()
+        TestableRepositories.reset()
+        TestableControllers.reset()
         app.shutdownGracefully { (error) in
             guard let error = error else { return }
             print("Error shuttingdown: \(error)")
         }
-        conn.close()
     }
 
     func failableTest(line: UInt = #line, file: StaticString = #file, test: (() throws -> Void)) {

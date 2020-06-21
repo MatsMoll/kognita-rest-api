@@ -1,15 +1,65 @@
 import XCTest
 @testable import KognitaCore
+import KognitaAPI
 import KognitaCoreTestable
 import Vapor
+
+class TestableControllers: APIControllerCollection {
+
+    var controllers: APIControllers
+
+    init(repositories: RepositoriesRepresentable) {
+        controllers = APIControllers.defaultControllers(with: repositories)
+    }
+
+    var subjectController: SubjectAPIControlling { controllers.subjectController }
+    var topicController: TopicAPIControlling { controllers.topicController }
+    var subtopicController: SubtopicAPIControlling { controllers.subtopicController }
+    var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling { controllers.multipleChoiceTaskController }
+    var typingTaskController: FlashCardTaskAPIControlling { controllers.typingTaskController }
+    var practiceSessionController: PracticeSessionAPIControlling { controllers.practiceSessionController }
+    var taskResultController: TaskResultAPIControlling { controllers.taskResultController }
+    var subjectTestController: SubjectTestAPIControlling { controllers.subjectTestController }
+    var testSessionController: TestSessionAPIControlling { controllers.testSessionController }
+    var taskDiscussionController: TaskDiscussionAPIControlling { controllers.taskDiscussionController }
+    var taskDiscussionResponseController: TaskDiscussionResponseAPIControlling { controllers.taskDiscussionResponseController }
+    var taskSolutionController: TaskSolutionAPIControlling { controllers.taskSolutionController }
+    var userController: UserAPIControlling { controllers.userController }
+
+    static var shared: TestableControllers!
+
+    static func testable(with repositories: RepositoriesRepresentable) -> TestableControllers {
+        if shared == nil {
+            shared = TestableControllers(repositories: repositories)
+        }
+        return shared
+    }
+
+    static func reset() {
+        shared = nil
+    }
+
+    static func modifyControllers(_ modifier: @escaping (inout APIControllers) -> Void) {
+        guard let shared = shared else { fatalError() }
+        modifier(&shared.controllers)
+    }
+
+    func boot(router: Router) throws {
+        try controllers.boot(router: router)
+    }
+}
 
 class TestSessionTests: VaporTestCase {
 
     let rootUri = "api/test-sessions"
 
-    lazy var subjectTestRepository: some SubjectTestRepositoring = SubjectTest.DatabaseRepository(conn: conn)
-    lazy var testSessionRepository: some TestSessionRepositoring = TestSessionRepositoryMock(eventLoop: conn.eventLoop)
+    lazy var subjectTestRepository: SubjectTestRepositoring = self.repositories.subjectTestRepository
+    lazy var testSessionRepository: TestSessionRepositoring = self.repositories.testSessionRepository
     var mock: TestSessionRepositoryMock { testSessionRepository as! TestSessionRepositoryMock }
+
+    override func modify(repositories: inout TestableRepositories) {
+        repositories.testSessionRepository = TestSessionRepositoryMock(eventLoop: app.eventLoop)
+    }
 
     override func setUp() {
         super.setUp()

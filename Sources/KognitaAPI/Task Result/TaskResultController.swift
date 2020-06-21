@@ -4,8 +4,6 @@ import KognitaCore
 
 public struct TaskResultAPIController: TaskResultAPIControlling {
 
-    let conn: DatabaseConnectable
-
     var repository: TaskResultRepositoring.Type { TaskResult.DatabaseRepository.self }
 
 //    static func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
@@ -34,7 +32,7 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
             throw Abort(.forbidden)
         }
         return repository
-            .getResults(on: conn)
+            .getResults(on: req)
     }
 
 //    static func export(on req: Request) throws -> EventLoopFuture<[TaskResult.Answer]> {

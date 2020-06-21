@@ -10,9 +10,9 @@ import KognitaCore
 
 public struct SubtopicController: SubtopicAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some SubtopicRepositoring { Subtopic.DatabaseRepository(conn: conn) }
+    public var repository: SubtopicRepositoring { repositories.subtopicRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<Subtopic> {
         try req.create(in: repository.create(from: by: ))

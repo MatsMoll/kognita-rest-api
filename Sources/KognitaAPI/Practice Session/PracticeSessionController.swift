@@ -15,11 +15,11 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
         case unableToFindTask(PracticeSessionRepresentable, User)
     }
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    public var repository: some PracticeSessionRepository { PracticeSession.DatabaseRepository(conn: conn) }
-    var solutionRepository: some TaskSolutionRepositoring { TaskSolution.DatabaseRepository(conn: conn) }
-    var subjectRepository: some SubjectRepositoring { Subject.DatabaseRepository(conn: conn) }
+    public var repository: PracticeSessionRepository { repositories.practiceSessionRepository }
+    var solutionRepository: TaskSolutionRepositoring { repositories.taskSolutionRepository }
+    var subjectRepository: SubjectRepositoring { repositories.subjectRepository }
 
     public func create(on req: Request) throws -> EventLoopFuture<PracticeSession> {
         try req.create(in: repository.create(from: by: ))
@@ -199,7 +199,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
         }
     }
 
-    func extend(session req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+    public func extend(session req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
 
         let user = try req.requireAuthenticated(User.self)
 
@@ -214,7 +214,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
         let answer: String
     }
 
-    func estimatedScore(on req: Request) throws -> EventLoopFuture<Response> {
+    public func estimatedScore(on req: Request) throws -> EventLoopFuture<Response> {
 
         return try req.content
             .decode(EstimateScore.self)

@@ -3,9 +3,9 @@ import KognitaCore
 
 public struct TestSessionAPIController: TestSessionAPIControlling {
 
-    let conn: DatabaseConnectable
+    let repositories: RepositoriesRepresentable
 
-    var repository: some TestSessionRepositoring { TestSession.DatabaseRepository(conn: conn) }
+    var repository: TestSessionRepositoring { repositories.testSessionRepository }
 
     public func submit(test req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
