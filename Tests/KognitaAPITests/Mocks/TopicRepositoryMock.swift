@@ -9,9 +9,9 @@ struct TopicRepositoryMock: TopicRepository {
 
     class Logger: TestLogger {
         enum Entry {
-            case getTopics(subject: Subject)
+            case getTopics(subjectID: Subject.ID)
             case create(data: Topic.Create.Data, user: User?)
-            case delete(Topic)
+            case delete(Topic.ID)
         }
 
         var logs: [Entry] = []
@@ -20,8 +20,9 @@ struct TopicRepositoryMock: TopicRepository {
     var logger = Logger()
     var eventLoop: EventLoop
 
-    func getTopics(in subject: Subject) throws -> EventLoopFuture<[Topic]> {
-        eventLoop.future([])
+    func getTopicsWith(subjectID: Subject.ID) -> EventLoopFuture<[Topic]> {
+        logger.log(entry: .getTopics(subjectID: subjectID))
+        return eventLoop.future([])
     }
 
     func exportTasks(in topic: Topic) throws -> EventLoopFuture<TopicExportContent> {
@@ -58,6 +59,7 @@ struct TopicRepositoryMock: TopicRepository {
     }
 
     func deleteModelWith(id: Int, by user: User?) throws -> EventLoopFuture<Void> {
+        logger.log(entry: .delete(id))
         return eventLoop.future()
     }
 

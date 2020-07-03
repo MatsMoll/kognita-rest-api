@@ -8,27 +8,23 @@
 import Vapor
 import KognitaCore
 
-extension TypingTask: ModelParameterRepresentable {}
+extension TypingTask: ModelParameterRepresentable, Content {}
 
 public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
 
-    let repositories: RepositoriesRepresentable
-
-    public var repository: FlashCardTaskRepository { repositories.typingTaskRepository }
-
-    public func create(on req: Request) throws -> EventLoopFuture<Task> {
-        try req.create(in: repository.create(from: by: ))
+    public func create(on req: Request) throws -> EventLoopFuture<TypingTask> {
+        try req.create(in: req.repositories.typingTaskRepository.create(from: by: ))
     }
 
-    public func update(on req: Request) throws -> EventLoopFuture<Task> {
-        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: TypingTask.self)
+    public func update(on req: Request) throws -> EventLoopFuture<TypingTask> {
+        try req.update(with: req.repositories.typingTaskRepository.updateModelWith(id: to: by: ), parameter: TypingTask.self)
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: TypingTask.self)
+        try req.delete(with: req.repositories.typingTaskRepository.deleteModelWith(id: by: ), parameter: TypingTask.self)
     }
 }
 
-extension FlashCardTask {
+extension TypingTask {
     public typealias DefaultAPIController = FlashCardTaskAPIController
 }

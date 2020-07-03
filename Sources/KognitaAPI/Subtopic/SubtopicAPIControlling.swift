@@ -15,15 +15,15 @@ public protocol SubtopicAPIControlling: CreateModelAPIController,
 }
 
 extension SubtopicAPIControlling {
-    public func boot(router: Router) throws {
+    public func boot(routes: RoutesBuilder) throws {
 
-        let subtopics = router.grouped("subtopics")
+        let subtopics = routes.grouped("subtopics")
 
         register(create: create(on: ), router: subtopics)
         register(update: update(on:), router: subtopics, parameter: Subtopic.self)
         register(delete: subtopics, parameter: Subtopic.self)
         register(retrive: retrive(on:), router: subtopics, parameter: Subtopic.self)
 
-        router.get("topics", Topic.parameter, "subtopics", use: self.getAllIn(topic: ))
+        routes.get("topics", Topic.parameter, "subtopics", use: self.getAllIn(topic: ))
     }
 }

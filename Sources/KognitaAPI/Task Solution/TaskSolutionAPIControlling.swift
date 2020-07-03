@@ -18,9 +18,9 @@ extension TaskSolutionAPIControlling {
     ///
     /// - parameters:
     ///     - router: `Router` to register any new routes to.
-    public func boot(router: Router) throws {
+    public func boot(routes: RoutesBuilder) throws {
 
-        let solutions = router.grouped("task-solutions")
+        let solutions = routes.grouped("task-solutions")
         let solution = solutions.grouped(TaskSolution.parameter)
 
         register(create: create(on:), router: solutions)

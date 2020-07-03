@@ -1,4 +1,3 @@
-import FluentPostgreSQL
 import Vapor
 import KognitaCore
 
@@ -18,11 +17,11 @@ public protocol TopicAPIControlling: CreateModelAPIController,
 }
 
 extension TopicAPIControlling {
-    public func boot(router: Router) {
+    public func boot(routes: RoutesBuilder) throws {
 
-        let topics = router.grouped("topics")
+        let topics = routes.grouped("topics")
 
-        router.get("subjects", Subject.parameter, "topics", use: self.getAllIn(subject: ))
+        routes.get("subjects", Subject.parameter, "topics", use: self.getAllIn(subject: ))
 
         register(create: create(on:), router: topics)
         register(update: update(on:), router: topics, parameter: Topic.self)

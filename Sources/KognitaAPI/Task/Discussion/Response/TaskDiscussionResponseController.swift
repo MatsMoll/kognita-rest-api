@@ -7,36 +7,25 @@
 
 import Vapor
 import KognitaCore
-import FluentPostgreSQL
 
 public struct TaskDiscussionResponseAPIController: TaskDiscussionResponseAPIControlling {
 
-    let repositories: RepositoriesRepresentable
-
-    public var repository: TaskDiscussionRepositoring { repositories.taskDiscussionRepository }
-
     public func create(on req: Request) throws -> EventLoopFuture<TaskDiscussionResponse.Create.Response> {
 
-        return try req
-            .content
-            .decode(TaskDiscussionResponse.Create.Data.self)
-            .and(result: req.requireAuthenticated(User.self))
-            .flatMap(repository.respond)
+        try req.repositories.taskDiscussionRepository.respond(with: req.content.decode(TaskDiscussionResponse.Create.Data.self), by: req.auth.require())
             .transform(to: .init())
     }
 
     public func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussionResponse]> {
 
-        let user = try req.requireAuthenticated(User.self)
-
-        return try repository.responses(
-            to: req.parameters.modelID(TaskDiscussion.self),
-            for: user
+        return try req.repositories.taskDiscussionRepository.responses(
+            to: req.parameters.get(TaskDiscussion.self),
+            for: req.auth.require()
         )
     }
 
-    public func setRecentlyVisited(for user: User, on req: Request) throws -> EventLoopFuture<Bool> {
-        try repository.setRecentlyVisited(for: req.requireAuthenticated())
+    public func setRecentlyVisited(on req: Request) throws -> EventLoopFuture<Bool> {
+        try req.repositories.taskDiscussionRepository.setRecentlyVisited(for: req.auth.require())
     }
 }
 

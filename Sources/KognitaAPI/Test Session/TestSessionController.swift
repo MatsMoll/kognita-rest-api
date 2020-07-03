@@ -3,105 +3,69 @@ import KognitaCore
 
 public struct TestSessionAPIController: TestSessionAPIControlling {
 
-    let repositories: RepositoriesRepresentable
-
-    var repository: TestSessionRepositoring { repositories.testSessionRepository }
-
     public func submit(test req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-//        let user = try req.requireAuthenticated(User.self)
-
-        // FIXME: -- Not imp.
-        throw Abort(.notImplemented)
-//        return req.parameters
-//            .model(TaskSession.TestParameter.self, on: req)
-//            .flatMap { session in
-//
-//                try Repository.submit(test: session, by: user, on: req)
-//        }
-//        .transform(to: .ok)
+        try req.repositories
+            .testSessionRepository
+            .submit(
+                testID: req.parameters.get(TestSession.self),
+                by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func submit(multipleChoiseTask req: Request) throws -> EventLoopFuture<HTTPStatus> {
-
-        // FIXME: -- Not imp.
-        throw Abort(.notImplemented)
-//        let user = try req.requireAuthenticated(User.self)
-//
-//        return req.parameters
-//            .model(TaskSession.TestParameter.self, on: req)
-//            .flatMap { session in
-//
-//                try req.content
-//                    .decode(MultipleChoiseTask.Submit.self)
-//                    .flatMap { content in
-//
-//                        try Repository.submit(content: content, for: session, by: user, on: req)
-//                }
-//        }
-//        .transform(to: .ok)
+        try req.repositories.testSessionRepository
+            .submit(
+                content: req.content.decode(),
+                sessionID: req.parameters.get(TestSession.self),
+                by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func results(on req: Request) throws -> EventLoopFuture<TestSession.Results> {
-
-        // FIXME: -- Not imp.
-        throw Abort(.notImplemented)
-//        let user = try req.requireAuthenticated(User.self)
-//
-//        return req.parameters
-//            .model(TaskSession.TestParameter.self, on: req)
-//            .flatMap { session in
-//
-//                try Repository.results(in: session, for: user, on: req)
-//        }
+        try req.repositories.testSessionRepository
+            .results(
+                in: req.parameters.get(TestSession.self),
+                for: req.auth.require()
+        )
     }
 
-    public func overview(on req: Request) throws -> EventLoopFuture<TestSession.Overview> {
+    public func overview(on req: Request) throws -> EventLoopFuture<TestSession.PreSubmitOverview> {
 
-        // FIXME: -- Not imp.
-        throw Abort(.notImplemented)
-//        let user = try req.requireAuthenticated(User.self)
-//
-//        return req.parameters
-//            .model(TaskSession.TestParameter.self, on: req)
-//            .flatMap { session in
-//
-//                try Repository.overview(in: session, for: user, on: req)
-//        }
+        let user = try req.auth.require(User.self)
+
+        return try req.repositories.testSessionRepository
+            .sessionReporesentableWith(id: req.parameters.get(TestSession.self))
+            .failableFlatMap { session in
+                try req.repositories.testSessionRepository.overview(in: session, for: user)
+        }
     }
 
     public func solutions(on req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
 
-        // FIXME: -- Not imp.
-        throw Abort(.notImplemented)
-//        let user = try req.requireAuthenticated(User.self)
-//
-//        return req.parameters
-//            .model(TaskSession.TestParameter.self, on: req)
-//            .flatMap { session in
-//
-//                let pivotID = try req.first(Int.self)
-//
-//                return try Repository.solutions(for: user, in: session, pivotID: pivotID, on: req)
-//        }
+        let user = try req.auth.require(User.self)
+
+        return try req.repositories.testSessionRepository
+            .sessionReporesentableWith(id: req.parameters.get(TestSession.self))
+            .failableFlatMap { session in
+
+                guard user.id == session.userID else { return req.eventLoop.future(error: Abort(.forbidden)) }
+                return try req.repositories.testSessionRepository.solutions(for: user, in: session, pivotID: req.parameters.get(Int.self))
+        }
     }
 
     public func detailedTaskResult(on req: Request) throws -> EventLoopFuture<TestSession.DetailedTaskResult> {
 
-        // FIXME: -- Not imp.
-        throw Abort(.notImplemented)
-//        let user = try req.requireAuthenticated(User.self)
-//
-//        return req.parameters
-//            .model(TaskSession.TestParameter.self, on: req)
-//            .flatMap { session in
-//
-//                guard try session.userID == user.requireID() else { throw Abort(.forbidden) }
-//
-//                let pivotID = try req.first(Int.self)
-//
-//                return try Repository.results(in: session, pivotID: pivotID, on: req)
-//        }
+        let user = try req.auth.require(User.self)
+
+        return try req.repositories.testSessionRepository
+            .sessionReporesentableWith(id: req.parameters.get(TestSession.self))
+            .failableFlatMap { session in
+                guard user.id == session.userID else { return req.eventLoop.future(error: Abort(.forbidden)) }
+                return try req.repositories.testSessionRepository.results(in: session, pivotID: req.parameters.get(Int.self))
+        }
     }
 }
 

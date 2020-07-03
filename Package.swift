@@ -6,9 +6,9 @@ import Foundation
 
 var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
-    .package(name: "Vapor", url: "https://github.com/vapor/vapor.git", from: "3.3.1"),
+    .package(name: "vapor", url: "https://github.com/vapor/vapor.git", from: "4.14.0"),
 
-    .package(name: "Mailgun", url: "https://github.com/twof/VaporMailgunService.git", from: "1.5.0"),
+    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc")
 ]
 
 switch ProcessInfo.processInfo.environment["BUILD_TYPE"] {
@@ -50,16 +50,17 @@ let package = Package(
         .target(
             name: "KognitaAPI",
             dependencies: [
-                "KognitaCore",
-                "KognitaContent",
-                "Mailgun",
-                "Vapor"
+                .product(name: "KognitaCore", package: "KognitaCore"),
+                .product(name: "KognitaContent", package: "KognitaContent"),
+                .product(name: "Vapor", package: "vapor"),
+                .product(name: "Mailgun", package: "VaporMailgunService"),
         ]),
         .testTarget(
             name: "KognitaAPITests",
             dependencies: [
                 .target(name: "KognitaAPI"),
-                .product(name: "KognitaCoreTestable", package: "KognitaCore")
+                .product(name: "KognitaCoreTestable", package: "KognitaCore"),
+                .product(name: "XCTVapor", package: "vapor")
         ]),
     ]
 )

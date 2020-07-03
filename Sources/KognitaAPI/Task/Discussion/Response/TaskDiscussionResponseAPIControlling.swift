@@ -8,14 +8,15 @@ extension TaskDiscussionResponse: Content {}
 public protocol TaskDiscussionResponseAPIControlling: CreateModelAPIController, RouteCollection {
     func create(on req: Request) throws -> EventLoopFuture<TaskDiscussionResponse.Create.Response>
     func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussionResponse]>
+    func setRecentlyVisited(on req: Request) throws -> EventLoopFuture<Bool>
 }
 
 extension TaskDiscussionResponseAPIControlling {
 
-    public func boot(router: Router) throws {
-        let discussionResponse = router.grouped("task-discussion-response")
+    public func boot(routes: RoutesBuilder) throws {
+        let discussionResponse = routes.grouped("task-discussion-response")
         register(create: create(on:), router: discussionResponse)
 
-        router.get("task-discussions", TaskDiscussion.parameter, "responses", use: self.get(responses: ))
+        routes.get("task-discussions", TaskDiscussion.parameter, "responses", use: self.get(responses: ))
     }
 }

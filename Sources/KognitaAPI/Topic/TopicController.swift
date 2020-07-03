@@ -5,39 +5,33 @@
 //  Created by Mats Mollestad on 07/10/2018.
 //
 
-import FluentPostgreSQL
 import Vapor
 import KognitaCore
 
 public struct TopicAPIController: TopicAPIControlling {
 
-    let repositories: RepositoriesRepresentable
-
-    public var repository: TopicRepository { repositories.topicRepository }
-
     public func create(on req: Request) throws -> EventLoopFuture<Topic> {
-        try req.create(in: repository.create(from:  by: ))
+        try req.create(in: req.repositories.topicRepository.create(from:  by: ))
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<Topic> {
-        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: Topic.self)
+        try req.update(with: req.repositories.topicRepository.updateModelWith(id: to: by: ), parameter: Topic.self)
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: Topic.self)
+        try req.delete(with: req.repositories.topicRepository.deleteModelWith(id: by: ), parameter: Topic.self)
     }
 
     public func retrive(_ req: Request) throws -> EventLoopFuture<Topic> {
-        try req.retrive(with: repository.find, parameter: Topic.self)
+        try req.retrive(with: req.repositories.topicRepository.find, parameter: Topic.self)
     }
 
     public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Topic]> {
-        try repository.all()
+        try req.repositories.topicRepository.all()
     }
 
     public func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
-        // FIXME: -- Add imp.
-        throw Abort(.notImplemented)
+        try req.repositories.topicRepository.getTopicsWith(subjectID: req.parameters.get(Subject.self))
     }
 }
 

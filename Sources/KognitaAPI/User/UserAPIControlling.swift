@@ -14,9 +14,9 @@ public protocol UserAPIControlling: CreateModelAPIController, RouteCollection {
 }
 
 extension UserAPIControlling {
-    public func boot(router: Router) {
+    public func boot(routes: RoutesBuilder) throws {
 
-        let users = router.grouped("users")
+        let users = routes.grouped("users")
 
         // public routes
         register(create: create(on:), router: users)
@@ -26,7 +26,7 @@ extension UserAPIControlling {
         users.post("reset-password", use: self.resetPassword)
 
         // basic / password auth protected routes
-        let basic = router.grouped(User.basicAuthMiddleware(using: BCryptDigest()))
-        basic.post("users/login", use: self.login)
+        let basic = users.grouped(User.basicAuthMiddleware())
+        basic.post("login", use: self.login)
     }
 }

@@ -1,10 +1,7 @@
 import Vapor
-import FluentPostgreSQL
 import KognitaCore
 
 public struct TaskResultAPIController: TaskResultAPIControlling {
-
-    var repository: TaskResultRepositoring.Type { TaskResult.DatabaseRepository.self }
 
 //    static func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
 //
@@ -27,12 +24,11 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
 //    }
 
     public func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
         guard user.isAdmin else {
             throw Abort(.forbidden)
         }
-        return repository
-            .getResults(on: req)
+        return req.repositories.taskResultRepository.getResults()
     }
 
 //    static func export(on req: Request) throws -> EventLoopFuture<[TaskResult.Answer]> {

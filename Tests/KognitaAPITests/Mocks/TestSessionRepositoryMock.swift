@@ -5,9 +5,9 @@ struct TestSessionRepositoryMock: TestSessionRepositoring {
 
     class Logger: TestLogger {
         enum Entry {
-            case finnish(session: TestSessionRepresentable, user: User)
-            case answer(content: MultipleChoiceTask.Submit, session: TestSessionRepresentable, user: User)
-            case results(session: TestSessionRepresentable, user: User)
+            case finnish(sessionID: TestSession.ID, user: User)
+            case answer(content: MultipleChoiceTask.Submit, sessionID: TestSession.ID, user: User)
+            case results(sessionID: TestSession.ID, user: User)
         }
 
         var logs: [Entry] = []
@@ -16,18 +16,18 @@ struct TestSessionRepositoryMock: TestSessionRepositoring {
     let logger = Logger()
     var eventLoop: EventLoop
 
-    func submit(content: MultipleChoiceTask.Submit, for session: TestSessionRepresentable, by user: User) throws -> EventLoopFuture<Void> {
-        logger.log(entry: .answer(content: content, session: session, user: user))
+    func submit(content: MultipleChoiceTask.Submit, sessionID: TestSession.ID, by user: User) -> EventLoopFuture<Void> {
+        logger.log(entry: .answer(content: content, sessionID: sessionID, user: user))
         return eventLoop.future()
     }
 
-    func submit(test: TestSessionRepresentable, by user: User) throws -> EventLoopFuture<Void> {
-        logger.log(entry: .finnish(session: test, user: user))
+    func submit(testID: TestSession.ID, by user: User) throws -> EventLoopFuture<Void> {
+        logger.log(entry: .finnish(sessionID: testID, user: user))
         return eventLoop.future()
     }
 
-    func results(in test: TestSessionRepresentable, for user: User) throws -> EventLoopFuture<TestSession.Results> {
-        logger.log(entry: .results(session: test, user: user))
+    func results(in testID: TestSession.ID, for user: User) -> EventLoopFuture<TestSession.Results> {
+        logger.log(entry: .results(sessionID: testID, user: user))
         return eventLoop.future(
             TestSession.Results(
                 testTitle: "Testing",

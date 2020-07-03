@@ -24,12 +24,16 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
     func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
+    func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview>
 }
 
-extension SubjectAPIControlling {
-    public func boot(router: Router) {
+extension Subject.Compendium: Content {}
 
-        let subjects = router.grouped("subjects")
+extension SubjectAPIControlling {
+
+    public func boot(routes: RoutesBuilder) throws {
+
+        let subjects = routes.grouped("subjects")
         let subjectInstance = subjects.grouped(Subject.parameter)
 
         register(create: create(on:), router: subjects)
@@ -47,7 +51,7 @@ extension SubjectAPIControlling {
         subjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
-        router.post("subjects/import", use: self.importContent)
+        routes.post("subjects", "import", use: self.importContent)
         subjectInstance.post("import-peer", use: self.importContentPeerWise)
     }
 }

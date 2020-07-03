@@ -3,6 +3,7 @@ import Vapor
 
 extension SubjectTest {
     fileprivate static let dummy = SubjectTest(id: 0, createdAt: .now, subjectID: 0, duration: .minutes(1), openedAt: .now, endedAt: nil, scheduledAt: .now, password: "", title: "", isTeamBasedLearning: false, taskIDs: [])
+    fileprivate static func dummy(withID id: Int) -> SubjectTest { SubjectTest(id: id, createdAt: .now, subjectID: 0, duration: .minutes(1), openedAt: .now, endedAt: nil, scheduledAt: .now, password: "", title: "", isTeamBasedLearning: false, taskIDs: []) }
 }
 
 struct SubjectTestRepositoryMock: SubjectTestRepositoring {
@@ -13,7 +14,7 @@ struct SubjectTestRepositoryMock: SubjectTestRepositoring {
             case open(test: SubjectTest, user: User)
             case enter(test: SubjectTest, user: User)
             case completionStatus(test: SubjectTest, user: User)
-            case taskWith(id: SubjectTest.Pivot.Task.ID, session: TestSessionRepresentable, user: User)
+            case taskWith(id: Int, session: TestSessionRepresentable, user: User)
             case results(test: SubjectTest, user: User)
             case create(data: SubjectTest.Create.Data, user: User?)
             case update(data: SubjectTest.Update.Data, user: User)
@@ -38,7 +39,7 @@ struct SubjectTestRepositoryMock: SubjectTestRepositoring {
         return eventLoop.future(test)
     }
 
-    func enter(test: SubjectTest, with request: SubjectTest.Enter.Request, by user: User) throws -> EventLoopFuture<TestSession> {
+    func enter(test: SubjectTest, with request: SubjectTest.Enter.Request, by user: User) -> EventLoopFuture<TestSession> {
         logger.log(entry: .enter(test: test, user: user))
         return eventLoop.future(TestSession(id: 0, createdAt: .now, testID: 0))
     }
@@ -117,7 +118,9 @@ struct SubjectTestRepositoryMock: SubjectTestRepositoring {
 
     func create(from content: SubjectTest.Create.Data, by user: User?) throws -> EventLoopFuture<SubjectTest> {
         logger.log(entry: .create(data: content, user: user))
-        return try eventLoop.future(SubjectTest.DatabaseModel(data: content).content())
+        let response = SubjectTest.DatabaseModel(data: content)
+        response.id = 1
+        return try eventLoop.future(response.content())
     }
 
     func updateModelWith(id: Int, to data: SubjectTest.Update.Data, by user: User) throws -> EventLoopFuture<SubjectTest> {
@@ -130,7 +133,7 @@ struct SubjectTestRepositoryMock: SubjectTestRepositoring {
     }
 
     func find(_ id: Int, or error: Error) -> EventLoopFuture<SubjectTest> {
-        eventLoop.future(.dummy)
+        eventLoop.future(.dummy(withID: id))
     }
 
     func find(_ id: Int) -> EventLoopFuture<SubjectTest?> {

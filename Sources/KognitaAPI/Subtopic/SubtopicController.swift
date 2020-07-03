@@ -10,37 +10,24 @@ import KognitaCore
 
 public struct SubtopicController: SubtopicAPIControlling {
 
-    let repositories: RepositoriesRepresentable
-
-    public var repository: SubtopicRepositoring { repositories.subtopicRepository }
-
     public func create(on req: Request) throws -> EventLoopFuture<Subtopic> {
-        try req.create(in: repository.create(from: by: ))
+        try req.create(in: req.repositories.subtopicRepository.create(from: by: ))
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<Subtopic.Update.Response> {
-        try req.update(with: repository.updateModelWith(id: to: by: ), parameter: Subtopic.self)
+        try req.update(with: req.repositories.subtopicRepository.updateModelWith(id: to: by: ), parameter: Subtopic.self)
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: repository.deleteModelWith(id: by: ), parameter: Subtopic.self)
+        try req.delete(with: req.repositories.subtopicRepository.deleteModelWith(id: by: ), parameter: Subtopic.self)
     }
 
     public func retrive(on req: Request) throws -> EventLoopFuture<Subtopic> {
-        try req.retrive(with: repository.find, parameter: Subtopic.self)
+        try req.retrive(with: req.repositories.subtopicRepository.find, parameter: Subtopic.self)
     }
 
     public func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
-
-        // FIXME: -- Add implementation
-        throw Abort(.notImplemented)
-//        return req.parameters
-//            .model(Topic.self, on: req)
-//            .flatMap { topic in
-//
-//                try Repository
-//                    .getSubtopics(in: topic, with: req)
-//        }
+        try req.repositories.subtopicRepository.subtopics(with: req.parameters.get(Topic.self))
     }
 }
 

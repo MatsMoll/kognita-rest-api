@@ -15,14 +15,15 @@ final class PracticeSessionTests: VaporTestCase {
 
     func testResultsWithNoAnswers() {
         failableTest {
-            let user = try User.create(on: conn)
-            let task = try Task.create(on: conn)
-            let session = try PracticeSession.create(in: [task.subtopicID], for: user, on: conn)
+            let user = try User.create(on: app)
+            let task = try TaskDatabaseModel.create(on: app)
+            let session = try PracticeSession.create(in: [task.$subtopic.id], for: user, on: app)
             _ = try practiceSessionRepository.end(session, for: user).wait()
 
             let uri = try "/api/practice-sessions/\(session.requireID())/result"
-            let response = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)
-            response.has(statusCode: .ok)
+            try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user) { response in
+                response.has(statusCode: .ok)
+            }
         }
     }
     

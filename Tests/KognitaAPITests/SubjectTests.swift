@@ -7,8 +7,8 @@
 
 import Vapor
 import XCTest
-import FluentPostgreSQL
 import Crypto
+import Fluent
 @testable import KognitaCore
 import KognitaCoreTestable
 
@@ -23,18 +23,18 @@ class SubjectTests: VaporTestCase {
     
     func testGetAllSubjects() throws {
 
-        let user = try User.create(on: conn)
-        _ = try Subject.create(creator: user, on: conn)
-        _ = try Subject.create(creator: user, on: conn)
+        let user = try User.create(on: app)
+        _ = try Subject.create(creator: user, on: app)
+        _ = try Subject.create(creator: user, on: app)
 
-        let startSubjects = try Subject.DatabaseModel.query(on: conn).all().wait()
+        let startSubjects = try Subject.DatabaseModel.query(on: app.db).all().wait()
         XCTAssert(startSubjects.count != 0, "There is no subjects in the database")
 
-        let response = try app.sendRequest(to: subjectPath, method: .GET, headers: standardHeaders, loggedInUser: user)
-        XCTAssert(response.http.status == .ok, "This should not return an error")
-
-        let subjects = try response.content.syncDecode([Subject].self)
-        XCTAssert(subjects.count == startSubjects.count, "There should be two subjects, but there were: \(subjects.count)")
+        try app.sendRequest(to: subjectPath, method: .GET, headers: standardHeaders, loggedInUser: user) { response in
+            response.has(statusCode: .ok)
+            let subjects = try response.content.decode([Subject].self)
+            XCTAssertEqual(subjects.count, startSubjects.count)
+        }
     }
     
     
@@ -42,7 +42,7 @@ class SubjectTests: VaporTestCase {
     
     func testCreateSubject() throws {
 
-        let user = try User.create(on: conn)
+        let user = try User.create(on: app)
 
         let requestBody = Subject.Create.Data(
             name: "OS",
@@ -50,17 +50,14 @@ class SubjectTests: VaporTestCase {
             category: "Tech"
         )
 
-        let response = try app.sendRequest(to: subjectPath, method: .POST, headers: standardHeaders, body: requestBody, loggedInUser: user)
-        let subject = try response.content.syncDecode(Subject.self)
+        try app.sendRequest(to: subjectPath, method: .POST, headers: standardHeaders, body: requestBody, loggedInUser: user) { response in
+            let subject = try response.content.decode(Subject.self)
+            response.has(statusCode: .ok)
+            XCTAssertEqual(subject.name, requestBody.name)
+            let currentSubjects = try Subject.DatabaseModel.query(on: self.app.db).filter(\.$name == requestBody.name).all().wait()
 
-        XCTAssert(response.http.status == .ok, "There was an error when posting a new subject: \(response.http.status)")
-        XCTAssert(subject.name == requestBody.name, "The saved subject has a different .name")
-//        XCTAssert(subject.colorClass == requestBody.colorClass, "The saved subject has a different .code")
-//        XCTAssert(subject.creatorID == user.id, "The creatorId is incorrect: \(subject.creatorId)")
-
-        let currentSubjects = try Subject.DatabaseModel.query(on: conn).filter(\.name == requestBody.name).all().wait()
-
-        XCTAssert(currentSubjects.isEmpty == false, "The new subject was not added")
+            XCTAssert(currentSubjects.isEmpty == false, "The new subject was not added")
+        }
     }
 
 
@@ -71,34 +68,36 @@ class SubjectTests: VaporTestCase {
             category: "Something"
         )
 
-        XCTAssert(try Subject.DatabaseModel.query(on: conn)
-            .filter(\.name == requestBody.name)
+        XCTAssert(try Subject.DatabaseModel.query(on: app.db)
+            .filter(\.$name == requestBody.name)
             .all()
             .wait()
             .isEmpty == true, "There exists a subject with name: \(requestBody.name)")
 
-        let response = try app.sendRequest(to: subjectPath, method: .POST, headers: standardHeaders, body: requestBody)
-        response.has(statusCode: .unauthorized)
+        try app.sendRequest(to: subjectPath, method: .POST, headers: standardHeaders, body: requestBody) { response in
+            response.has(statusCode: .unauthorized)
 
-        let currentSubjects = try Subject.DatabaseModel.query(on: conn).filter(\.name == requestBody.name).all().wait()
-        XCTAssert(currentSubjects.isEmpty == true, "The new subject was added, but should not have been")
+            let currentSubjects = try Subject.DatabaseModel.query(on: self.app.db).filter(\.$name == requestBody.name).all().wait()
+            XCTAssert(currentSubjects.isEmpty == true, "The new subject was added, but should not have been")
+        }
     }
 
     // MARK: - GET /subjects/:id
     
     func testGetSingleSubject() throws {
-        let user = try User.create(on: conn)
-        let subject = try Subject.create(creator: user, on: conn)
-        _ = try Subject.create(creator: user, on: conn)
+        let user = try User.create(on: app)
+        let subject = try Subject.create(creator: user, on: app)
+        _ = try Subject.create(creator: user, on: app)
 
         let uri = subjectPath + "/\(subject.id)"
-        let response = try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user)
-        XCTAssert(response.http.status == .ok, "This should not return an error")
+        try app.sendRequest(to: uri, method: .GET, headers: standardHeaders, loggedInUser: user) { response in
+            response.has(statusCode: .ok)
 
-        let responseSubject = try response.content.syncDecode(Subject.self)
-        XCTAssert(responseSubject.name == subject.name, "The response subject name du not match the one retreving, returned \(responseSubject.name)")
-        XCTAssert(responseSubject.id == subject.id, "The response subject id du not match the one retreving, returned \(responseSubject.id)")
-        XCTAssert(responseSubject.category == subject.category, "The response subject category du not match the one retreving, returned \(responseSubject.category)")
+            let responseSubject = try response.content.decode(Subject.self)
+            XCTAssert(responseSubject.name == subject.name, "The response subject name du not match the one retreving, returned \(responseSubject.name)")
+            XCTAssert(responseSubject.id == subject.id, "The response subject id du not match the one retreving, returned \(responseSubject.id)")
+            XCTAssert(responseSubject.category == subject.category, "The response subject category du not match the one retreving, returned \(responseSubject.category)")
+        }
     }
     
     
@@ -107,52 +106,54 @@ class SubjectTests: VaporTestCase {
     /// Tests if it is possible to delete a subject
     func testDeleteSubject() throws {
 
-        let user = try User.create(on: conn)
+        let user = try User.create(on: app)
 
-        _ = try Subject.create(creator: user, on: conn)
-        let subjectToDelete = try Subject.create(creator: user, on: conn)
+        _ = try Subject.create(creator: user, on: app)
+        let subjectToDelete = try Subject.create(creator: user, on: app)
 
-        let startSubjects = try Subject.DatabaseModel.query(on: conn).all().wait()
+        let startSubjects = try Subject.DatabaseModel.query(on: app.db).all().wait()
 
         let path = subjectPath + "/\(subjectToDelete.id)"
-        let response = try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders, loggedInUser: user)
-        XCTAssert(response.http.status == .ok, "Not returning an ok status on delete: \(response.http.status)")
+        try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders, loggedInUser: user) { response in
+            response.has(statusCode: .ok)
 
-        let currentSubjects = try Subject.DatabaseModel.query(on: conn).all().wait()
-        XCTAssert(currentSubjects.count == startSubjects.count - 1, "The amount of subject is incorrect, count: \(currentSubjects.count)")
+            let currentSubjects = try Subject.DatabaseModel.query(on: self.app.db).all().wait()
+            XCTAssert(currentSubjects.count == startSubjects.count - 1, "The amount of subject is incorrect, count: \(currentSubjects.count)")
+        }
     }
     
     
     /// Tests if it is possible to delete when not being the creator of a subject
 //    func testDeleteSubjectWhenNotCreator() throws {
-//        let user = try User.create(on: conn)
-//        let creator = try User.create(on: conn)
+//        let user = try User.create(on: app)
+//        let creator = try User.create(on: app)
 //
-//        let subjectToDelete = try Subject.create(creator: creator, on: conn)
+//        let subjectToDelete = try Subject.create(creator: creator, on: app)
 //
-//        let startSubjects = try Subject.query(on: conn).all().wait()
+//        let startSubjects = try Subject.query(on: app).all().wait()
 //
 //        let path = try subjectPath + "/\(subjectToDelete.requireID())"
 //        let response = try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders, loggedInUser: user)
 //        XCTAssert(response.http.status == .forbidden, "Not returning a forbidden status on delete: \(response.http.status)")
 //
-//        let currentSubjects = try Subject.query(on: conn).all().wait()
+//        let currentSubjects = try Subject.query(on: app).all().wait()
 //        XCTAssert(currentSubjects.count == startSubjects.count, "The amount of subject is incorrect, count: \(currentSubjects.count)")
 //    }
     
     /// Tests if it is possible to delete when not being the creator of a subject
     func testDeleteSubjectWhenNotLoggedIn() throws {
-        let creator = try User.create(on: conn)
-        let subjectToDelete = try Subject.create(creator: creator, on: conn)
+        let creator = try User.create(on: app)
+        let subjectToDelete = try Subject.create(creator: creator, on: app)
 
-        let startSubjects = try Subject.DatabaseModel.query(on: conn).all().wait()
+        let startSubjects = try Subject.DatabaseModel.query(on: app.db).all().wait()
 
         let path = subjectPath + "/\(subjectToDelete.id)"
-        let response = try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders)
-        response.has(statusCode: .unauthorized)
+        try app.sendRequest(to: path, method: .DELETE, headers: standardHeaders) { response in
+            response.has(statusCode: .unauthorized)
 
-        let currentSubjects = try Subject.DatabaseModel.query(on: conn).all().wait()
-        XCTAssert(currentSubjects.count == startSubjects.count, "The amount of subject is incorrect, count: \(currentSubjects.count)")
+            let currentSubjects = try Subject.DatabaseModel.query(on: self.app.db).all().wait()
+            XCTAssert(currentSubjects.count == startSubjects.count, "The amount of subject is incorrect, count: \(currentSubjects.count)")
+        }
     }
     
     

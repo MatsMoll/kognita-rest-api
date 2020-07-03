@@ -1,5 +1,4 @@
 import Vapor
-import FluentPostgreSQL
 import KognitaCore
 
 public protocol MultipleChoiseTaskAPIControlling: CreateModelAPIController, UpdateModelAPIController, DeleteModelAPIController, RouteCollection {
@@ -9,8 +8,8 @@ public protocol MultipleChoiseTaskAPIControlling: CreateModelAPIController, Upda
 
 extension MultipleChoiseTaskAPIControlling {
 
-    public func boot(router: Router) {
-        let multiple = router.grouped("tasks/multiple-choise")
+    public func boot(routes: RoutesBuilder) throws {
+        let multiple = routes.grouped("tasks", "multiple-choise")
 
         register(create: create(on:), router: multiple)
         register(update: update(on:), router: multiple, parameter: MultipleChoiceTask.self)

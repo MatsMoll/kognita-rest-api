@@ -1,8 +1,7 @@
 import Vapor
 import KognitaCore
 import Mailgun
-import FluentPostgreSQL
-import Authentication
+import PostgresKit
 
 extension Optional {
 
@@ -14,7 +13,7 @@ extension Optional {
     }
 }
 
-public protocol APIControllerCollection: Service, RouteCollection {
+public protocol APIControllerCollection: RouteCollection {
     var subjectController: SubjectAPIControlling { get }
     var topicController: TopicAPIControlling { get }
     var subtopicController: SubtopicAPIControlling { get }
@@ -46,14 +45,14 @@ public struct APIControllers: APIControllerCollection {
     public var taskSolutionController: TaskSolutionAPIControlling
     public var userController: UserAPIControlling
 
-    public func boot(router: Router) throws {
+    public func boot(routes: RoutesBuilder) throws {
 
-        try router.register(collection: userController)
+        try routes.register(collection: userController)
 
-        let auth = router.grouped(
-            User.tokenAuthMiddleware(),
-            User.authSessionsMiddleware(),
-            User.guardAuthMiddleware()
+        let auth = routes.grouped(
+            User.sessionAuthMiddleware(),
+            User.bearerAuthMiddleware(),
+            User.guardMiddleware()
         )
         try auth.register(collection: subjectController)
         try auth.register(collection: topicController)
@@ -63,7 +62,6 @@ public struct APIControllers: APIControllerCollection {
         try auth.register(collection: practiceSessionController)
         try auth.register(collection: testSessionController)
         try auth.register(collection: subjectTestController)
-        try auth.register(collection: testSessionController)
         try auth.register(collection: taskDiscussionController)
         try auth.register(collection: taskDiscussionResponseController)
         try auth.register(collection: taskSolutionController)
@@ -72,26 +70,30 @@ public struct APIControllers: APIControllerCollection {
 }
 
 extension APIControllers {
-    public static func defaultControllers(with repositories: RepositoriesRepresentable) -> APIControllers {
+    public static func defaultControllers() -> APIControllers {
         APIControllers(
-            subjectController: Subject.DefaultAPIController(repositories: repositories),
-            topicController: Topic.DefaultAPIController(repositories: repositories),
-            subtopicController: Subtopic.DefaultAPIController(repositories: repositories),
-            multipleChoiceTaskController: MultipleChoiceTask.DefaultAPIController(repositories: repositories),
-            typingTaskController: FlashCardTask.DefaultAPIController(repositories: repositories),
-            practiceSessionController: PracticeSession.DefaultAPIController(repositories: repositories),
+            subjectController: Subject.DefaultAPIController(),
+            topicController: Topic.DefaultAPIController(),
+            subtopicController: Subtopic.DefaultAPIController(),
+            multipleChoiceTaskController: MultipleChoiceTask.DefaultAPIController(),
+            typingTaskController: TypingTask.DefaultAPIController(),
+            practiceSessionController: PracticeSession.DefaultAPIController(),
             taskResultController: TaskResult.DefaultAPIController(),
-            subjectTestController: SubjectTest.DefaultAPIController(repositories: repositories),
-            testSessionController: TestSession.DefaultAPIController(repositories: repositories),
-            taskDiscussionController: TaskDiscussion.DefaultAPIController(repositories: repositories),
-            taskDiscussionResponseController: TaskDiscussionResponse.DefaultAPIController(repositories: repositories),
-            taskSolutionController: TaskSolution.DefaultAPIController(repositories: repositories),
-            userController: User.DefaultAPIController(repositories: repositories)
+            subjectTestController: SubjectTest.DefaultAPIController(),
+            testSessionController: TestSession.DefaultAPIController(),
+            taskDiscussionController: TaskDiscussion.DefaultAPIController(),
+            taskDiscussionResponseController: TaskDiscussionResponse.DefaultAPIController(),
+            taskSolutionController: TaskSolution.DefaultAPIController(),
+            userController: User.DefaultAPIController()
         )
     }
 }
 
-public struct KognitaAPIProvider: Provider {
+extension Request {
+    public var controllers: APIControllers { .defaultControllers() }
+}
+
+public struct KognitaAPIProvider: LifecycleHandler {
 
     let env: Environment
 
@@ -99,63 +101,54 @@ public struct KognitaAPIProvider: Provider {
         self.env = env
     }
 
-    public func register(_ services: inout Services) throws {
-        try KognitaAPI.setupApi(with: env, in: &services)
+    public func register(_ app: Application) throws {
+        try KognitaAPI.setupApi(for: app, routes: app.grouped("api"))
 
         if env == .testing {
-            try KognitaAPI.setupForTesting(env: env, services: &services)
-        } else {
-            services.register(APIControllerCollection.self) { (container: Container) -> APIControllers in
-                try .defaultControllers(with: container.make())
-            }
+            try KognitaAPI.setupForTesting(app: app)
+        }
+
+        if Environment.get("VAPOR_MIGRATION")?.lowercased() == "true" {
+            try! app.autoMigrate().wait()
         }
     }
 
-    public func didBoot(_ container: Container) throws -> EventLoopFuture<Void> {
-        let router      = try container.make(Router.self)
-        let controllers = try container.make(APIControllerCollection.self)
-        _               = try container.make(TextMiningClienting.self)
-
-        let apiRouter = router.grouped("api")
-
-        try controllers.boot(router: apiRouter)
-
-        return .done(on: container)
+    public func willBoot(_ application: Application) throws {
+        try self.register(application)
     }
 }
 
 public class KognitaAPI {
 
-    public static func configMiddleware(config: inout MiddlewareConfig) {
-        config.use(HTTPSRedirectMiddleware())
+    public static func configMiddleware(config app: Application) {
+        app.middleware.use(HTTPSRedirectMiddleware())
     }
 
-    static func setupApi(with env: Environment, in services: inout Services) throws {
+    static func setupApi(for app: Application, routes: RoutesBuilder) throws {
         /// In order to upload big files
-        try services.register(FluentPostgreSQLProvider())
-        try services.register(AuthenticationProvider())
 
-        services.register(NIOServerConfig.default(maxBodySize: 20_000_000))
+//        try services.register(AuthenticationProvider())
 
-        KognitaCore.config(enviroment: env, in: &services)
+//        services.register(NIOServerConfig.default(maxBodySize: 20_000_000))
 
-        setupDatabase(for: env, in: &services)
-        services.register(User.VerifyEmailSender(), as: VerifyEmailSendable.self)
+        KognitaCore.config(app: app)
+
+        setupDatabase(for: app)
+//        services.register(User.VerifyEmailSender(), as: VerifyEmailSendable.self)
 
         // Needs to be after addMigrations(), because it relies on the tables created there
-        if env == .testing {
+        if app.environment == .testing {
             // Register the commands (used to reset the database)
-            var commandConfig = CommandConfig()
-            commandConfig.useFluentCommands()
-            services.register(commandConfig)
+            try setupForTesting(app: app)
         } else {
-            setupMailgun(in: &services)
+            setupMailgun(in: app)
         }
 
-        setupTextClient(env: env, services: &services)
+        setupTextClient(app: app)
+        try APIControllers.defaultControllers().boot(routes: routes.grouped(app.sessions.middleware))
     }
 
-    static func setupTextClient(env: Environment, services: inout Services) {
+    static func setupTextClient(app: Application) {
 
         // Localhost testing config
         var baseUrl = "http://127.0.0.1:5000"
@@ -164,108 +157,94 @@ public class KognitaAPI {
             baseUrl = baseURL
         }
 
-        services.register(TextMiningClienting.self) { container in
-            PythonTextClient(
-                client: try container.make(),
-                baseUrl: baseUrl,
-                logger: try container.make()
-            )
+        app.textMiningClienting.use { request in
+            PythonTextClient(client: request.client, baseUrl: baseUrl, logger: request.logger)
         }
     }
 
-    static func setupForTesting(env: Environment, services: inout Services) throws {
-        var middlewares = MiddlewareConfig()
+    static func setupForTesting(app: Application) throws {
 
-        middlewares.use(SessionsMiddleware.self)
-        middlewares.use(ErrorMiddleware.self)
-        services.register(middlewares)
-
-        services.register(DatabaseConnectionPoolConfig(maxConnections: 2))
+        app.middleware.use(app.sessions.middleware)
+        app.middleware.use(ErrorMiddleware.default(environment: app.environment))
     }
 
     /// Configures the mailing service
-    private static func setupMailgun(in services: inout Services) {
+    private static func setupMailgun(in app: Application) {
         guard let mailgunKey = Environment.get("MAILGUN_KEY"),
             let mailgunDomain = Environment.get("MAILGUN_DOMAIN") else {
                 fatalError("Mailgun is NOT activated")
         }
-        let mailgun = Mailgun(apiKey: mailgunKey, domain: mailgunDomain, region: .eu)
-        services.register(mailgun, as: MailgunProvider.self)
+        app.mailgun.configuration = .init(apiKey: mailgunKey)
+        app.mailgun.defaultDomain = .init(mailgunDomain, .eu)
     }
 
     /// Configures the database
-    private static func setupDatabase(for enviroment: Environment, in services: inout Services) {
+    private static func setupDatabase(for app: Application) {
 
+        var maxConnections = 4
         if
             let maxConnectionsEnv = Environment.get("MAX_CONNECTIONS"),
-            let maxConnections = Int(maxConnectionsEnv)
+            let customMaxConnections = Int(maxConnectionsEnv)
         {
-            services.register(DatabaseConnectionPoolConfig(maxConnections: maxConnections))
-        } else {
-            services.register(DatabaseConnectionPoolConfig(maxConnections: 4))
+            maxConnections = customMaxConnections
+        } else if app.environment == .testing {
+            maxConnections = 2
         }
 
         // Configure a PostgreSQL database
-        let databaseConfig: PostgreSQLDatabaseConfig!
-
-        let hostname = Environment.get("DATABASE_HOSTNAME") ?? "localhost"
-        let username = Environment.get("DATABASE_USER") ?? "matsmollestad"
+        let databaseConfig: PostgresConfiguration!
 
         if let url = Environment.get("DATABASE_URL") {  // Heroku
-            guard let psqlConfig = PostgreSQLDatabaseConfig(url: url, transport: .unverifiedTLS) else {
+            guard let psqlConfig = PostgresConfiguration(url: url) else {
                 fatalError("Failed to create PostgreSQL Config")
             }
             databaseConfig = psqlConfig
         } else {                                        // Localy testing
+            let hostname = Environment.get("DATABASE_HOSTNAME") ?? "localhost"
+            let username = Environment.get("DATABASE_USER") ?? "matsmollestad"
+
             var databaseName = "local"
             if let customName = Environment.get("DATABASE_DB") {
                 databaseName = customName
-            } else if enviroment == .testing {
+            } else if app.environment == .testing {
                 databaseName = "testing"
             }
             let databasePort = 5432
             let password = Environment.get("DATABASE_PASSWORD") ?? nil
-            databaseConfig = PostgreSQLDatabaseConfig(
+            databaseConfig = PostgresConfiguration(
                 hostname: hostname,
                 port: databasePort,
                 username: username,
-                database: databaseName,
-                password: password
+                password: password,
+                database: databaseName
             )
         }
-
-        let postgres = PostgreSQLDatabase(config: databaseConfig)
-
-        // Register the configured PostgreSQL database to the database config.
-        var databases = DatabasesConfig()
-        databases.enableLogging(on: .psql)
-        databases.add(database: postgres, as: .psql)
-        services.register(databases)
+        app.databases.use(.postgres(configuration: databaseConfig, maxConnectionsPerEventLoop: maxConnections), as: .psql)
     }
 }
 
 class HTTPSRedirectMiddleware: Middleware {
-    func respond(to request: Request, chainingTo next: Responder) throws -> EventLoopFuture<Response> {
-        guard request.environment == Environment.production else {
-            return try next.respond(to: request)
+    func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
+        guard request.application.environment == Environment.production else {
+            return next.respond(to: request)
         }
 
-        let proto = request.http.headers.firstValue(name: HTTPHeaderName("X-Forwarded-Proto"))
-            ?? request.http.url.scheme
+        let proto = request.headers.first(name: "X-Forwarded-Proto")
+            ?? request.url.scheme
             ?? "http"
 
         guard proto == "https" else {
-            guard let host = request.http.headers.firstValue(name: .host) else {
-                throw Abort(.badRequest)
+            guard let host = request.headers.first(name: .host) else {
+                return request.eventLoop.future(error: Abort(.badRequest))
             }
 
-            let httpsURL = "https://" + host + request.http.urlString
-            return request.future(request.redirect(to: httpsURL, type: .permanent))
+            let httpsURL = "https://" + host + request.url.string
+            return request.eventLoop.future(request.redirect(to: httpsURL, type: .permanent))
         }
 
-        return try next.respond(to: request)
+        return next.respond(to: request)
             .map { resp in
-                resp.http.headers.add(
+                resp.headers.add(
                     name: "Strict-Transport-Security",
                     value: "max-age=31536000; includeSubDomains; preload")
                 return resp
