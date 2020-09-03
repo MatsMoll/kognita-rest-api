@@ -7,6 +7,10 @@ extension Topic {
 
 struct TopicRepositoryMock: TopicRepository {
 
+    func topicFor(taskID: Int) -> EventLoopFuture<Topic> {
+        eventLoop.future(.dummy)
+    }
+
     class Logger: TestLogger {
         enum Entry {
             case getTopics(subjectID: Subject.ID)

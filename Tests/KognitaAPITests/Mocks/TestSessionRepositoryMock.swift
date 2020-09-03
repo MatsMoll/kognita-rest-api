@@ -3,6 +3,23 @@ import Vapor
 
 struct TestSessionRepositoryMock: TestSessionRepositoring {
 
+    func testIDFor(id: TestSession.ID) -> EventLoopFuture<SubjectTest.ID> {
+        eventLoop.future(1)
+    }
+
+    func sessionReporesentableWith(id: TestSession.ID) -> EventLoopFuture<TestSessionRepresentable> {
+        eventLoop.future(
+            TestSession.TestParameter(
+                session: .init(userID: 1),
+                testSession: .init(
+                    sessionID: 1,
+                    testID: 1
+                )
+            )
+        )
+    }
+
+
     class Logger: TestLogger {
         enum Entry {
             case finnish(sessionID: TestSession.ID, user: User)
@@ -42,9 +59,9 @@ struct TestSessionRepositoryMock: TestSessionRepositoring {
         )
     }
 
-    func overview(in session: TestSessionRepresentable, for user: User) throws -> EventLoopFuture<TestSession.Overview> {
+    func overview(in session: TestSessionRepresentable, for user: User) throws -> EventLoopFuture<TestSession.PreSubmitOverview> {
         try eventLoop.future(
-            TestSession.Overview(
+            TestSession.PreSubmitOverview(
                 sessionID: session.requireID(),
                 test: SubjectTest(
                     id: 0,
@@ -62,7 +79,7 @@ struct TestSessionRepositoryMock: TestSessionRepositoring {
         )
     }
 
-    func getSessions(for user: User) throws -> EventLoopFuture<[TestSession.HighOverview]> {
+    func getSessions(for user: User) -> EventLoopFuture<[TestSession.CompletedOverview]> {
         eventLoop.future([])
     }
 

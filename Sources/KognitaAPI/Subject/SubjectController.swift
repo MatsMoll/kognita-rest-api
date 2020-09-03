@@ -7,6 +7,7 @@
 
 import Vapor
 import KognitaCore
+import QTIKit
 
 extension URLQueryContainer {
     func decode<T: Decodable>() throws -> T { try decode(T.self) }
@@ -19,7 +20,8 @@ extension ContentContainer {
 public struct SubjectAPIController: SubjectAPIControlling {
 
     public func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview> {
-        throw Abort(.notImplemented)
+        try req.repositories.subjectRepository
+            .overviewFor(id: req.parameters.get(Subject.self))
     }
 
     public func create(on req: Request) throws -> EventLoopFuture<Subject> {
@@ -90,7 +92,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
                     .failableFlatMap { currentTest in
 
                         try req.repositories.topicRepository
-                            .getTopicsWithTaskCount(in: subject)
+                            .getTopicsWithTaskCount(withSubjectID: subject.id)
                             .flatMap { topics in
 
                                 req.repositories.taskResultRepository
@@ -111,8 +113,11 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
                                                         Subject.Details(
                                                             subject: subject,
-                                                            topics: topics.compactMap { topic in
-                                                                guard let level = userLevels.first(where: { $0.topicID == topic.topic.id }) else { return nil }
+                                                            topics: topics.map { topic in
+                                                                var level = topic.userLevelZero()
+                                                                if let unwrapedLevel = userLevels.first(where: { $0.topicID == topic.topic.id }) {
+                                                                    level = unwrapedLevel
+                                                                }
                                                                 return Topic.UserOverview(
                                                                     id: topic.topic.id,
                                                                     name: topic.topic.name,
@@ -120,22 +125,12 @@ public struct SubjectAPIController: SubjectAPIControlling {
                                                                     userLevel: level
                                                                 )
                                                             },
-                                                            subjectLevel: Subject.UserLevel.init(subjectID: subject.id, correctScore: 0, maxScore: 0),
                                                             openTest: currentTest,
                                                             numberOfTasks: 0,
                                                             isActive: activeSubject?.subjectID == subject.id,
                                                             canPractice: canPractice,
                                                             isModerator: isModerator
                                                         )
-//                                                        Subject.Details(
-//                                                            subject: subject,
-//                                                            topics: topics,
-//                                                            levels: levels,
-//                                                            isActive: activeSubject != nil,
-//                                                            canPractice: canPractice,
-//                                                            isModerator: isModerator,
-//                                                            openTest: test
-//                                                        )
                                                 }
                                         }
                                 }
