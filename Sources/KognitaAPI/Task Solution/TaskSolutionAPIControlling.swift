@@ -10,6 +10,7 @@ public protocol TaskSolutionAPIControlling: CreateModelAPIController, UpdateMode
     func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
     func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
     func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func solutionsForTask(on req: Request) throws -> EventLoopFuture<[TaskSolution.Response]>
 }
 
 extension TaskSolutionAPIControlling {
@@ -30,5 +31,7 @@ extension TaskSolutionAPIControlling {
         solution.post("upvote", use: self.upvote(on: ))
         solution.post("revoke-vote", use: self.revokeVote(on: ))
         solution.post("approve", use: self.approve(on: ))
+
+        routes.get("tasks", GenericTask.parameter, "solutions", use: solutionsForTask(on:))
     }
 }

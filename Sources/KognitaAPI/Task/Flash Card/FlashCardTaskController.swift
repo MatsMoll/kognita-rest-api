@@ -23,6 +23,10 @@ public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
         try req.delete(with: req.repositories.typingTaskRepository.deleteModelWith(id: by: ), parameter: TypingTask.self)
     }
+
+    public func createDraft(on req: Request) throws -> EventLoopFuture<Int> {
+        try req.repositories.typingTaskRepository.createDraft(from: req.content.decode(), by: req.auth.require())
+    }
 }
 
 extension TypingTask {

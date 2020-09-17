@@ -33,6 +33,15 @@ public struct TopicAPIController: TopicAPIControlling {
     public func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]> {
         try req.repositories.topicRepository.getTopicsWith(subjectID: req.parameters.get(Subject.self))
     }
+
+    public func save(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+        try req.repositories.topicRepository.save(
+            topics: req.content.decode(),
+            forSubjectID: req.parameters.get(Subject.self),
+            user: req.auth.require()
+        )
+        .transform(to: .ok)
+    }
 }
 
 extension Topic {
