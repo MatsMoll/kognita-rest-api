@@ -42,7 +42,10 @@ extension Application {
         app.logger.logLevel = .debug
 
         try KognitaAPI.setupApi(for: app, routes: app.grouped("api"))
+        app.verifyEmailSender.use(EmailSenderMock.init(request: ))
+        app.resetPasswordSender.use(ResetPasswordMock.init(request: ))
         app.repositoriesFactory.use { request in TestableRepositories.testable(database: request.db, password: request.password) }
+        DatabaseMigrations.setupTables(app.migrations)
 
         return app
     }

@@ -7,6 +7,18 @@ extension Topic {
 
 struct TopicRepositoryMock: TopicRepository {
 
+    func getTopicsWithTaskCount(withSubjectID subjectID: Subject.ID) throws -> EventLoopFuture<[Topic.WithTaskCount]> {
+        eventLoop.future([])
+    }
+
+    func topicsWithSubtopics(subjectID: Subject.ID) -> EventLoopFuture<[Topic.WithSubtopics]> {
+        eventLoop.future([])
+    }
+
+    func save(topics: [Topic], forSubjectID subjectID: Subject.ID, user: User) -> EventLoopFuture<Void> {
+        eventLoop.future()
+    }
+
     func topicFor(taskID: Int) -> EventLoopFuture<Topic> {
         eventLoop.future(.dummy)
     }
@@ -68,7 +80,7 @@ struct TopicRepositoryMock: TopicRepository {
     }
 
     func find(_ id: Int, or error: Error) -> EventLoopFuture<Topic> {
-        eventLoop.future(error: error)
+        eventLoop.future(.dummy)
     }
 
     func find(_ id: Int) -> EventLoopFuture<Topic?> {

@@ -11,6 +11,7 @@ import XCTVapor
 import KognitaAPI
 import KognitaCore
 import KognitaCoreTestable
+import FluentSQL
 
 /// A class that setups a application in a testable enviroment and creates a connection to the database
 class VaporTestCase: XCTestCase {
@@ -39,7 +40,10 @@ class VaporTestCase: XCTestCase {
     }
 
     func resetDB() {
-        try! app.autoRevert().wait()
+        guard let database = app.databases.database(logger: app.logger, on: app.eventLoopGroup.next()) as? SQLDatabase else { fatalError() }
+        try! database.raw("DROP SCHEMA public CASCADE").run().wait()
+        try! database.raw("CREATE SCHEMA public").run().wait()
+        try! database.raw("GRANT ALL ON SCHEMA public TO public").run().wait()
         try! app.autoMigrate().wait()
     }
     

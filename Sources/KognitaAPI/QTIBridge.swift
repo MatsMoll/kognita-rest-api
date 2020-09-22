@@ -1,5 +1,5 @@
 import QTIKit
-import KognitaContent
+import KognitaModels
 
 struct QTIBridge {
     static func convertToTask(assessmentItems: [AssessmentItem]) -> [MultipleChoiceTask.Create.Data] {

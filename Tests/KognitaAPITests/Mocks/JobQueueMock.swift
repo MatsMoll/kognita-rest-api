@@ -1,4 +1,5 @@
 import KognitaCore
+import KognitaAPI
 import Vapor
 import XCTest
 
@@ -32,3 +33,21 @@ import XCTest
 //        return JobQueueMock(container: container)
 //    }
 //}
+
+struct EmailSenderMock: VerifyEmailSendable {
+
+    let request: Request
+
+    func sendEmail(with token: User.VerifyEmail.EmailContent) throws -> EventLoopFuture<Void> {
+        request.eventLoop.future()
+    }
+}
+
+struct ResetPasswordMock: ResetPasswordSender {
+
+    let request: Request
+
+    func sendResetPassword(for user: User, token: User.ResetPassword.Token.Create.Response) -> EventLoopFuture<Void> {
+        request.eventLoop.future()
+    }
+}

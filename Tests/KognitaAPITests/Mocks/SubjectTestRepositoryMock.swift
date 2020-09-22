@@ -61,7 +61,7 @@ struct SubjectTestRepositoryMock: SubjectTestRepositoring {
         return eventLoop.future(
             SubjectTest.MultipleChoiseTaskContent(
                 test: .dummy,
-                task: MultipleChoiceTask(id: 0, subtopicID: 0, question: "", isTestable: false, isMultipleSelect: false, choises: []),
+                task: MultipleChoiceTask(id: 0, subtopicID: 0, question: "", isTestable: false, deletedAt: nil, isMultipleSelect: false, choises: []),
                 choises: [],
                 testTasks: []
             )

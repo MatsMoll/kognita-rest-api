@@ -23,7 +23,7 @@ public struct TopicAPIController: TopicAPIControlling {
     }
 
     public func retrive(_ req: Request) throws -> EventLoopFuture<Topic> {
-        try req.retrive(with: req.repositories.topicRepository.find, parameter: Topic.self)
+        try req.retrive(with: req.repositories.topicRepository.find(_: or:), parameter: Topic.self)
     }
 
     public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Topic]> {

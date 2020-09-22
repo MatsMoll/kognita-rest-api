@@ -138,7 +138,7 @@ public class KognitaAPI {
         KognitaCore.config(app: app)
 
         setupDatabase(for: app)
-//        services.register(User.VerifyEmailSender(), as: VerifyEmailSendable.self)
+        app.verifyEmailSender.use { User.VerifyEmailSender(request: $0) }
 
         // Needs to be after addMigrations(), because it relies on the tables created there
         if app.environment == .testing {

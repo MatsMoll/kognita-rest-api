@@ -8,14 +8,14 @@ public protocol VerifyEmailRenderable {
 
 struct VerifyEmailSenderFactory {
     var make: ((Request) -> VerifyEmailSendable)?
-    mutating func user(_ make: @escaping ((Request) -> VerifyEmailSendable)) {
+    mutating func use(_ make: @escaping ((Request) -> VerifyEmailSendable)) {
         self.make = make
     }
 }
 
 struct VerifyEmailRenderableFactory {
     var make: ((Request) -> VerifyEmailRenderable)?
-    mutating func user(_ make: @escaping ((Request) -> VerifyEmailRenderable)) {
+    mutating func use(_ make: @escaping ((Request) -> VerifyEmailRenderable)) {
         self.make = make
     }
 }

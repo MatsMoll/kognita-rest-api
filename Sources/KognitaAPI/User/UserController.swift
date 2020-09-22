@@ -87,17 +87,9 @@ public struct UserAPIController: UserAPIControlling {
                 }
                 return try req.repositories.userRepository
                     .startReset(for: user)
-                    .failableFlatMap { token in
+                    .flatMap { token in
 
-                        let mail = try MailgunMessage(
-                            from: "kontakt@kognita.no",
-                            to: userEmail,
-                            subject: "Kognita - Gjenopprett Passord",
-                            text: "",
-                            html: req.resetPasswordRenderer.render(with: token, for: user)
-                        )
-                        return req.mailgun()
-                            .send(mail)
+                        req.resetPasswordSender.sendResetPassword(for: user, token: token)
                             .transform(to: .ok)
                 }
         }
@@ -119,9 +111,9 @@ public struct UserAPIController: UserAPIControlling {
         if let request = try? req.query.decode(User.VerifyEmail.Token.self) {
 
             return try req.repositories.userRepository.find(req.parameters.get(User.self), or: Abort(.badRequest))
-                .failableFlatMap { user in
+                .flatMap { user in
 
-                    try req.repositories.userRepository.verify(user: user, with: request)
+                    req.repositories.userRepository.verify(user: user, with: request)
                         .transform(to: .ok)
             }
         } else {

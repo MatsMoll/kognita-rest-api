@@ -13,6 +13,7 @@ class TestableControllers: APIControllerCollection {
         controllers = APIControllers.defaultControllers()
     }
 
+    var lectureNoteController: LectureNoteAPIController { controllers.lectureNoteController }
     var subjectController: SubjectAPIControlling { controllers.subjectController }
     var topicController: TopicAPIControlling { controllers.topicController }
     var subtopicController: SubtopicAPIControlling { controllers.subtopicController }
