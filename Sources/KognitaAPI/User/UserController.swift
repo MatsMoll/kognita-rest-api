@@ -6,9 +6,9 @@ public protocol ResetPasswordMailRenderable {
     func render(with token: User.ResetPassword.Token, for user: User) throws -> String
 }
 
-struct ResetPasswordMailRenderableFactory {
+public struct ResetPasswordMailRenderableFactory {
     var make: ((Request) -> ResetPasswordMailRenderable)?
-    mutating func use(_ make: @escaping (Request) -> ResetPasswordMailRenderable) {
+    public mutating func use(_ make: @escaping (Request) -> ResetPasswordMailRenderable) {
         self.make = make
     }
 }
@@ -18,14 +18,14 @@ extension Application {
         typealias Value = ResetPasswordMailRenderableFactory
     }
 
-    var resetPasswordRenderer: ResetPasswordMailRenderableFactory {
+    public var resetPasswordRenderer: ResetPasswordMailRenderableFactory {
         get { self.storage[ResetPasswordMailRenderableKey.self] ?? .init() }
         set { self.storage[ResetPasswordMailRenderableKey.self] = newValue }
     }
 }
 
 extension Request {
-    var resetPasswordRenderer: ResetPasswordMailRenderable {
+    public var resetPasswordRenderer: ResetPasswordMailRenderable {
         self.application.resetPasswordRenderer.make!(self)
     }
 }

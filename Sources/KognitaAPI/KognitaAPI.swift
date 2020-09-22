@@ -139,6 +139,7 @@ public class KognitaAPI {
 
         setupDatabase(for: app)
         app.verifyEmailSender.use { User.VerifyEmailSender(request: $0) }
+        app.resetPasswordSender.use(User.ResetPasswordMailgunSender.init(request: ))
 
         // Needs to be after addMigrations(), because it relies on the tables created there
         if app.environment == .testing {

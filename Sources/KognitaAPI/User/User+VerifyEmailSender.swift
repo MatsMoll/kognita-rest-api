@@ -6,16 +6,16 @@ public protocol VerifyEmailRenderable {
     func render(with content: User.VerifyEmail.EmailContent, on request: Request) throws -> EventLoopFuture<String>
 }
 
-struct VerifyEmailSenderFactory {
+public struct VerifyEmailSenderFactory {
     var make: ((Request) -> VerifyEmailSendable)?
-    mutating func use(_ make: @escaping ((Request) -> VerifyEmailSendable)) {
+    public mutating func use(_ make: @escaping ((Request) -> VerifyEmailSendable)) {
         self.make = make
     }
 }
 
-struct VerifyEmailRenderableFactory {
+public struct VerifyEmailRenderableFactory {
     var make: ((Request) -> VerifyEmailRenderable)?
-    mutating func use(_ make: @escaping ((Request) -> VerifyEmailRenderable)) {
+    public mutating func use(_ make: @escaping ((Request) -> VerifyEmailRenderable)) {
         self.make = make
     }
 }
@@ -29,24 +29,24 @@ extension Application {
         typealias Value = VerifyEmailSenderFactory
     }
 
-    var verifyEmailRenderer: VerifyEmailRenderableFactory {
+    public var verifyEmailRenderer: VerifyEmailRenderableFactory {
         get { self.storage[VerifyEmailRenderableKey.self] ?? .init() }
         set { self.storage[VerifyEmailRenderableKey.self] = newValue }
     }
 
-    var verifyEmailSender: VerifyEmailSenderFactory {
+    public var verifyEmailSender: VerifyEmailSenderFactory {
         get { self.storage[VerifyEmailSenderKey.self] ?? .init() }
         set { self.storage[VerifyEmailSenderKey.self] = newValue }
     }
 }
 extension Request {
-    var verifyEmailRenderer: VerifyEmailRenderable {
+    public var verifyEmailRenderer: VerifyEmailRenderable {
         application.verifyEmailRenderer.make!(self)
     }
 }
 
 extension Request {
-    var verifyEmailSender: VerifyEmailSendable {
+    public var verifyEmailSender: VerifyEmailSendable {
         self.application.verifyEmailSender.make!(self)
     }
 }

@@ -2,12 +2,11 @@ import KognitaCore
 import Vapor
 import Mailgun
 
-
 public protocol ResetPasswordSender {
     func sendResetPassword(for user: User, token: User.ResetPassword.Token.Create.Response) -> EventLoopFuture<Void>
 }
 
-struct ResetPasswordSenderFactory {
+public struct ResetPasswordSenderFactory {
     var make: ((Request) -> ResetPasswordSender)?
     mutating func use(_ make: @escaping ((Request) -> ResetPasswordSender)) {
         self.make = make
@@ -20,14 +19,14 @@ extension Application {
         typealias Value = ResetPasswordSenderFactory
     }
 
-    var resetPasswordSender: ResetPasswordSenderFactory {
+    public var resetPasswordSender: ResetPasswordSenderFactory {
         get { self.storage[ResetPasswordSenderKey.self] ?? .init() }
         set { self.storage[ResetPasswordSenderKey.self] = newValue }
     }
 }
 
 extension Request {
-    var resetPasswordSender: ResetPasswordSender {
+    public var resetPasswordSender: ResetPasswordSender {
         self.application.resetPasswordSender.make!(self)
     }
 }
