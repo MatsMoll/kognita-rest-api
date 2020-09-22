@@ -1,46 +1,55 @@
 import KognitaCore
 import Vapor
 
-public final class TaskSolutionAPIController<Repository: TaskSolutionRepositoring>: TaskSolutionAPIControlling {
+public struct TaskSolutionAPIController: TaskSolutionAPIControlling {
 
-    public static func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
-        let user = try req.requireAuthenticated(User.self)
-
-        return req.parameters
-            .model(TaskSolution.self, on: req)
-            .flatMap { solution in
-                try Repository.upvote(for: solution.requireID(), by: user, on: req)
-                    .transform(to: .ok)
-        }
+    public func create(on req: Request) throws -> EventLoopFuture<TaskSolution> {
+        try req.create(in: req.repositories.taskSolutionRepository.create(from: by: ))
     }
 
-    public static func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
-
-        let user = try req.requireAuthenticated(User.self)
-
-        return req.parameters
-            .model(TaskSolution.self, on: req)
-            .flatMap { solution in
-                try Repository.revokeVote(for: solution.requireID(), by: user, on: req)
-                    .transform(to: .ok)
-        }
+    public func update(on req: Request) throws -> EventLoopFuture<TaskSolution> {
+        try req.update(with: req.repositories.taskSolutionRepository.updateModelWith(id: to: by: ), parameter: TaskSolution.self)
     }
 
-    public static func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        try req.delete(with: req.repositories.taskSolutionRepository.deleteModelWith(id: by: ), parameter: TaskSolution.self)
+    }
 
-        let user = try req.requireAuthenticated(User.self)
+    public func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
 
-        return req.parameters
-            .model(TaskSolution.self, on: req)
-            .flatMap { solution in
+        return try req.repositories.taskSolutionRepository.upvote(
+            for: req.parameters.get(TaskSolution.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
+    }
 
-                try Repository.approve(for: solution.requireID(), by: user, on: req)
-                    .transform(to: .ok)
-        }
+    public func revokeVote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+
+        return try req.repositories.taskSolutionRepository.revokeVote(
+            for: req.parameters.get(TaskSolution.self),
+            by: req.auth.require()
+        )
+            .transform(to: .ok)
+    }
+
+    public func approve(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        return try req.repositories.taskSolutionRepository.approve(
+            for: req.parameters.get(TaskSolution.self),
+            by: req.auth.require()
+        )
+            .transform(to: .ok)
+    }
+
+    public func solutionsForTask(on req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
+        let user = try req.auth.require(User.self)
+        guard user.isAdmin else { throw Abort(.forbidden) }
+        return try req.repositories.taskSolutionRepository.solutions(for: req.parameters.get(GenericTask.self), for: user)
     }
 }
 
 extension TaskSolution {
     /// A `TaskSolutionAPIController` using the `TaskSolution.DatabaseRepository`
-    public typealias DefaultAPIController = TaskSolutionAPIController<TaskSolution.DatabaseRepository>
+    public typealias DefaultAPIController = TaskSolutionAPIController
 }

@@ -2,25 +2,11 @@ import Vapor
 import KognitaCore
 
 public protocol RetriveAllModelsAPIController {
-
-    associatedtype ModelResponse: Content
-    associatedtype Repository
-
-    static func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]>
-
-    func register(retriveAll router: Router)
+    func register<Response: Content>(retriveAll: @escaping (Request) throws -> EventLoopFuture<[Response]>, router: RoutesBuilder)
 }
 
 extension RetriveAllModelsAPIController {
-    public func register(retriveAll router: Router) {
-        router.get("/", use: Self.retriveAll)
-    }
-}
-
-extension RetriveAllModelsAPIController where
-    Repository: RetriveAllModelsRepository,
-    Repository.ResponseModel == ModelResponse {
-    public static func retriveAll(on req: Request) throws -> EventLoopFuture<[ModelResponse]> {
-        return try Repository.all(on: req)
+    public func register<Response: Content>(retriveAll: @escaping (Request) throws -> EventLoopFuture<[Response]>, router: RoutesBuilder) {
+        router.get(use: retriveAll)
     }
 }

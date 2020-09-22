@@ -7,47 +7,28 @@
 
 import Vapor
 import KognitaCore
-import FluentPostgreSQL
 
-public class TaskDiscussionResponseAPIController
-    <Repository: TaskDiscussionRepositoring>:
-    TaskDiscussionResponseAPIControlling {
-    public static func create(on req: Request) throws -> EventLoopFuture<TaskDiscussion.Pivot.Response.Create.Response> {
+public struct TaskDiscussionResponseAPIController: TaskDiscussionResponseAPIControlling {
 
-        let user = try req.requireAuthenticated(User.self)
+    public func create(on req: Request) throws -> EventLoopFuture<TaskDiscussionResponse.Create.Response> {
 
-        return try req
-            .content
-            .decode(TaskDiscussion.Pivot.Response.Create.Data.self)
-            .map { respons in
-
-                return try Repository.respond(
-                    with: respons,
-                    by: user,
-                    on: req)
-        }
-        .transform(to: .init())
-
+        try req.repositories.taskDiscussionRepository.respond(with: req.content.decode(TaskDiscussionResponse.Create.Data.self), by: req.auth.require())
+            .transform(to: .init())
     }
 
-    public static func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussion.Pivot.Response.Details]> {
+    public func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussionResponse]> {
 
-        let user = try req.requireAuthenticated(User.self)
-
-        return req.parameters
-            .model(TaskDiscussion.self, on: req)
-            .flatMap { discussion in
-                try Repository.responses(to: discussion.requireID(), for: user, on: req)
-        }
+        return try req.repositories.taskDiscussionRepository.responses(
+            to: req.parameters.get(TaskDiscussion.self),
+            for: req.auth.require()
+        )
     }
 
-    public static func setRecentlyVisited(for user: User, on req: Request) throws -> EventLoopFuture<Bool> {
-        let user = try req.requireAuthenticated(User.self)
-
-        return try Repository.setRecentlyVisited(for: user, on: req)
-    }    
+    public func setRecentlyVisited(on req: Request) throws -> EventLoopFuture<Bool> {
+        try req.repositories.taskDiscussionRepository.setRecentlyVisited(for: req.auth.require())
+    }
 }
 
-extension TaskDiscussion.Pivot.Response {
-    public typealias DefaultAPIController = TaskDiscussionResponseAPIController<TaskDiscussion.DatabaseRepository>
+extension TaskDiscussionResponse {
+    public typealias DefaultAPIController = TaskDiscussionResponseAPIController
 }

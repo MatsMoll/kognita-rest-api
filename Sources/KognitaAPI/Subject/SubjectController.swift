@@ -7,102 +7,130 @@
 
 import Vapor
 import KognitaCore
+import QTIKit
 
-public final class SubjectAPIController<Repository: SubjectRepositoring>: SubjectAPIControlling {
+extension URLQueryContainer {
+    func decode<T: Decodable>() throws -> T { try decode(T.self) }
+}
 
-    public static func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]> {
+extension ContentContainer {
+    func decode<T: Decodable>() throws -> T { try decode(T.self) }
+}
 
-        let user = try req.requireAuthenticated(User.self)
+public struct SubjectAPIController: SubjectAPIControlling {
+
+    public func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview> {
+        try req.repositories.subjectRepository
+            .overviewFor(id: req.parameters.get(Subject.self))
+    }
+
+    public func create(on req: Request) throws -> EventLoopFuture<Subject> {
+        try req.create(in: req.repositories.subjectRepository.create(from: by: ))
+    }
+
+    public func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response> {
+        try req.update(with: req.repositories.subjectRepository.updateModelWith(id: to: by: ), parameter: Subject.self)
+    }
+
+    public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        try req.delete(with: req.repositories.subjectRepository.deleteModelWith(id: by: ), parameter: Subject.self)
+    }
+
+    public func retrive(on req: Request) throws -> EventLoopFuture<Subject> {
+        try req.retrive(with: req.repositories.subjectRepository.find, parameter: Subject.self)
+    }
+
+    public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Subject]> {
+        try req.repositories.subjectRepository.all()
+    }
+
+    public func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]> {
+
+        let user = try req.auth.require(User.self)
 
         guard user.isAdmin else { throw Abort(.notFound) }
 
-        return req.parameters
-            .model(Subject.self, on: req)
-            .flatMap { subject in
-
-                try SubjectTest.DatabaseRepository
-                    .stats(for: subject, on: req)
-        }
+        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            .failableFlatMap(event: req.repositories.subjectTestRepository.stats)
     }
 
-    public static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
-        _ = try req.requireAuthenticated(User.self)
-        return req.parameters
-            .model(Subject.self, on: req)
-            .flatMap { subject in
+    public func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
+        let user = try req.auth.require(User.self)
 
-                let filter = try req.query.decode(SubjectCompendiumFilter.self)
-
-                return try Subject.DatabaseRepository
-                    .compendium(for: subject.requireID(), filter: filter, on: req)
-        }
+        return try req.repositories.subjectRepository.compendium(
+            for: req.parameters.get(Subject.self),
+            filter: req.query.decode(),
+            for: user.id
+        )
     }
 
-    public static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
 
         guard user.isAdmin else { throw Abort(.notFound) }
 
-        return try req.content
-            .decode([Task.PeerWise].self)
-            .flatMap { data in
-
-                req.parameters
-                    .model(Subject.self, on: req)
-                    .flatMap { subject in
-
-                        try Subject.DatabaseRepository.importContent(in: subject, peerWise: data, user: user, on: req)
-                }
+        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            .failableFlatMap { subject in
+                try req.repositories.subjectRepository.importContent(
+                    in: subject,
+                    peerWise: req.content.decode(),
+                    user: user
+                )
         }
         .transform(to: .ok)
     }
 
-    public static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
+    public func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
 
-        return req.parameters
-            .model(Subject.self, on: req)
-            .flatMap { subject in
+        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            .failableFlatMap { subject in
 
-                try SubjectTest.DatabaseRepository
-                    .currentlyOpenTest(in: subject, user: user, on: req)
-                    .flatMap { test in
+                try req.repositories.subjectTestRepository
+                    .currentlyOpenTest(in: subject, user: user)
+                    .failableFlatMap { currentTest in
 
-                        try Topic.DatabaseRepository
-                            .getTopicsWithTaskCount(in: subject, conn: req)
+                        try req.repositories.topicRepository
+                            .getTopicsWithTaskCount(withSubjectID: subject.id)
                             .flatMap { topics in
 
-                                try TaskResult.DatabaseRepository
-                                    .getUserLevel(for: user.requireID(), in: topics.map { try $0.topic.requireID() }, on: req)
-                                    .flatMap { levels in
+                                req.repositories.taskResultRepository
+                                    .getUserLevel(for: user.id, in: topics.map { $0.topic.id })
+                                    .failableFlatMap { userLevels in
 
-                                        try Repository.active(subject: subject, for: user, on: req)
-                                            .flatMap { activeSubject in
+                                        try req.repositories.subjectRepository.active(subject: subject, for: user)
+                                            .failableFlatMap { activeSubject in
 
                                                 var canPractice = activeSubject?.canPractice ?? false
                                                 if user.isAdmin {
                                                     canPractice = true
                                                 }
 
-                                                return try User.DatabaseRepository
-                                                    .isModerator(user: user, subjectID: subject.requireID(), on: req)
-                                                    .map {
-                                                        return true
-                                                    }
-                                                    .catchMap { _ in
-                                                        return false
-                                                    }
-                                                    .map { isModerator in
+                                                return req.repositories.userRepository
+                                                    .isModerator(user: user, subjectID: subject.id)
+                                                    .flatMapThrowing { isModerator in
+
                                                         Subject.Details(
                                                             subject: subject,
-                                                            topics: topics,
-                                                            levels: levels,
-                                                            isActive: activeSubject != nil,
+                                                            topics: topics.map { topic in
+                                                                var level = topic.userLevelZero()
+                                                                if let unwrapedLevel = userLevels.first(where: { $0.topicID == topic.topic.id }) {
+                                                                    level = unwrapedLevel
+                                                                }
+                                                                return Topic.UserOverview(
+                                                                    id: topic.topic.id,
+                                                                    name: topic.topic.name,
+                                                                    numberOfTasks: topic.taskCount,
+                                                                    userLevel: level
+                                                                )
+                                                            },
+                                                            openTest: currentTest,
+                                                            numberOfTasks: 0,
+                                                            isActive: activeSubject?.subjectID == subject.id,
                                                             canPractice: canPractice,
-                                                            isModerator: isModerator,
-                                                            openTest: test
+                                                            isModerator: isModerator
                                                         )
                                                 }
                                         }
@@ -112,58 +140,52 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
     }
 
-    public static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent> {
-        let user = try req.requireAuthenticated(User.self)
+    public func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent> {
+        let user = try req.auth.require(User.self)
         guard user.isAdmin else { throw Abort(.notFound) }
-        return req.parameters.model(Subject.self, on: req).flatMap { subject in
-            try Topic.DatabaseRepository
-                .exportTopics(in: subject, on: req)
-        }
+
+        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            .failableFlatMap(event: req.repositories.topicRepository.exportTopics(in:))
     }
 
-    public static func exportAll(on req: Request) throws -> EventLoopFuture<[SubjectExportContent]> {
-        _ = try req.requireAuthenticated(User.self)
-        return try Repository
-            .all(on: req)
-            .flatMap { subjects in
-                try subjects.map { try Topic.DatabaseRepository
-                    .exportTopics(in: $0, on: req)
+    public func exportAll(on req: Request) throws -> EventLoopFuture<[SubjectExportContent]> {
+        _ = try req.auth.require(User.self)
+
+        return try req.repositories.subjectRepository.all()
+            .failableFlatMap { subjects in
+                try subjects.map { try req.repositories.topicRepository
+                    .exportTopics(in: $0)
                 }
-                .flatten(on: req)
+                .flatten(on: req.eventLoop)
         }
     }
 
-    public static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        let user = try req.requireAuthenticated(User.self)
+    public func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let user = try req.auth.require(User.self)
 
         guard user.isAdmin else {
             throw Abort(.forbidden)
         }
         return try req.content
             .decode([SubjectExportContent].self)
-            .flatMap { content in
-                content.map {
-                    Subject.DatabaseRepository
-                        .importContent($0, on: req)
-                }
-                .flatten(on: req)
-                .transform(to: .ok)
-        }
+            .map { req.repositories.subjectRepository.importContent($0) }
+            .flatten(on: req.eventLoop)
+            .transform(to: .ok)
     }
 
-    public static func getListContent(_ req: Request) throws -> EventLoopFuture<Subject.ListContent> {
-        let user = try req.requireAuthenticated(User.self)
+    public func getListContent(_ req: Request) throws -> EventLoopFuture<Dashboard> {
+        let user = try req.auth.require(User.self)
 
-        return try Repository
-            .allSubjects(for: user, on: req)
-            .flatMap { subjects in
+        return try req.repositories.subjectRepository
+            .allSubjects(for: user)
+            .failableFlatMap { subjects in
 
-                try SubjectTest.DatabaseRepository
-                    .currentlyOpenTest(for: user, on: req)
+                try req.repositories.subjectTestRepository
+                    .currentlyOpenTest(for: user)
                     .map { test in
 
                         // FIXME: - Set ongoing sessions parameters
-                        Subject.ListContent(
+                        Dashboard(
                             subjects: subjects,
                             ongoingPracticeSession: nil,
                             ongoingTestSession: nil,
@@ -173,71 +195,57 @@ public final class SubjectAPIController<Repository: SubjectRepositoring>: Subjec
         }
     }
 
-    public static func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
 
-        return req.parameters
-            .model(Subject.self, on: req)
-            .flatMap { subject in
+        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            .failableFlatMap { subject in
 
-                try Repository.mark(inactive: subject, for: user, on: req)
+                try req.repositories.subjectRepository.mark(inactive: subject, for: user)
         }
         .transform(to: .ok)
     }
 
-    public static func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
 
-        return req.parameters
-            .model(Subject.self, on: req)
-            .flatMap { subject in
+        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            .failableFlatMap { subject in
 
-                try Repository.mark(active: subject, canPractice: true, for: user, on: req)
+                try req.repositories.subjectRepository.mark(active: subject, canPractice: true, for: user)
         }
         .transform(to: .ok)
     }
 
-    public static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
 
-        return try req.content
-            .decode(Subject.ModeratorPrivilegeRequest.self)
-            .flatMap { content in
-
-                req.parameters
-                    .model(Subject.self, on: req)
-                    .flatMap { subject in
-
-                        try Repository.grantModeratorPrivilege(for: content.userID, in: subject.requireID(), by: user, on: req)
-                }
-        }
+        return try req.repositories.subjectRepository.grantModeratorPrivilege(
+            for: req.content.decode(Subject.ModeratorPrivilegeRequest.self).userID,
+            in: req.parameters.get(Subject.self),
+            by: user
+        )
         .transform(to: .ok)
     }
 
-    public static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try req.auth.require(User.self)
 
-        return try req.content
-            .decode(Subject.ModeratorPrivilegeRequest.self)
-            .flatMap { content in
-
-                req.parameters
-                    .model(Subject.self, on: req)
-                    .flatMap { subject in
-
-                        try Repository.revokeModeratorPrivilege(for: content.userID, in: subject.requireID(), by: user, on: req)
-                }
-        }
+        return try req.repositories.subjectRepository.revokeModeratorPrivilege(
+            for: req.content.decode(Subject.ModeratorPrivilegeRequest.self).userID,
+            in: req.parameters.get(Subject.self),
+            by: user
+        )
         .transform(to: .ok)
     }
 }
 
 extension Subject {
-    public typealias DefaultAPIController = SubjectAPIController<Subject.DatabaseRepository>
+    public typealias DefaultAPIController = SubjectAPIController
 }
 
 extension Subject {

@@ -3,42 +3,48 @@ import XCTest
 import KognitaCoreTestable
 import Vapor
 
+extension SubjectTest.Create.Data: Content {}
+
 final class SubjectTestTests: VaporTestCase {
+
+    var subjectTestRepository: SubjectTestRepositoring { repositories.subjectTestRepository }
+    var mock: SubjectTestRepositoryMock { subjectTestRepository as! SubjectTestRepositoryMock }
+
+    override func modify(repositories: TestableRepositories) {
+        repositories.subjectTestRepository = SubjectTestRepositoryMock(eventLoop: app.eventLoopGroup.next())
+    }
 
     private let rootUri = "api/subject-tests"
 
     func testCreateTest() throws {
-        do {
-            SubjectTestRepositoryMock.Logger.shared.clear()
+        mock.logger.clear()
 
-            let user = try User.create(on: conn)
-            let topic = try Topic.create(on: conn)
-            let subtopic = try Subtopic.create(topic: topic, on: conn)
-            let numberOfTasks = 4
-            let taskIds = try (0..<numberOfTasks).map { _ in
-                try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                    .requireID()
-            }
+        let user = try User.create(on: app)
+        let topic = try Topic.create(on: app)
+        let subtopic = try Subtopic.create(topic: topic, on: app)
+        let numberOfTasks = 4
+        let taskIds = try (0..<numberOfTasks).map { _ in
+            try MultipleChoiceTask.create(subtopic: subtopic, on: app).id
+        }
 
-            let createTest = SubjectTest.Create.Data(
-                tasks:          taskIds,
-                subjectID:      topic.subjectId,
-                duration:       .minutes(10),
-                scheduledAt:    Date().addingTimeInterval(.minutes(50)),
-                password:       "testing",
-                title:          "Testing",
-                isTeamBasedLearning: false
-            )
-            let response = try app.sendRequest(to: rootUri, method: .POST, headers: standardHeaders, body: createTest, loggedInUser: user)
-
+        let createTest = SubjectTest.Create.Data(
+            tasks:          taskIds,
+            subjectID:      topic.subjectID,
+            duration:       .minutes(10),
+            scheduledAt:    Date().addingTimeInterval(.minutes(50)),
+            password:       "testing",
+            title:          "Testing",
+            isTeamBasedLearning: false
+        )
+        try app.sendRequest(to: rootUri, method: .POST, headers: standardHeaders, body: createTest, loggedInUser: user) { response in
             response.has(statusCode: .ok)
             response.has(content: SubjectTest.Create.Response.self)
 
-            let logEntry = try XCTUnwrap(SubjectTestRepositoryMock.Logger.shared.logs.last)
+            let logEntry = try XCTUnwrap(self.mock.logger.logs.last)
 
             switch logEntry {
             case .create(let data, let loggedUser):
-                XCTAssertEqual(try user.requireID(), loggedUser?.id)
+                XCTAssertEqual(user.id, loggedUser?.id)
 
                 XCTAssertEqual(data.title, createTest.title)
                 XCTAssertEqual(data.duration, createTest.duration)
@@ -47,43 +53,38 @@ final class SubjectTestTests: VaporTestCase {
             default:
                 XCTFail("Incorect log entry")
             }
-        } catch {
-            XCTFail(error.localizedDescription)
         }
     }
 
     func testUpdateTest() throws {
-        do {
-            SubjectTestRepositoryMock.Logger.shared.clear()
+        mock.logger.clear()
 
-            let user = try User.create(on: conn)
-            let test = try setupTestWithTasks()
-            let subtopic = try Subtopic.create(on: conn)
-            let numberOfTasks = 4
-            let taskIds = try (0..<numberOfTasks).map { _ in
-                try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                    .requireID()
-            }
-            let updateTest = SubjectTest.Update.Data(
-                tasks:          taskIds,
-                subjectID:      test.subjectID,
-                duration:       .minutes(15),
-                scheduledAt:    Date().addingTimeInterval(.minutes(50)),
-                password:       "testing",
-                title:          "Update Test",
-                isTeamBasedLearning: false
-            )
+        let user = try User.create(on: app)
+        let test = try setupTestWithTasks()
+        let subtopic = try Subtopic.create(on: app)
+        let numberOfTasks = 4
+        let taskIds = try (0..<numberOfTasks).map { _ in
+            try MultipleChoiceTask.create(subtopic: subtopic, on: app).id
+        }
+        let updateTest = SubjectTest.Update.Data(
+            tasks:          taskIds,
+            subjectID:      test.subjectID,
+            duration:       .minutes(15),
+            scheduledAt:    Date().addingTimeInterval(.minutes(50)),
+            password:       "testing",
+            title:          "Update Test",
+            isTeamBasedLearning: false
+        )
 
-            let response = try app.sendRequest(to: uri(for: test), method: .PUT, headers: standardHeaders, body: updateTest, loggedInUser: user)
-
+        try app.sendRequest(to: uri(for: test), method: .PUT, headers: standardHeaders, body: updateTest, loggedInUser: user) { response in
             response.has(statusCode: .ok)
             response.has(content: SubjectTest.Update.Response.self)
 
-            let logEntry = try XCTUnwrap(SubjectTestRepositoryMock.Logger.shared.logs.last)
+            let logEntry = try XCTUnwrap(self.mock.logger.logs.last)
 
             switch logEntry {
             case .update(let data, let loggedUser):
-                XCTAssertEqual(try loggedUser.requireID(), user.id)
+                XCTAssertEqual(loggedUser.id, user.id)
 
                 XCTAssertEqual(data.title, updateTest.title)
                 XCTAssertEqual(data.duration, updateTest.duration)
@@ -91,14 +92,12 @@ final class SubjectTestTests: VaporTestCase {
             default:
                 XCTFail("Incorect log entry")
             }
-        } catch {
-            XCTFail(error.localizedDescription)
         }
     }
 
 //    func testDeleteTest() throws {
 //        do {
-//            let user = try User.create(on: conn)
+//            let user = try User.create(on: app)
 //            let test = try setupTestWithTasks()
 //
 //            let response = try app.sendRequest(to: uri(for: test), method: .DELETE, headers: standardHeaders, loggedInUser: user)
@@ -110,17 +109,16 @@ final class SubjectTestTests: VaporTestCase {
 //    }
 
     func testOpeningTest() throws {
-        do {
-            SubjectTestRepositoryMock.Logger.shared.clear()
+        mock.logger.clear()
 
-            let user = try User.create(on: conn)
-            let test = try setupTestWithTasks()
+        let user = try User.create(on: app)
+        let test = try setupTestWithTasks()
 
-            let openUri = uri(for: test) + "/open"
-            let response = try app.sendRequest(to: openUri, method: .POST, headers: standardHeaders, loggedInUser: user)
+        let openUri = uri(for: test) + "/open"
+        try app.sendRequest(to: openUri, method: .POST, headers: standardHeaders, loggedInUser: user) { response in
             response.has(statusCode: .ok)
 
-            let logEntry = try XCTUnwrap(SubjectTestRepositoryMock.Logger.shared.logs.last)
+            let logEntry = try XCTUnwrap(self.mock.logger.logs.last)
 
             switch logEntry {
             case .open(let loggedTest, let loggedUser):
@@ -130,31 +128,28 @@ final class SubjectTestTests: VaporTestCase {
             default:
                 XCTFail("Incorect log entry")
             }
-        } catch {
-            XCTFail(error.localizedDescription)
         }
     }
 
     func uri(for test: SubjectTest) -> String {
-        try! "\(rootUri)/\(test.requireID())"
+        "\(rootUri)/\(test.id)"
     }
 
     func setupTestWithTasks(scheduledAt: Date = .now, duration: TimeInterval = .minutes(10), numberOfTasks: Int = 3) throws -> SubjectTest {
-        let topic = try Topic.create(on: conn)
-        let subtopic = try Subtopic.create(topic: topic, on: conn)
+        let topic = try Topic.create(on: app)
+        let subtopic = try Subtopic.create(topic: topic, on: app)
         let taskIds = try (0..<numberOfTasks).map { _ in
-            try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-                .requireID()
+            try MultipleChoiceTask.create(subtopic: subtopic, on: app).id
         }
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
-        _ = try MultipleChoiseTask.create(subtopic: subtopic, on: conn)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: app)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: app)
+        _ = try MultipleChoiceTask.create(subtopic: subtopic, on: app)
 
-        let user = try User.create(on: conn)
+        let user = try User.create(on: app)
 
         let data = SubjectTest.Create.Data(
             tasks:          taskIds,
-            subjectID:      topic.subjectId,
+            subjectID:      topic.subjectID,
             duration:       duration,
             scheduledAt:    scheduledAt,
             password:       "password",
@@ -163,10 +158,10 @@ final class SubjectTestTests: VaporTestCase {
         )
 
         if scheduledAt.timeIntervalSinceNow < 0 {
-            let test = try SubjectTest.DatabaseRepository.create(from: data, by: user, on: conn).wait()
-            return try SubjectTest.DatabaseRepository.open(test: test, by: user, on: conn).wait()
+            let test = try subjectTestRepository.create(from: data, by: user).wait()
+            return try subjectTestRepository.open(test: test, by: user).wait()
         } else {
-            return try SubjectTest.DatabaseRepository.create(from: data, by: user, on: conn).wait()
+            return try subjectTestRepository.create(from: data, by: user).wait()
         }
     }
 

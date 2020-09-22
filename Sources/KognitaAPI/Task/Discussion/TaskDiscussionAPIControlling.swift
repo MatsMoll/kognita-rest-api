@@ -1,28 +1,26 @@
 import Vapor
 import KognitaCore
 
-public protocol TaskDiscussionAPIControlling: CreateModelAPIController,
-    UpdateModelAPIController,
-    RouteCollection
-    where
-    Repository: TaskDiscussionRepositoring,
-    UpdateData        == TaskDiscussion.Update.Data,
-    UpdateResponse    == TaskDiscussion.Update.Response,
-    CreateData        == TaskDiscussion.Create.Data,
-    CreateResponse    == TaskDiscussion.Create.Response,
-    Model             == TaskDiscussion {
-    static func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
-    static func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion.Details]>
+extension GenericTask: ModelParameterRepresentable {}
+extension NoData: Content {}
+extension TaskDiscussion: Content {}
+
+public protocol TaskDiscussionAPIControlling: CreateModelAPIController, UpdateModelAPIController, RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<TaskDiscussion.Create.Response>
+    func update(on req: Request) throws -> EventLoopFuture<TaskDiscussion.Update.Response>
+    func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion]>
+    func getDiscussionsForUser(on req: Request) throws -> EventLoopFuture<[TaskDiscussion]>
 }
 
 extension TaskDiscussionAPIControlling {
 
-    public func boot(router: Router) throws {
-        let discussion = router.grouped("task-discussion")
-        register(create: discussion)
-        register(update: discussion)
+    public func boot(routes: RoutesBuilder) throws {
 
-        router.get("tasks", Task.parameter, "discussions", use: Self.get(discussions: ))
-        discussion.get("user", use: Self.getDiscussionsForUser(on: ))
+        let discussion = routes.grouped("task-discussion")
+        register(create: create(on:), router: discussion)
+        register(update: update(on:), router: discussion, parameter: TaskDiscussion.self)
+
+        routes.get("tasks", GenericTask.parameter, "discussions", use: self.get(discussions: ))
+        discussion.get("user", use: self.getDiscussionsForUser(on: ))
     }
 }

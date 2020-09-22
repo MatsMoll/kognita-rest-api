@@ -1,16 +1,15 @@
 import Vapor
-import FluentPostgreSQL
 import KognitaCore
 
-public final class TaskResultAPIController<Repository: TaskResultRepositoring>: TaskResultAPIControlling {
+public struct TaskResultAPIController: TaskResultAPIControlling {
 
-    static func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
-
-        let user = try req.requireAuthenticated(User.self)
-
-        return try Repository
-            .getAllResults(for: user.requireID(), with: req)
-    }
+//    static func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
+//
+//        let user = try req.requireAuthenticated(User.self)
+//
+//        return try Repository
+//            .getAllResults(for: user.requireID(), with: req)
+//    }
 
 //    static func getRevisitSchedualFilter(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
 //
@@ -24,13 +23,12 @@ public final class TaskResultAPIController<Repository: TaskResultRepositoring>: 
 //        }
 //    }
 
-    public static func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
-        let user = try req.requireAuthenticated(User.self)
+    public func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
+        let user = try req.auth.require(User.self)
         guard user.isAdmin else {
             throw Abort(.forbidden)
         }
-        return Repository
-            .getResults(on: req)
+        return req.repositories.taskResultRepository.getResults()
     }
 
 //    static func export(on req: Request) throws -> EventLoopFuture<[TaskResult.Answer]> {
@@ -49,5 +47,5 @@ public final class TaskResultAPIController<Repository: TaskResultRepositoring>: 
 extension TaskResult.Answer: Content {}
 
 extension TaskResult {
-    public typealias DefaultAPIController = TaskResultAPIController<TaskResult.DatabaseRepository>
+    public typealias DefaultAPIController = TaskResultAPIController
 }
