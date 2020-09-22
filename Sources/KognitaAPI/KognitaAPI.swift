@@ -130,11 +130,6 @@ public class KognitaAPI {
 
     static func setupApi(for app: Application, routes: RoutesBuilder) throws {
         /// In order to upload big files
-
-//        try services.register(AuthenticationProvider())
-
-//        services.register(NIOServerConfig.default(maxBodySize: 20_000_000))
-
         KognitaCore.config(app: app)
 
         setupDatabase(for: app)
