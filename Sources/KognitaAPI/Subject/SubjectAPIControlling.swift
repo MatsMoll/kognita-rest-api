@@ -51,7 +51,7 @@ extension SubjectAPIControlling {
         subjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
-        routes.post("subjects", "import", use: self.importContent)
+        routes.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
         subjectInstance.post("import-peer", use: self.importContentPeerWise)
     }
 }
