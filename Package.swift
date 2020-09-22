@@ -29,7 +29,7 @@ case "DEV":
 default:
     dependencies.append(contentsOf: [
             .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
-            .package(name: "KognitaModels", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaModels", from: "2.0.0"),
+            .package(name: "KognitaModels", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaModels", from: "1.0.0"),
             .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
         ]
     )
