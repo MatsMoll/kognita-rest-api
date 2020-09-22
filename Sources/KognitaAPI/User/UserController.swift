@@ -1,10 +1,33 @@
 import Vapor
-import FluentPostgreSQL
 import KognitaCore
 import Mailgun
 
-public protocol ResetPasswordMailRenderable: Service {
-    func render(with token: User.ResetPassword.Token.Data, for user: User) throws -> String
+public protocol ResetPasswordMailRenderable {
+    func render(with token: User.ResetPassword.Token, for user: User) throws -> String
+}
+
+public struct ResetPasswordMailRenderableFactory {
+    var make: ((Request) -> ResetPasswordMailRenderable)?
+    public mutating func use(_ make: @escaping (Request) -> ResetPasswordMailRenderable) {
+        self.make = make
+    }
+}
+
+extension Application {
+    private struct ResetPasswordMailRenderableKey: StorageKey {
+        typealias Value = ResetPasswordMailRenderableFactory
+    }
+
+    public var resetPasswordRenderer: ResetPasswordMailRenderableFactory {
+        get { self.storage[ResetPasswordMailRenderableKey.self] ?? .init() }
+        set { self.storage[ResetPasswordMailRenderableKey.self] = newValue }
+    }
+}
+
+extension Request {
+    public var resetPasswordRenderer: ResetPasswordMailRenderable {
+        self.application.resetPasswordRenderer.make!(self)
+    }
 }
 
 extension User.ResetPassword {
@@ -14,130 +37,97 @@ extension User.ResetPassword {
 }
 
 /// Creates new users and logs them in.
-public final class UserAPIController<Repository: UserRepository>: UserAPIControlling {
+public struct UserAPIController: UserAPIControlling {
 
     public enum Errors: Error {
         case userNotFound
     }
 
     /// Logs a user in, returning a token for accessing protected endpoints.
-    public static func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
+    public func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
         // get user auth'd by basic auth middleware
-        let user = try req.requireAuthenticated(User.self)
-
-        return try User.DatabaseRepository
-            .login(with: user, conn: req)
+        try req.repositories.userRepository.login(with: req.auth.require())
     }
 
     /// Creates a new user.
-    public static func create(on req: Request) throws -> EventLoopFuture<User.Response> {
+    public func create(on req: Request) throws -> EventLoopFuture<User> {
         // decode request content
-        return try req.content
-            .decode(User.Create.Data.self)
-            .flatMap { content in
-                try User.DatabaseRepository
-                    .create(from: content, by: nil, on: req)
-        }
-        .flatMap { userResponse in
-            try sendVerifyEmail(to: userResponse, on: req)
-                .transform(to: userResponse)
+        try req.repositories.userRepository.create(from: req.content.decode(User.Create.Data.self), by: req.auth.get())
+            .flatMap { user in
+                self.sendVerifyEmail(to: user, on: req)
+                    .transform(to: user)
         }
     }
 
     /// Sends verification email and set this as a scheduled job, waiting 30 seconds before sending the email.
-    static func sendVerifyEmail(to user: User.Response, on req: Request) throws -> EventLoopFuture<Void> {
-        let jobQueue = try req.make(JobQueueable.self)
-        jobQueue.scheduleFutureJob(after: .seconds(30)) { (container, conn) -> EventLoopFuture<Void> in
-            let sender = try container.make(VerifyEmailSendable.self)
-            return try Repository.verifyToken(for: user.userId, on: conn)
-                .flatMap { token in
-                    try sender.sendEmail(with: token.content(with: user.email), on: container)
-            }
+    func sendVerifyEmail(to user: User, on req: Request) -> EventLoopFuture<Void> {
+        req.repositories.userRepository
+            .verifyToken(for: user.id)
+            .failableFlatMap { token in
+                try req.verifyEmailSender.sendEmail(
+                    with: User.VerifyEmail.EmailContent(
+                        token: token.token,
+                        userID: user.id,
+                        email: user.email
+                    )
+                )
         }
-        return req.future()
     }
 
-    public static func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
-        return try req.content
-            .decode(User.ResetPassword.Email.self)
-            .flatMap { email in
+        let email = try req.content.decode(User.ResetPassword.Email.self)
+        let userEmail = email.email.lowercased()
 
-                let userEmail = email.email.lowercased()
-
-                return Repository
-                    .first(with: userEmail, on: req)
-                    .flatMap { user in
-
-                        guard let user = user else {
-                            return req.future(.ok)
-                        }
-                        return try User.ResetPassword.Token.Repository
-                            .create(by: user, on: req)
-                            .flatMap { token in
-
-                                let renderer = try req.make(ResetPasswordMailRenderable.self)
-                                let mailgun = try req.make(MailgunProvider.self)
-
-                                let mail = try Mailgun.Message(
-                                    from: "kontakt@kognita.no",
-                                    to: userEmail,
-                                    subject: "Kognita - Gjenopprett Passord",
-                                    text: "",
-                                    html: renderer.render(with: token, for: user)
-                                )
-                                return try mailgun.send(mail, on: req)
-                                    .transform(to: .ok)
-                        }
+        return req.repositories.userRepository
+            .first(with: userEmail)
+            .failableFlatMap { user in
+                guard let user = user else {
+                    return req.eventLoop.future(.ok)
                 }
-        }
-    }
+                return try req.repositories.userRepository
+                    .startReset(for: user)
+                    .flatMap { token in
 
-    public static func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        return try req.content
-            .decode(User.ResetPassword.Token.Data.self)
-            .flatMap { token in
-
-                try req.content
-                    .decode(User.ResetPassword.Data.self)
-                    .flatMap { data in
-
-                        try User.ResetPassword.Token.Repository
-                            .reset(to: data, with: token.token, on: req)
+                        req.resetPasswordSender.sendResetPassword(for: user, token: token)
                             .transform(to: .ok)
                 }
         }
     }
 
-    public static func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+    public func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+
+        try req.repositories.userRepository
+            .reset(
+                to: req.content.decode(User.ResetPassword.Data.self),
+                with: req.content.decode(User.ResetPassword.Token.Data.self).token
+        )
+            .transform(to: .ok)
+    }
+
+    public func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         // For Web
-        if let request = try? req.query.decode(User.VerifyEmail.Request.self) {
-            return req.parameters
-                .model(User.self, on: req)
+        if let request = try? req.query.decode(User.VerifyEmail.Token.self) {
+
+            return try req.repositories.userRepository.find(req.parameters.get(User.self), or: Abort(.badRequest))
                 .flatMap { user in
 
-                    try Repository.verify(user: user, with: request, on: req)
+                    req.repositories.userRepository.verify(user: user, with: request)
                         .transform(to: .ok)
             }
         } else {
             // For API
-            return try req.content
-                .decode(User.VerifyEmail.Request.self)
-                .flatMap { request in
-
-                    req.parameters
-                        .model(User.self, on: req)
-                        .flatMap { user in
-
-                            try Repository.verify(user: user, with: request, on: req)
-                                .transform(to: .ok)
-                    }
+            return try req.repositories.userRepository.find(req.parameters.get(User.self))
+                .unwrap(or: Abort(.badRequest))
+                .failableFlatMap { user in
+                    try req.repositories.userRepository.verify(user: user, with: req.content.decode(User.VerifyEmail.Token.self))
             }
+            .transform(to: .ok)
         }
     }
 }
 
 extension User {
-    public typealias DefaultAPIController = UserAPIController<User.DatabaseRepository>
+    public typealias DefaultAPIController = UserAPIController
 }

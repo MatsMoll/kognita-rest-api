@@ -8,19 +8,29 @@
 import Vapor
 import KognitaCore
 
-public final class SubtopicController<Repository: SubtopicRepositoring>: SubtopicAPIControlling {
+public struct SubtopicController: SubtopicAPIControlling {
 
-    public static func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
-        return req.parameters
-            .model(Topic.self, on: req)
-            .flatMap { topic in
+    public func create(on req: Request) throws -> EventLoopFuture<Subtopic> {
+        try req.create(in: req.repositories.subtopicRepository.create(from: by: ))
+    }
 
-                try Repository
-                    .getSubtopics(in: topic, with: req)
-        }
+    public func update(on req: Request) throws -> EventLoopFuture<Subtopic.Update.Response> {
+        try req.update(with: req.repositories.subtopicRepository.updateModelWith(id: to: by: ), parameter: Subtopic.self)
+    }
+
+    public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        try req.delete(with: req.repositories.subtopicRepository.deleteModelWith(id: by: ), parameter: Subtopic.self)
+    }
+
+    public func retrive(on req: Request) throws -> EventLoopFuture<Subtopic> {
+        try req.retrive(with: req.repositories.subtopicRepository.find, parameter: Subtopic.self)
+    }
+
+    public func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {
+        try req.repositories.subtopicRepository.subtopics(with: req.parameters.get(Topic.self))
     }
 }
 
 extension Subtopic {
-    public typealias DefaultAPIController = SubtopicController<Subtopic.DatabaseRepository>
+    public typealias DefaultAPIController = SubtopicController
 }

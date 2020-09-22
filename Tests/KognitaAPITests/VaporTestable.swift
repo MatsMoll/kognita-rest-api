@@ -7,8 +7,11 @@
 
 import Vapor
 import XCTest
-import FluentPostgreSQL
-
+import XCTVapor
+import KognitaAPI
+import KognitaCore
+import KognitaCoreTestable
+import FluentSQL
 
 /// A class that setups a application in a testable enviroment and creates a connection to the database
 class VaporTestCase: XCTestCase {
@@ -17,29 +20,39 @@ class VaporTestCase: XCTestCase {
         case badTest
     }
     
-    lazy var app: Application = try! Application.testable(envArgs: self.envArgs)
-    var conn: PostgreSQLConnection!
-    
+    var app: Application!
+
+    var repositories: RepositoriesRepresentable { TestableRepositories.testable(with: app) }
+
     let standardHeaders: HTTPHeaders = ["Content-Type" : "application/json"]
     
     var envArgs: [String]?
-    
-    
+
+    func modify(controllers: inout APIControllers) {}
+    func modify(repositories: TestableRepositories) {}
+
+
     override func setUp() {
         super.setUp()
-        print("Running setup")
-        try! Application.reset()
         app = try! Application.testable()
-        conn = try! app.newConnection(to: .psql).wait()
+        self.resetDB()
+        modify(repositories: TestableRepositories.testable(with: app))
+    }
+
+    func resetDB() {
+        guard let database = app.databases.database(logger: app.logger, on: app.eventLoopGroup.next()) as? SQLDatabase else { fatalError() }
+        try! database.raw("DROP SCHEMA public CASCADE").run().wait()
+        try! database.raw("CREATE SCHEMA public").run().wait()
+        try! database.raw("GRANT ALL ON SCHEMA public TO public").run().wait()
+        try! app.autoMigrate().wait()
     }
     
     override func tearDown() {
         super.tearDown()
-        app.shutdownGracefully { (error) in
-            guard let error = error else { return }
-            print("Error shuttingdown: \(error)")
-        }
-        conn.close()
+        app.shutdown()
+        app = nil
+        TestableRepositories.reset()
+        TestableControllers.reset()
     }
 
     func failableTest(line: UInt = #line, file: StaticString = #file, test: (() throws -> Void)) {
@@ -63,19 +76,18 @@ class VaporTestCase: XCTestCase {
     }
 }
 
-
-extension Response {
+extension XCTHTTPResponse {
     func has(statusCode: HTTPResponseStatus, file: StaticString = #file, line: UInt = #line) {
-        XCTAssertEqual(http.status, statusCode, "The http status code should have been \(statusCode), but were \(http.status)", file: file, line: line)
+        XCTAssertEqual(status, statusCode, "The http status code should have been \(statusCode), but were \(status)", file: file, line: line)
     }
 
     func has(headerName: String, with value: String? = nil, file: StaticString = #file, line: UInt = #line) {
-        XCTAssertTrue(self.http.headers.contains(name: headerName), file: file, line: line)
+        XCTAssertTrue(self.headers.contains(name: headerName), file: file, line: line)
     }
 
     func has<T: Decodable>(content type: T.Type, file: StaticString = #file, line: UInt = #line) {
         XCTAssertNoThrow(
-            try content.syncDecode(T.self),
+            try content.decode(T.self),
             "Was not able to decode \(type) based on the reponse content",
             file: file,
             line: line

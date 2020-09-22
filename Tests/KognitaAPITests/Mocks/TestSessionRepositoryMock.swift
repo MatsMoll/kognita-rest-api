@@ -1,50 +1,51 @@
 import Vapor
 @testable import KognitaCore
 
-class TestSessionRepositoryMock: TestSessionRepositoring {
+struct TestSessionRepositoryMock: TestSessionRepositoring {
 
-    static func solutions(for user: User, in session: TestSessionRepresentable, pivotID: SubjectTest.Pivot.Task.ID, on conn: DatabaseConnectable) throws -> EventLoopFuture<[TaskSolution.Response]> {
-        conn.future([])
+    func testIDFor(id: TestSession.ID) -> EventLoopFuture<SubjectTest.ID> {
+        eventLoop.future(1)
     }
 
-    static func results(in session: TestSessionRepresentable, pivotID: SubjectTest.Pivot.Task.ID, on conn: DatabaseConnectable) throws -> EventLoopFuture<TestSession.DetailedTaskResult> {
-        conn.future(TestSession.DetailedTaskResult(
-            taskID: 1,
-            description: nil,
-            question: "Test",
-            isMultipleSelect: false,
-            testSessionID: session.testID,
-            choises: [],
-            selectedChoises: []
+    func sessionReporesentableWith(id: TestSession.ID) -> EventLoopFuture<TestSessionRepresentable> {
+        eventLoop.future(
+            TestSession.TestParameter(
+                session: .init(userID: 1),
+                testSession: .init(
+                    sessionID: 1,
+                    testID: 1
+                )
             )
         )
     }
 
+
     class Logger: TestLogger {
         enum Entry {
-            case finnish(session: TestSessionRepresentable, user: User)
-            case answer(content: MultipleChoiseTask.Submit, session: TestSessionRepresentable, user: User)
-            case results(session: TestSessionRepresentable, user: User)
+            case finnish(sessionID: TestSession.ID, user: User)
+            case answer(content: MultipleChoiceTask.Submit, sessionID: TestSession.ID, user: User)
+            case results(sessionID: TestSession.ID, user: User)
         }
 
         var logs: [Entry] = []
-
-        static let shared = Logger()
     }
 
-    static func submit(content: MultipleChoiseTask.Submit, for session: TestSessionRepresentable, by user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<Void> {
-        Logger.shared.log(entry: .answer(content: content, session: session, user: user))
-        return conn.future()
+    let logger = Logger()
+    var eventLoop: EventLoop
+
+    func submit(content: MultipleChoiceTask.Submit, sessionID: TestSession.ID, by user: User) -> EventLoopFuture<Void> {
+        logger.log(entry: .answer(content: content, sessionID: sessionID, user: user))
+        return eventLoop.future()
     }
 
-    static func submit(test: TestSessionRepresentable, by user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<Void> {
-        Logger.shared.log(entry: .finnish(session: test, user: user))
-        return conn.future()
+    func submit(testID: TestSession.ID, by user: User) throws -> EventLoopFuture<Void> {
+        logger.log(entry: .finnish(sessionID: testID, user: user))
+        return eventLoop.future()
     }
 
-    static func results(in test: TestSessionRepresentable, for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<TestSession.Results> {
-        Logger.shared.log(entry: .results(session: test, user: user))
-        return conn.future(
+    func results(in testID: TestSession.ID, for user: User) -> EventLoopFuture<TestSession.Results> {
+        logger.log(entry: .results(sessionID: testID, user: user))
+        return eventLoop.future(
             TestSession.Results(
                 testTitle: "Testing",
                 endedAt: .now,
@@ -58,24 +59,48 @@ class TestSessionRepositoryMock: TestSessionRepositoring {
         )
     }
 
-    static func overview(in session: TestSessionRepresentable, for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<TestSession.Overview> {
-        try conn.future(
-            TestSession.Overview(
+    func overview(in session: TestSessionRepresentable, for user: User) throws -> EventLoopFuture<TestSession.PreSubmitOverview> {
+        try eventLoop.future(
+            TestSession.PreSubmitOverview(
                 sessionID: session.requireID(),
                 test: SubjectTest(
-                    scheduledAt: .now,
-                    duration: 0,
-                    password: "",
-                    title: "Test",
+                    id: 0,
+                    createdAt: .now,
                     subjectID: 0,
-                    isTeamBasedLearning: false
+                    duration: .minutes(1),
+                    scheduledAt: .now,
+                    password: "",
+                    title: "",
+                    isTeamBasedLearning: false,
+                    taskIDs: []
                 ),
                 tasks: []
             )
         )
     }
 
-    static func getSessions(for user: User, on conn: DatabaseConnectable) throws -> EventLoopFuture<[TestSession.HighOverview]> {
-        conn.future([])
+    func getSessions(for user: User) -> EventLoopFuture<[TestSession.CompletedOverview]> {
+        eventLoop.future([])
+    }
+
+    func solutions(for user: User, in session: TestSessionRepresentable, pivotID: Int) throws -> EventLoopFuture<[TaskSolution.Response]> {
+        eventLoop.future([])
+    }
+
+    func results(in session: TestSessionRepresentable, pivotID: Int) throws -> EventLoopFuture<TestSession.DetailedTaskResult> {
+        eventLoop.future(TestSession.DetailedTaskResult(
+            taskID: 1,
+            description: nil,
+            question: "Test",
+            isMultipleSelect: false,
+            testSessionID: session.testID,
+            choises: [],
+            selectedChoises: []
+            )
+        )
+    }
+
+    func createResult(for session: TestSessionRepresentable) throws -> EventLoopFuture<Void> {
+        eventLoop.future()
     }
 }

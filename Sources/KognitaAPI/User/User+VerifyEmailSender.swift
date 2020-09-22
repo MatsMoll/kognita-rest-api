@@ -2,22 +2,67 @@ import KognitaCore
 import Vapor
 import Mailgun
 
-public protocol VerifyEmailRenderable: Service {
-    func render(with content: User.VerifyEmail.EmailContent, on container: Container) throws -> EventLoopFuture<String>
+public protocol VerifyEmailRenderable {
+    func render(with content: User.VerifyEmail.EmailContent, on request: Request) throws -> EventLoopFuture<String>
+}
+
+public struct VerifyEmailSenderFactory {
+    var make: ((Request) -> VerifyEmailSendable)?
+    public mutating func use(_ make: @escaping ((Request) -> VerifyEmailSendable)) {
+        self.make = make
+    }
+}
+
+public struct VerifyEmailRenderableFactory {
+    var make: ((Request) -> VerifyEmailRenderable)?
+    public mutating func use(_ make: @escaping ((Request) -> VerifyEmailRenderable)) {
+        self.make = make
+    }
+}
+
+extension Application {
+    private struct VerifyEmailRenderableKey: StorageKey {
+        typealias Value = VerifyEmailRenderableFactory
+    }
+
+    private struct VerifyEmailSenderKey: StorageKey {
+        typealias Value = VerifyEmailSenderFactory
+    }
+
+    public var verifyEmailRenderer: VerifyEmailRenderableFactory {
+        get { self.storage[VerifyEmailRenderableKey.self] ?? .init() }
+        set { self.storage[VerifyEmailRenderableKey.self] = newValue }
+    }
+
+    public var verifyEmailSender: VerifyEmailSenderFactory {
+        get { self.storage[VerifyEmailSenderKey.self] ?? .init() }
+        set { self.storage[VerifyEmailSenderKey.self] = newValue }
+    }
+}
+extension Request {
+    public var verifyEmailRenderer: VerifyEmailRenderable {
+        application.verifyEmailRenderer.make!(self)
+    }
+}
+
+extension Request {
+    public var verifyEmailSender: VerifyEmailSendable {
+        self.application.verifyEmailSender.make!(self)
+    }
 }
 
 extension User {
-    final class VerifyEmailSender: VerifyEmailSendable, Service {
+    struct VerifyEmailSender: VerifyEmailSendable {
 
-        func sendEmail(with token: User.VerifyEmail.EmailContent, on container: Container) throws -> EventLoopFuture<Void> {
+        let request: Request
 
-            let renderer = try container.make(VerifyEmailRenderable.self)
-            let mailgun = try container.make(Mailgun.self)
+        func sendEmail(with token: User.VerifyEmail.EmailContent) throws -> EventLoopFuture<Void> {
 
-            return try renderer.render(with: token, on: container)
+            return try request.verifyEmailRenderer
+                .render(with: token, on: request)
                 .flatMap { html in
 
-                    let message = Mailgun.Message(
+                    let message = MailgunMessage(
                         from: "noreply@kognita.no",
                         to: token.email,
                         subject: "Kognita - Verifiser brukeren din",
@@ -25,7 +70,8 @@ extension User {
                         html: html
                     )
 
-                    return try mailgun.send(message, on: container)
+                    return self.request.mailgun()
+                        .send(message)
                         .transform(to: ())
             }
         }

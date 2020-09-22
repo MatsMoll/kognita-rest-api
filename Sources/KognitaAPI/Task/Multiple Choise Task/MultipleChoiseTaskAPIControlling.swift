@@ -1,26 +1,21 @@
 import Vapor
-import FluentPostgreSQL
 import KognitaCore
 
-public protocol MultipleChoiseTaskAPIControlling: CreateModelAPIController,
-    UpdateModelAPIController,
-    DeleteModelAPIController,
-    RouteCollection
-    where
-    Repository: MultipleChoiseTaskRepository,
-    UpdateData        == MultipleChoiseTask.Edit.Data,
-    UpdateResponse    == MultipleChoiseTask.Edit.Response,
-    CreateData        == MultipleChoiseTask.Create.Data,
-    CreateResponse    == MultipleChoiseTask.Create.Response,
-    Model             == MultipleChoiseTask {}
+public protocol MultipleChoiseTaskAPIControlling: CreateModelAPIController, UpdateModelAPIController, DeleteModelAPIController, RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<MultipleChoiceTask.Create.Response>
+    func update(on req: Request) throws -> EventLoopFuture<MultipleChoiceTask.Update.Response>
+    func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
+}
 
 extension MultipleChoiseTaskAPIControlling {
 
-    public func boot(router: Router) {
-        let multiple = router.grouped("tasks/multiple-choise")
+    public func boot(routes: RoutesBuilder) throws {
+        let multiple = routes.grouped("tasks", "multiple-choise")
 
-        register(create: multiple)
-        register(update: multiple)
-        register(delete: multiple)
+        register(create: create(on:), router: multiple)
+        register(update: update(on:), router: multiple, parameter: MultipleChoiceTask.self)
+        register(delete: multiple, parameter: MultipleChoiceTask.self)
+
+        multiple.delete(MultipleChoiceTask.parameter, "force", use: forceDelete(on:))
     }
 }

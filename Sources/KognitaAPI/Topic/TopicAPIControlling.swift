@@ -1,35 +1,35 @@
-import FluentPostgreSQL
 import Vapor
 import KognitaCore
+
+extension Topic: ModelParameterRepresentable {}
 
 public protocol TopicAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RetriveModelAPIController,
     RetriveAllModelsAPIController,
-    RouteCollection
-    where
-    Repository: TopicRepository,
-    Model           == Topic,
-    CreateData      == Topic.Create.Data,
-    CreateResponse  == Topic.Create.Response,
-    UpdateData      == Topic.Edit.Data,
-    UpdateResponse  == Topic.Edit.Response,
-    ModelResponse   == Topic {
-    static func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]>
+    RouteCollection {
+    func save(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
+    func create(on req: Request) throws -> EventLoopFuture<Topic.Create.Response>
+    func update(on req: Request) throws -> EventLoopFuture<Topic.Update.Response>
+    func retriveAll(_ req: Request) throws -> EventLoopFuture<[Topic]>
+    func retrive(_ req: Request) throws -> EventLoopFuture<Topic>
+    func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]>
 }
 
 extension TopicAPIControlling {
-    public func boot(router: Router) {
+    public func boot(routes: RoutesBuilder) throws {
 
-        let topics = router.grouped("topics")
+        let topics = routes.grouped("topics")
 
-        router.get("subjects", Subject.parameter, "topics", use: Self.getAllIn(subject: ))
+        routes.get("subjects", Subject.parameter, "topics", use: self.getAllIn(subject: ))
+        routes.put("subjects", Subject.parameter, "topics", use: self.save(on: ))
 
-        register(create: topics)
-        register(delete: topics)
-        register(update: topics)
-        register(retrive: topics)
-        register(retriveAll: topics)
+        register(create: create(on:), router: topics)
+        register(update: update(on:), router: topics, parameter: Topic.self)
+        register(retrive: retrive(_:), router: topics, parameter: Topic.self)
+        register(delete: topics, parameter: Topic.self)
+        register(retriveAll: retriveAll(_:), router: topics)
+
     }
 }

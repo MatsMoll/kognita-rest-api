@@ -1,55 +1,57 @@
 import Vapor
 import KognitaCore
 
+extension Subject: ModelParameterRepresentable {}
+
 public protocol SubjectAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
     DeleteModelAPIController,
     RetriveModelAPIController,
     RetriveAllModelsAPIController,
-    RouteCollection
-    where
-    Repository: SubjectRepositoring,
-    Model           == Subject,
-    ModelResponse   == Subject,
-    CreateData      == Subject.Create.Data,
-    CreateResponse  == Subject.Create.Response,
-    UpdateData      == Subject.Edit.Data,
-    UpdateResponse  == Subject.Edit.Response {
-    static func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
-    static func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func getListContent(_ req: Request) throws -> EventLoopFuture<Subject.ListContent>
-    static func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent>
-    static func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
-    static func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
-    static func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
+    RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<Subject.Create.Response>
+    func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response>
+    func retrive(on req: Request) throws -> EventLoopFuture<Subject>
+    func retriveAll(_ req: Request) throws -> EventLoopFuture<[Subject]>
+    func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details>
+    func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func getListContent(_ req: Request) throws -> EventLoopFuture<Dashboard>
+    func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent>
+    func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func revokePriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
+    func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
+    func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview>
 }
 
-extension SubjectAPIControlling {
-    public func boot(router: Router) {
+extension Subject.Compendium: Content {}
 
-        let subjects = router.grouped("subjects")
+extension SubjectAPIControlling {
+
+    public func boot(routes: RoutesBuilder) throws {
+
+        let subjects = routes.grouped("subjects")
         let subjectInstance = subjects.grouped(Subject.parameter)
 
-        register(create: subjects)
-        register(delete: subjects)
-        register(update: subjects)
-        register(retrive: subjects)
-        register(retriveAll: subjects)
+        register(create: create(on:), router: subjects)
+        register(update: update(on:), router: subjects, parameter: Subject.self)
+        register(delete: subjects, parameter: Subject.self)
+        register(retrive: retrive(on:), router: subjects, parameter: Subject.self)
+        register(retriveAll: retriveAll(_:), router: subjects)
 
-        subjectInstance.get("stats", use: Self.testStats(on: ))
-        subjectInstance.get("export", use: Self.export)
-        subjectInstance.get("compendium", use: Self.compendium(on: ))
-        subjectInstance.post("active", use: Self.makeSubject(active: ))
-        subjectInstance.post("inactive", use: Self.makeSubject(inactive: ))
-        subjectInstance.post("grant-moderator", use: Self.grantPriveleges(on: ))
-        subjectInstance.post("revoke-moderator", use: Self.revokePriveleges(on: ))
+        subjectInstance.get("stats", use: self.testStats(on: ))
+        subjectInstance.get("export", use: self.export)
+        subjectInstance.get("compendium", use: self.compendium(on: ))
+        subjectInstance.post("active", use: self.makeSubject(active: ))
+        subjectInstance.post("inactive", use: self.makeSubject(inactive: ))
+        subjectInstance.post("grant-moderator", use: self.grantPriveleges(on: ))
+        subjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
-        router.post("subjects/import", use: Self.importContent)
-        subjectInstance.post("import-peer", use: Self.importContentPeerWise)
+        routes.post("subjects", "import", use: self.importContent)
+        subjectInstance.post("import-peer", use: self.importContentPeerWise)
     }
 }

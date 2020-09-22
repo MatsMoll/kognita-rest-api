@@ -1,21 +1,22 @@
 import Vapor
 import KognitaCore
 
-public protocol TaskDiscussionResponseAPIControlling: CreateModelAPIController,
-    RouteCollection
-    where
-    Repository: TaskDiscussionRepositoring,
-    CreateData        == TaskDiscussion.Pivot.Response.Create.Data,
-    CreateResponse    == TaskDiscussion.Pivot.Response.Create.Response {
-    static func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussion.Pivot.Response.Details]>
+extension TaskDiscussionResponse.Create.Response: Content {}
+extension TaskDiscussion: ModelParameterRepresentable {}
+extension TaskDiscussionResponse: Content {}
+
+public protocol TaskDiscussionResponseAPIControlling: CreateModelAPIController, RouteCollection {
+    func create(on req: Request) throws -> EventLoopFuture<TaskDiscussionResponse.Create.Response>
+    func get(responses req: Request) throws -> EventLoopFuture<[TaskDiscussionResponse]>
+    func setRecentlyVisited(on req: Request) throws -> EventLoopFuture<Bool>
 }
 
 extension TaskDiscussionResponseAPIControlling {
 
-    public func boot(router: Router) throws {
-        let discussionResponse = router.grouped("task-discussion-response")
-        register(create: discussionResponse)
+    public func boot(routes: RoutesBuilder) throws {
+        let discussionResponse = routes.grouped("task-discussion-response")
+        register(create: create(on:), router: discussionResponse)
 
-        router.get("task-discussions", TaskDiscussion.parameter, "responses", use: Self.get(responses: ))
+        routes.get("task-discussions", TaskDiscussion.parameter, "responses", use: self.get(responses: ))
     }
 }

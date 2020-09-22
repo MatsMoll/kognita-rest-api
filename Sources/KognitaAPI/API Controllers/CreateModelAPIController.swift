@@ -2,34 +2,18 @@ import Vapor
 import KognitaCore
 
 public protocol CreateModelAPIController {
-    associatedtype CreateData: Decodable
-    associatedtype CreateResponse: Content
-    associatedtype Repository: CreateModelRepository
 
-    static func create(on req: Request) throws -> EventLoopFuture<CreateResponse>
-
-    func register(create route: Router)
+    func register<R: Content>(create: @escaping (Request) throws -> EventLoopFuture<R>, router: RoutesBuilder)
 }
 
 extension CreateModelAPIController {
-    public func register(create router: Router) {
-        router.post("/", use: Self.create)
+    public func register<R: Content>(create: @escaping (Request) throws -> EventLoopFuture<R>, router: RoutesBuilder) {
+        router.post(use: create)
     }
 }
 
-extension CreateModelAPIController
-    where
-    Repository.CreateData       == CreateData,
-    Repository.CreateResponse   == CreateResponse {
-
-    public static func create(on req: Request) throws -> EventLoopFuture<CreateResponse> {
-
-        let user = try req.authenticated(User.self)
-
-        return try req.content
-            .decode(CreateData.self)
-            .flatMap { data in
-                try Repository.create(from: data, by: user, on: req)
-        }
+extension Request {
+    func create<CreateData: Decodable, CreateResponse: Content>(in repository: @escaping (CreateData, User?) throws -> EventLoopFuture<CreateResponse>) throws -> EventLoopFuture<CreateResponse> {
+        return try repository(content.decode(), auth.require())
     }
 }

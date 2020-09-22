@@ -2,41 +2,22 @@ import Vapor
 import KognitaCore
 
 public protocol UpdateModelAPIController {
-    associatedtype UpdateData: Codable
-    associatedtype UpdateResponse: Content
-    associatedtype Model: ModelParameterRepresentable
-    associatedtype Repository: UpdateModelRepository
 
-    static func update(on req: Request) throws -> EventLoopFuture<UpdateResponse>
-
-    func register(update route: Router)
+    func register<Model: ModelParameterRepresentable, R: Content>(update: @escaping (Request) throws -> EventLoopFuture<R>, router: RoutesBuilder, parameter: Model.Type)
 }
 
 extension UpdateModelAPIController {
-    public func register(update router: Router) {
-        router.put(Model.parameter, use: Self.update)
+    public func register<Model: ModelParameterRepresentable, R: Content>(update: @escaping (Request) throws -> EventLoopFuture<R>, router: RoutesBuilder, parameter: Model.Type) {
+        router.put(Model.parameter, use: update)
     }
 }
 
-extension UpdateModelAPIController where
-    Repository.UpdateData       == UpdateData,
-    Repository.UpdateResponse   == UpdateResponse,
-    Repository.Model            == Model,
-    Model.ParameterModel        == Model {
-    public static func update(on req: Request) throws -> EventLoopFuture<UpdateResponse> {
+extension Request {
+    func update<D: Decodable, P: ModelParameterRepresentable, R: Content>(with repository: @escaping (P.ID, D, User) throws -> EventLoopFuture<R>, parameter: P.Type) throws -> EventLoopFuture<R> {
 
-        let user = try req.requireAuthenticated(User.self)
+        let user = try auth.require(User.self)
+        let id = try parameters.get(parameter)
 
-        return try req.content
-            .decode(UpdateData.self)
-            .flatMap { data in
-
-                req.parameters
-                    .model(Model.self, on: req)
-                    .flatMap { model in
-
-                        try Repository.update(model: model, to: data, by: user, on: req)
-                }
-        }
+        return try repository(id, try content.decode(D.self), user)
     }
 }
