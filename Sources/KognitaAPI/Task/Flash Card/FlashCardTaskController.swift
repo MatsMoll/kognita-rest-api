@@ -24,8 +24,9 @@ public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
         try req.delete(with: req.repositories.typingTaskRepository.deleteModelWith(id: by: ), parameter: TypingTask.self)
     }
 
-    public func createDraft(on req: Request) throws -> EventLoopFuture<Int> {
-        try req.repositories.typingTaskRepository.createDraft(from: req.content.decode(), by: req.auth.require())
+    public func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+        try req.repositories.typingTaskRepository.forceDelete(taskID: req.parameters.get(TypingTask.self), by: req.auth.require())
+            .transform(to: .ok)
     }
 }
 

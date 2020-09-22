@@ -5,7 +5,7 @@ public protocol FlashCardTaskAPIControlling: CreateModelAPIController, UpdateMod
     func create(on req: Request) throws -> EventLoopFuture<TypingTask.Create.Response>
     func update(on req: Request) throws -> EventLoopFuture<TypingTask.Update.Response>
 
-    func createDraft(on req: Request) throws -> EventLoopFuture<Task.ID>
+    func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
 }
 
 extension FlashCardTaskAPIControlling {
@@ -15,6 +15,6 @@ extension FlashCardTaskAPIControlling {
         register(create: create(on:), router: flashCard)
         register(update: update(on:), router: flashCard, parameter: TypingTask.self)
         register(delete: flashCard, parameter: TypingTask.self)
-        flashCard.post("draft", use: createDraft(on:))
+        flashCard.delete(TypingTask.parameter, "force", use: forceDelete(on:))
     }
 }

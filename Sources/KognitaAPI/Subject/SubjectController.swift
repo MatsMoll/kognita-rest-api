@@ -55,11 +55,12 @@ public struct SubjectAPIController: SubjectAPIControlling {
     }
 
     public func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
-        _ = try req.auth.require(User.self)
+        let user = try req.auth.require(User.self)
 
         return try req.repositories.subjectRepository.compendium(
             for: req.parameters.get(Subject.self),
-            filter: req.query.decode()
+            filter: req.query.decode(),
+            for: user.id
         )
     }
 

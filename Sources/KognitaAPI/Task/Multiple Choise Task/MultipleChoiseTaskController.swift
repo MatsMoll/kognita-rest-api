@@ -25,6 +25,11 @@ public struct MultipleChoiceTaskAPIController: MultipleChoiseTaskAPIControlling 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
         try req.delete(with: req.repositories.multipleChoiceTaskRepository.deleteModelWith(id: by: ), parameter: MultipleChoiceTask.self)
     }
+
+    public func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+        try req.repositories.multipleChoiceTaskRepository.forceDelete(taskID: req.parameters.get(MultipleChoiceTask.self), by: req.auth.require())
+            .transform(to: .ok)
+    }
 }
 
 extension MultipleChoiceTask {
