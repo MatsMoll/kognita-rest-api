@@ -195,9 +195,10 @@ public class KognitaAPI {
         let databaseConfig: PostgresConfiguration!
 
         if let url = Environment.get("DATABASE_URL") {  // Heroku
-            guard let psqlConfig = PostgresConfiguration(url: url) else {
+            guard var psqlConfig = PostgresConfiguration(url: url) else {
                 fatalError("Failed to create PostgreSQL Config")
             }
+            psqlConfig.tlsConfiguration = .forClient(certificateVerification: .none)
             databaseConfig = psqlConfig
         } else {                                        // Localy testing
             let hostname = Environment.get("DATABASE_HOSTNAME") ?? "localhost"
