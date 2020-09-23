@@ -43,7 +43,6 @@ extension SubjectAPIControlling {
         register(retriveAll: retriveAll(_:), router: subjects)
 
         subjectInstance.get("stats", use: self.testStats(on: ))
-        subjectInstance.get("export", use: self.export)
         subjectInstance.get("compendium", use: self.compendium(on: ))
         subjectInstance.post("active", use: self.makeSubject(active: ))
         subjectInstance.post("inactive", use: self.makeSubject(inactive: ))
@@ -51,6 +50,7 @@ extension SubjectAPIControlling {
         subjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
+        subjectInstance.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
         routes.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
         subjectInstance.post("import-peer", use: self.importContentPeerWise)
     }
