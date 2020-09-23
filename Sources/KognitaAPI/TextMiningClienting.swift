@@ -49,6 +49,7 @@ struct PythonTextClient: TextMiningClienting {
     func similarity(between first: String, and second: String) throws -> EventLoopFuture<ClientResponse> {
 
         var url = URI(path: "compare")
+        url.scheme = "https"
         url.host = baseUrl
         logger.log(level: .info, "Sending request \(url)", file: #file, function: #function, line: #line)
         return client.post(
