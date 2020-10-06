@@ -36,7 +36,7 @@ extension LectureNote.RecapSession {
     struct APIController: LectureNoteRecapSessionAPIController {
 
         func create(on req: Request) throws -> EventLoopFuture<LectureNote.RecapSession.ID> {
-            try req.create(in: req.repositories.lectureNoteRecapRepository.create(recap: for: ))
+            try req.repositories.lectureNoteRecapRepository.create(recap: req.content.decode(), for: req.auth.require())
         }
 
         func submit(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
