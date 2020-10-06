@@ -13,9 +13,9 @@ extension CreateModelAPIController {
 }
 
 extension Request {
-    func create<CreateData: Decodable, CreateResponse: Content>(in repository: @escaping (CreateData, User?) throws -> EventLoopFuture<CreateResponse>) throws -> EventLoopFuture<CreateResponse> {
-        return try repository(content.decode(), auth.require())
-    }
+//    func create<CreateData: Decodable, CreateResponse: Content>(in repository: @escaping (CreateData, User?) throws -> EventLoopFuture<CreateResponse>) throws -> EventLoopFuture<CreateResponse> {
+//        return try repository(content.decode(), auth.require())
+//    }
 
 //    func create<CreateData: Decodable, CreateResponse: Content>(in repository: @escaping (CreateData, User) throws -> EventLoopFuture<CreateResponse>) throws -> EventLoopFuture<CreateResponse> {
 //        return try repository(content.decode(), auth.require())

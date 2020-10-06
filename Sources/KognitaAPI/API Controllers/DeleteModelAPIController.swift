@@ -14,12 +14,12 @@ extension DeleteModelAPIController {
     }
 }
 
-extension Request {
-    func delete<Model: ModelParameterRepresentable>(with repository: @escaping (Model.ID, User?) throws -> EventLoopFuture<Void>, parameter: Model.Type) throws -> EventLoopFuture<HTTPStatus> {
-        return try repository(
-            parameters.get(Model.self),
-            auth.get()
-        )
-        .transform(to: .ok)
-    }
-}
+//extension Request {
+//    func delete<Model: ModelParameterRepresentable>(with repository: @escaping (Model.ID, User?) throws -> EventLoopFuture<Void>, parameter: Model.Type) throws -> EventLoopFuture<HTTPStatus> {
+//        return try repository(
+//            parameters.get(Model.self),
+//            auth.get()
+//        )
+//        .transform(to: .ok)
+//    }
+//}

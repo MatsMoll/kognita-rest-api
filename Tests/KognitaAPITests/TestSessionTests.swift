@@ -20,7 +20,7 @@ class TestableControllers: APIControllerCollection {
     var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling { controllers.multipleChoiceTaskController }
     var typingTaskController: FlashCardTaskAPIControlling { controllers.typingTaskController }
     var practiceSessionController: PracticeSessionAPIControlling { controllers.practiceSessionController }
-    var taskResultController: TaskResultAPIControlling { controllers.taskResultController }
+//    var taskResultController: TaskResultAPIControlling { controllers.taskResultController }
     var subjectTestController: SubjectTestAPIControlling { controllers.subjectTestController }
     var testSessionController: TestSessionAPIControlling { controllers.testSessionController }
     var taskDiscussionController: TaskDiscussionAPIControlling { controllers.taskDiscussionController }

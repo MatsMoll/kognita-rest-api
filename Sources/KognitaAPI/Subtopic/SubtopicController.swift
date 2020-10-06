@@ -11,19 +11,30 @@ import KognitaCore
 public struct SubtopicController: SubtopicAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<Subtopic> {
-        try req.create(in: req.repositories.subtopicRepository.create(from: by: ))
+        try req.repositories.subtopicRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<Subtopic.Update.Response> {
-        try req.update(with: req.repositories.subtopicRepository.updateModelWith(id: to: by: ), parameter: Subtopic.self)
+        try req.repositories.subtopicRepository.updateModelWith(
+            id: req.parameters.get(Subtopic.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.subtopicRepository.deleteModelWith(id: by: ), parameter: Subtopic.self)
+        try req.repositories.subtopicRepository.deleteModelWith(
+            id: req.parameters.get(Subtopic.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func retrive(on req: Request) throws -> EventLoopFuture<Subtopic> {
-        try req.retrive(with: req.repositories.subtopicRepository.find, parameter: Subtopic.self)
+        try req.repositories.subtopicRepository.find(
+            req.parameters.get(Subtopic.self),
+            or: Abort(.badRequest)
+        )
     }
 
     public func getAllIn(topic req: Request) throws -> EventLoopFuture<[Subtopic]> {

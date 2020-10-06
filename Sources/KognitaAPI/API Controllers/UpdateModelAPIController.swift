@@ -12,12 +12,12 @@ extension UpdateModelAPIController {
     }
 }
 
-extension Request {
-    func update<D: Decodable, P: ModelParameterRepresentable, R: Content>(with repository: @escaping (P.ID, D, User) throws -> EventLoopFuture<R>, parameter: P.Type) throws -> EventLoopFuture<R> {
-
-        let user = try auth.require(User.self)
-        let id = try parameters.get(parameter)
-
-        return try repository(id, try content.decode(D.self), user)
-    }
-}
+//extension Request {
+//    func update<D: Decodable, P: ModelParameterRepresentable, R: Content>(with repository: @escaping (P.ID, D, User) throws -> EventLoopFuture<R>, parameter: P.Type) throws -> EventLoopFuture<R> {
+//
+//        let user = try auth.require(User.self)
+//        let id = try parameters.get(parameter)
+//
+//        return try repository(id, try content.decode(D.self), user)
+//    }
+//}

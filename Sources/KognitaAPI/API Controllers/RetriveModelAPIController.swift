@@ -12,8 +12,8 @@ extension RetriveModelAPIController {
     }
 }
 
-extension Request {
-    public func retrive<Model: ModelParameterRepresentable, Response: Content>(with repository: @escaping (Model.ID, Error) throws -> EventLoopFuture<Response>, parameter: Model.Type) throws -> EventLoopFuture<Response> {
-        try repository(parameters.get(Model.self), Abort(.badRequest))
-    }
-}
+//extension Request {
+//    public func retrive<Model: ModelParameterRepresentable, Response: Content>(with repository: @escaping (Model.ID, Error) throws -> EventLoopFuture<Response>, parameter: Model.Type) throws -> EventLoopFuture<Response> {
+//        try repository(parameters.get(Model.self), Abort(.badRequest))
+//    }
+//}
