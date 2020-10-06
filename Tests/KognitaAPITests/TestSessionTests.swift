@@ -27,6 +27,8 @@ class TestableControllers: APIControllerCollection {
     var taskDiscussionResponseController: TaskDiscussionResponseAPIControlling { controllers.taskDiscussionResponseController }
     var taskSolutionController: TaskSolutionAPIControlling { controllers.taskSolutionController }
     var userController: UserAPIControlling { controllers.userController }
+    var lectureNoteTakingSessionController: LectureNoteTakingSessionAPIController { controllers.lectureNoteTakingSessionController }
+    var lectureNoteRecapSessionController: LectureNoteRecapSessionAPIController { controllers.lectureNoteRecapSessionController }
 
     static var shared: TestableControllers!
 
