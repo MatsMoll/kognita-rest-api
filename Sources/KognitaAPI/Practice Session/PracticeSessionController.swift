@@ -15,7 +15,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
     }
 
     public func create(on req: Request) throws -> EventLoopFuture<PracticeSession> {
-        try req.create(in: req.repositories.practiceSessionRepository.create(from: by: ))
+        try req.repositories.practiceSessionRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     /// Submits an answer to a session
@@ -53,7 +53,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
             .failableFlatMap { session in
-                try req.repositories.practiceSessionRepository
+                req.repositories.practiceSessionRepository
                     .end(session, for: user)
                     .transform(to: session.content())
         }
@@ -178,8 +178,9 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         return try req.repositories.practiceSessionRepository
             .find(req.parameters.get(PracticeSession.self))
-            .and(value: user)
-            .failableFlatMap(event: req.repositories.practiceSessionRepository.extend(session: for: ))
+            .failableFlatMap { sessionID in
+                try req.repositories.practiceSessionRepository.extend(session: sessionID, for: user)
+            }
             .transform(to: .ok)
     }
 

@@ -4,15 +4,26 @@ import Vapor
 public struct TaskSolutionAPIController: TaskSolutionAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<TaskSolution> {
-        try req.create(in: req.repositories.taskSolutionRepository.create(from: by: ))
+        try req.repositories.taskSolutionRepository.create(
+            from: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<TaskSolution> {
-        try req.update(with: req.repositories.taskSolutionRepository.updateModelWith(id: to: by: ), parameter: TaskSolution.self)
+        try req.repositories.taskSolutionRepository.updateModelWith(
+            id: req.parameters.get(TaskSolution.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.taskSolutionRepository.deleteModelWith(id: by: ), parameter: TaskSolution.self)
+        try req.repositories.taskSolutionRepository.deleteModelWith(
+            id: req.parameters.get(TaskSolution.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func upvote(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {

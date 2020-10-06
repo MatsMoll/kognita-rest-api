@@ -25,19 +25,30 @@ public struct SubjectAPIController: SubjectAPIControlling {
     }
 
     public func create(on req: Request) throws -> EventLoopFuture<Subject> {
-        try req.create(in: req.repositories.subjectRepository.create(from: by: ))
+        try req.repositories.subjectRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response> {
-        try req.update(with: req.repositories.subjectRepository.updateModelWith(id: to: by: ), parameter: Subject.self)
+        try req.repositories.subjectRepository.updateModelWith(
+            id: req.parameters.get(Subject.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.subjectRepository.deleteModelWith(id: by: ), parameter: Subject.self)
+        try req.repositories.subjectRepository.deleteModelWith(
+            id: req.parameters.get(Subject.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func retrive(on req: Request) throws -> EventLoopFuture<Subject> {
-        try req.retrive(with: req.repositories.subjectRepository.find, parameter: Subject.self)
+        try req.repositories.subjectRepository.find(
+            req.parameters.get(Subject.self),
+            or: Abort(.badRequest)
+        )
     }
 
     public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Subject]> {
@@ -51,7 +62,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
         guard user.isAdmin else { throw Abort(.notFound) }
 
         return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
-            .failableFlatMap(event: req.repositories.subjectTestRepository.stats)
+            .failableFlatMap { try req.repositories.subjectTestRepository.stats(for: $0) }
     }
 
     public func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium> {
@@ -145,7 +156,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
         guard user.isAdmin else { throw Abort(.notFound) }
 
         return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
-            .failableFlatMap(event: req.repositories.topicRepository.exportTopics(in:))
+            .failableFlatMap { try req.repositories.topicRepository.exportTopics(in: $0) }
     }
 
     public func exportAll(on req: Request) throws -> EventLoopFuture<[SubjectExportContent]> {

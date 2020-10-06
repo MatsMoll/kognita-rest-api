@@ -15,15 +15,23 @@ extension MultipleChoiceTask: ModelParameterRepresentable {
 public struct MultipleChoiceTaskAPIController: MultipleChoiseTaskAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<MultipleChoiceTask> {
-        try req.create(in: req.repositories.multipleChoiceTaskRepository.create(from: by: ))
+        try req.repositories.multipleChoiceTaskRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<MultipleChoiceTask> {
-        try req.update(with: req.repositories.multipleChoiceTaskRepository.updateModelWith(id: to: by: ), parameter: MultipleChoiceTask.self)
+        try req.repositories.multipleChoiceTaskRepository.updateModelWith(
+            id: req.parameters.get(MultipleChoiceTask.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.multipleChoiceTaskRepository.deleteModelWith(id: by: ), parameter: MultipleChoiceTask.self)
+        try req.repositories.multipleChoiceTaskRepository.deleteModelWith(
+            id: req.parameters.get(MultipleChoiceTask.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {

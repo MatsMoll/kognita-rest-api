@@ -20,7 +20,7 @@ public protocol APIControllerCollection: RouteCollection {
     var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling { get }
     var typingTaskController: FlashCardTaskAPIControlling { get }
     var practiceSessionController: PracticeSessionAPIControlling { get }
-    var taskResultController: TaskResultAPIControlling { get }
+//    var taskResultController: TaskResultAPIControlling { get }
     var subjectTestController: SubjectTestAPIControlling { get }
     var testSessionController: TestSessionAPIControlling { get }
     var taskDiscussionController: TaskDiscussionAPIControlling { get }
@@ -28,6 +28,7 @@ public protocol APIControllerCollection: RouteCollection {
     var taskSolutionController: TaskSolutionAPIControlling { get }
     var userController: UserAPIControlling { get }
     var lectureNoteController: LectureNoteAPIController { get }
+    var lectureNoteTakingSessionController: LectureNoteTakingSessionAPIController { get }
 }
 
 public struct APIControllers: APIControllerCollection {
@@ -38,7 +39,7 @@ public struct APIControllers: APIControllerCollection {
     public var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling
     public var typingTaskController: FlashCardTaskAPIControlling
     public var practiceSessionController: PracticeSessionAPIControlling
-    public var taskResultController: TaskResultAPIControlling
+//    public var taskResultController: TaskResultAPIControlling
     public var subjectTestController: SubjectTestAPIControlling
     public var testSessionController: TestSessionAPIControlling
     public var taskDiscussionController: TaskDiscussionAPIControlling
@@ -46,6 +47,8 @@ public struct APIControllers: APIControllerCollection {
     public var taskSolutionController: TaskSolutionAPIControlling
     public var userController: UserAPIControlling
     public var lectureNoteController: LectureNoteAPIController
+    public var lectureNoteTakingSessionController: LectureNoteTakingSessionAPIController
+    public var lectureNoteRecapSessionController: LectureNoteRecapSessionAPIController
 
     public func boot(routes: RoutesBuilder) throws {
 
@@ -67,8 +70,10 @@ public struct APIControllers: APIControllerCollection {
         try auth.register(collection: taskDiscussionController)
         try auth.register(collection: taskDiscussionResponseController)
         try auth.register(collection: taskSolutionController)
-        try auth.register(collection: taskResultController)
+//        try auth.register(collection: taskResultController)
         try auth.register(collection: lectureNoteController)
+        try auth.register(collection: lectureNoteTakingSessionController)
+        try auth.register(collection: lectureNoteRecapSessionController)
     }
 }
 
@@ -81,14 +86,16 @@ extension APIControllers {
             multipleChoiceTaskController: MultipleChoiceTask.DefaultAPIController(),
             typingTaskController: TypingTask.DefaultAPIController(),
             practiceSessionController: PracticeSession.DefaultAPIController(),
-            taskResultController: TaskResult.DefaultAPIController(),
+//            taskResultController: TaskResult.DefaultAPIController(),
             subjectTestController: SubjectTest.DefaultAPIController(),
             testSessionController: TestSession.DefaultAPIController(),
             taskDiscussionController: TaskDiscussion.DefaultAPIController(),
             taskDiscussionResponseController: TaskDiscussionResponse.DefaultAPIController(),
             taskSolutionController: TaskSolution.DefaultAPIController(),
             userController: User.DefaultAPIController(),
-            lectureNoteController: LectureNoteDatabaseAPIController()
+            lectureNoteController: LectureNoteDatabaseAPIController(),
+            lectureNoteTakingSessionController: LectureNoteTaskingSessionDatabaseAPIController(),
+            lectureNoteRecapSessionController: LectureNote.RecapSession.APIController()
         )
     }
 }
