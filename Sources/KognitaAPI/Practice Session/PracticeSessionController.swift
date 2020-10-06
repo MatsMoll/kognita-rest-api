@@ -53,7 +53,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
             .failableFlatMap { session in
-                try req.repositories.practiceSessionRepository
+                req.repositories.practiceSessionRepository
                     .end(session, for: user)
                     .transform(to: session.content())
         }

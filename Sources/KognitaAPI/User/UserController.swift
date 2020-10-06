@@ -46,7 +46,12 @@ public struct UserAPIController: UserAPIControlling {
     /// Logs a user in, returning a token for accessing protected endpoints.
     public func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
         // get user auth'd by basic auth middleware
-        try req.repositories.userRepository.login(with: req.auth.require())
+        let user: User = try req.auth.require()
+        return try req.repositories.userRepository.login(with: user)
+            .flatMap { token in
+                req.repositories.userRepository.logLogin(for: user, with: req.remoteAddress?.ipAddress)
+                    .transform(to: token)
+        }
     }
 
     /// Creates a new user.
