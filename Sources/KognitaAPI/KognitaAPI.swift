@@ -20,7 +20,7 @@ public protocol APIControllerCollection: RouteCollection {
     var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling { get }
     var typingTaskController: FlashCardTaskAPIControlling { get }
     var practiceSessionController: PracticeSessionAPIControlling { get }
-//    var taskResultController: TaskResultAPIControlling { get }
+    var taskResultController: TaskResultAPIControlling { get }
     var subjectTestController: SubjectTestAPIControlling { get }
     var testSessionController: TestSessionAPIControlling { get }
     var taskDiscussionController: TaskDiscussionAPIControlling { get }
@@ -39,7 +39,7 @@ public struct APIControllers: APIControllerCollection {
     public var multipleChoiceTaskController: MultipleChoiseTaskAPIControlling
     public var typingTaskController: FlashCardTaskAPIControlling
     public var practiceSessionController: PracticeSessionAPIControlling
-//    public var taskResultController: TaskResultAPIControlling
+    public var taskResultController: TaskResultAPIControlling
     public var subjectTestController: SubjectTestAPIControlling
     public var testSessionController: TestSessionAPIControlling
     public var taskDiscussionController: TaskDiscussionAPIControlling
@@ -70,7 +70,7 @@ public struct APIControllers: APIControllerCollection {
         try auth.register(collection: taskDiscussionController)
         try auth.register(collection: taskDiscussionResponseController)
         try auth.register(collection: taskSolutionController)
-//        try auth.register(collection: taskResultController)
+        try auth.register(collection: taskResultController)
         try auth.register(collection: lectureNoteController)
         try auth.register(collection: lectureNoteTakingSessionController)
         try auth.register(collection: lectureNoteRecapSessionController)
@@ -86,7 +86,7 @@ extension APIControllers {
             multipleChoiceTaskController: MultipleChoiceTask.DefaultAPIController(),
             typingTaskController: TypingTask.DefaultAPIController(),
             practiceSessionController: PracticeSession.DefaultAPIController(),
-//            taskResultController: TaskResult.DefaultAPIController(),
+            taskResultController: TaskResultAPIController(),
             subjectTestController: SubjectTest.DefaultAPIController(),
             testSessionController: TestSession.DefaultAPIController(),
             taskDiscussionController: TaskDiscussion.DefaultAPIController(),

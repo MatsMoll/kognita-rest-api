@@ -1,4 +1,15 @@
 import Vapor
+import KognitaModels
+
+public protocol TaskResultAPIControlling: RouteCollection {
+    func recommendedRecap(on req: Request) throws -> EventLoopFuture<[RecommendedRecap]>
+}
+
+extension TaskResultAPIControlling {
+    public func boot(routes: RoutesBuilder) throws {
+        routes.get("recommended-recap", use: recommendedRecap)
+    }
+}
 
 //public protocol TaskResultAPIControlling: RouteCollection {
 //    func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]>
