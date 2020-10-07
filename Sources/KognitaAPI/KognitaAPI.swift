@@ -94,7 +94,7 @@ extension APIControllers {
             taskSolutionController: TaskSolution.DefaultAPIController(),
             userController: User.DefaultAPIController(),
             lectureNoteController: LectureNoteDatabaseAPIController(),
-            lectureNoteTakingSessionController: LectureNoteTaskingSessionDatabaseAPIController(),
+            lectureNoteTakingSessionController: LectureNote.TakingSession.APIController(),
             lectureNoteRecapSessionController: LectureNote.RecapSession.APIController()
         )
     }

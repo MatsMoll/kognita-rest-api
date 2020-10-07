@@ -20,15 +20,10 @@ extension LectureNoteTakingSessionAPIController {
     }
 }
 
-struct LectureNoteTaskingSessionDatabaseAPIController: LectureNoteTakingSessionAPIController {
-    func create(on req: Request) throws -> EventLoopFuture<LectureNote.TakingSession> {
-        throw Abort(.badRequest)
+extension LectureNote.TakingSession {
+    struct APIController: LectureNoteTakingSessionAPIController {
+        func create(on req: Request) throws -> EventLoopFuture<LectureNote.TakingSession> {
+            try req.repositories.lectureNoteTakingRepository.create(for: req.auth.require())
+        }
     }
 }
-//extension LectureNote.TakingSession {
-//    struct APIController: LectureNoteTakingSessionAPIController {
-//        func create(on req: Request) throws -> EventLoopFuture<LectureNote.TakingSession> {
-//            try req.repositories.lectureNoteTakingRepository.create(for: req.auth.require())
-//        }
-//    }
-//}
