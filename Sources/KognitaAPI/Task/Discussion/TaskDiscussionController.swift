@@ -11,11 +11,15 @@ import KognitaCore
 public struct TaskDiscussionAPIController: TaskDiscussionAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<NoData> {
-        try req.create(in: req.repositories.taskDiscussionRepository.create(from: by: ))
+        try req.repositories.taskDiscussionRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<TaskDiscussion.Update.Response> {
-        try req.update(with: req.repositories.taskDiscussionRepository.updateModelWith(id: to: by: ), parameter: TaskDiscussion.self)
+        try req.repositories.taskDiscussionRepository.updateModelWith(
+            id: req.parameters.get(TaskDiscussion.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func get(discussions req: Request) throws -> EventLoopFuture<[TaskDiscussion]> {

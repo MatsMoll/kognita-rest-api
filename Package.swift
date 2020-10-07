@@ -6,7 +6,7 @@ import Foundation
 
 var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
-    .package(name: "vapor", url: "https://github.com/vapor/vapor.git", from: "4.14.0"),
+    .package(name: "vapor", url: "https://github.com/vapor/vapor.git", from: "4.29.0"),
 
     .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc")
 ]

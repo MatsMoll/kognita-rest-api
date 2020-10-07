@@ -1,7 +1,6 @@
 import Vapor
-import KognitaCore
 
-public struct TaskResultAPIController: TaskResultAPIControlling {
+//public struct TaskResultAPIController: TaskResultAPIControlling {
 
 //    static func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
 //
@@ -23,13 +22,13 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
 //        }
 //    }
 
-    public func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
-        let user = try req.auth.require(User.self)
-        guard user.isAdmin else {
-            throw Abort(.forbidden)
-        }
-        return req.repositories.taskResultRepository.getResults()
-    }
+//    public func get(resultsOverview req: Request) throws -> EventLoopFuture<[UserResultOverview]> {
+//        let user = try req.auth.require(User.self)
+//        guard user.isAdmin else {
+//            throw Abort(.forbidden)
+//        }
+//        return req.repositories.taskResultRepository.getResults()
+//    }
 
 //    static func export(on req: Request) throws -> EventLoopFuture<[TaskResult.Answer]> {
 //
@@ -42,10 +41,10 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
 //        return try TaskResultRepository
 //            .exportResults(on: req)
 //    }
-}
+//}
 
-extension TaskResult.Answer: Content {}
-
-extension TaskResult {
-    public typealias DefaultAPIController = TaskResultAPIController
-}
+//extension TaskResult.Answer: Content {}
+//
+//extension TaskResult {
+//    public typealias DefaultAPIController = TaskResultAPIController
+//}

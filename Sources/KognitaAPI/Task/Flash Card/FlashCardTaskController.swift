@@ -13,15 +13,23 @@ extension TypingTask: ModelParameterRepresentable, Content {}
 public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<TypingTask> {
-        try req.create(in: req.repositories.typingTaskRepository.create(from: by: ))
+        try req.repositories.typingTaskRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<TypingTask> {
-        try req.update(with: req.repositories.typingTaskRepository.updateModelWith(id: to: by: ), parameter: TypingTask.self)
+        try req.repositories.typingTaskRepository.updateModelWith(
+            id: req.parameters.get(TypingTask.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.typingTaskRepository.deleteModelWith(id: by: ), parameter: TypingTask.self)
+        try req.repositories.typingTaskRepository.deleteModelWith(
+            id: req.parameters.get(TypingTask.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {

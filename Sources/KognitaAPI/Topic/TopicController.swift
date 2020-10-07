@@ -11,19 +11,30 @@ import KognitaCore
 public struct TopicAPIController: TopicAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<Topic> {
-        try req.create(in: req.repositories.topicRepository.create(from:  by: ))
+        try req.repositories.topicRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<Topic> {
-        try req.update(with: req.repositories.topicRepository.updateModelWith(id: to: by: ), parameter: Topic.self)
+        try req.repositories.topicRepository.updateModelWith(
+            id: req.parameters.get(Topic.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.topicRepository.deleteModelWith(id: by: ), parameter: Topic.self)
+        try req.repositories.topicRepository.deleteModelWith(
+            id: req.parameters.get(Topic.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func retrive(_ req: Request) throws -> EventLoopFuture<Topic> {
-        try req.retrive(with: req.repositories.topicRepository.find(_: or:), parameter: Topic.self)
+        try req.repositories.topicRepository.find(
+            req.parameters.get(Topic.self),
+            or: Abort(.badRequest)
+        )
     }
 
     public func retriveAll(_ req: Request) throws -> EventLoopFuture<[Topic]> {

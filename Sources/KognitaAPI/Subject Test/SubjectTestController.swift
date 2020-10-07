@@ -4,15 +4,23 @@ import KognitaCore
 public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<SubjectTest> {
-        try req.create(in: req.repositories.subjectTestRepository.create(from: by: ))
+        try req.repositories.subjectTestRepository.create(from: req.content.decode(), by: req.auth.require())
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<SubjectTest.Update.Response> {
-        try req.update(with: req.repositories.subjectTestRepository.updateModelWith(id: to: by: ), parameter: SubjectTest.self)
+        try req.repositories.subjectTestRepository.updateModelWith(
+            id: req.parameters.get(SubjectTest.self),
+            to: req.content.decode(),
+            by: req.auth.require()
+        )
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.delete(with: req.repositories.subjectTestRepository.deleteModelWith(id: by: ), parameter: SubjectTest.self)
+        try req.repositories.subjectTestRepository.deleteModelWith(
+            id: req.parameters.get(SubjectTest.self),
+            by: req.auth.require()
+        )
+        .transform(to: .ok)
     }
 
     public func open(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
