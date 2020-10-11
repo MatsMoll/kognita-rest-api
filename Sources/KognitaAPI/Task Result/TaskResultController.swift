@@ -1,5 +1,35 @@
 import Vapor
+import KognitaModels
 
+extension RecommendedRecap: Content {}
+
+public struct TaskResultAPIController: TaskResultAPIControlling {
+
+    struct RecommendedTopicQuery: Codable {
+        let lowerBoundDays: Int?
+        let upperBoundDays: Int?
+    }
+
+    public func recommendedRecap(on req: Request) throws -> EventLoopFuture<[RecommendedRecap]> {
+
+        let user = try req.auth.require(User.self)
+        let query = try req.query.decode(RecommendedTopicQuery.self)
+        var lowerBoundDays = -3
+        var upperBoundDays = 10
+        if let manualLowerBound = query.lowerBoundDays {
+            lowerBoundDays = manualLowerBound.clamped(to: -50...40)
+        }
+        if let manualUpperBound = query.upperBoundDays {
+            upperBoundDays = manualUpperBound.clamped(to: -10...40)
+        }
+        guard lowerBoundDays < upperBoundDays else {
+            throw Abort(.badRequest, reason: "lowerBoundDays needs to be lower then upperBoundDays")
+        }
+
+        return req.repositories.taskResultRepository
+            .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: lowerBoundDays)
+    }
+}
 //public struct TaskResultAPIController: TaskResultAPIControlling {
 
 //    static func getRevisitSchedual(_ req: Request) throws -> EventLoopFuture<[TaskResult]> {
