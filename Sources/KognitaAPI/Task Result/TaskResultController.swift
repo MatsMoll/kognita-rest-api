@@ -8,6 +8,7 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
     struct RecommendedTopicQuery: Codable {
         let lowerBoundDays: Int?
         let upperBoundDays: Int?
+        let limit: Int?
     }
 
     public func recommendedRecap(on req: Request) throws -> EventLoopFuture<[RecommendedRecap]> {
@@ -16,18 +17,22 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
         let query = try req.query.decode(RecommendedTopicQuery.self)
         var lowerBoundDays = -3
         var upperBoundDays = 10
+        var limit = 3
         if let manualLowerBound = query.lowerBoundDays {
             lowerBoundDays = manualLowerBound.clamped(to: -50...40)
         }
         if let manualUpperBound = query.upperBoundDays {
             upperBoundDays = manualUpperBound.clamped(to: -10...40)
         }
+        if let manualLimit = query.limit {
+            limit = manualLimit
+        }
         guard lowerBoundDays < upperBoundDays else {
             throw Abort(.badRequest, reason: "lowerBoundDays needs to be lower then upperBoundDays")
         }
 
         return req.repositories.taskResultRepository
-            .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: lowerBoundDays)
+            .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: lowerBoundDays, limit: limit)
     }
 }
 //public struct TaskResultAPIController: TaskResultAPIControlling {
