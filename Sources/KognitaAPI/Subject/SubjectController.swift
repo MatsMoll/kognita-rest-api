@@ -192,7 +192,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
             .flatMap { subjects in
 
                 req.repositories.taskResultRepository
-                    .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: -3)
+                    .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: -5, limit: 1)
                     .failableFlatMap { recommendedRecaps in
 
                         try req.repositories.subjectTestRepository
