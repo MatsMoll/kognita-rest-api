@@ -189,20 +189,26 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         return try req.repositories.subjectRepository
             .allSubjects(for: user)
-            .failableFlatMap { subjects in
+            .flatMap { subjects in
 
-                try req.repositories.subjectTestRepository
-                    .currentlyOpenTest(for: user)
-                    .map { test in
+                req.repositories.taskResultRepository
+                    .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: -3)
+                    .failableFlatMap { recommendedRecaps in
 
-                        // FIXME: - Set ongoing sessions parameters
-                        Dashboard(
-                            subjects: subjects,
-                            ongoingPracticeSession: nil,
-                            ongoingTestSession: nil,
-                            openedTest: test
-                        )
-                }
+                        try req.repositories.subjectTestRepository
+                            .currentlyOpenTest(for: user)
+                            .map { test in
+
+                                // FIXME: - Set ongoing sessions parameters
+                                Dashboard(
+                                    subjects: subjects,
+                                    ongoingPracticeSession: nil,
+                                    ongoingTestSession: nil,
+                                    openedTest: test,
+                                    recommendedRecap: recommendedRecaps.first
+                                )
+                        }
+                    }
         }
     }
 
