@@ -38,7 +38,9 @@ extension Request {
 struct PythonTextClient: TextMiningClienting {
 
     let client: Client
+    let scheme: String
     let baseUrl: String
+    let port: Int
     let logger: Logger
 
     struct SimilarityData: Content {
@@ -49,8 +51,9 @@ struct PythonTextClient: TextMiningClienting {
     func similarity(between first: String, and second: String) throws -> EventLoopFuture<ClientResponse> {
 
         var url = URI(path: "compare")
-        url.scheme = "https"
+        url.scheme = scheme
         url.host = baseUrl
+        url.port = port
         logger.log(level: .info, "Sending request \(url)", file: #file, function: #function, line: #line)
         return client.post(
             url,

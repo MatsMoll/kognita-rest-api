@@ -96,7 +96,8 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+        return try req.repositories.subjectRepository
+            .find(req.parameters.get(Subject.self), or: Abort(.badRequest))
             .failableFlatMap { subject in
 
                 try req.repositories.subjectTestRepository
@@ -133,7 +134,8 @@ public struct SubjectAPIController: SubjectAPIControlling {
                                                                 return Topic.UserOverview(
                                                                     id: topic.topic.id,
                                                                     name: topic.topic.name,
-                                                                    numberOfTasks: topic.taskCount,
+                                                                    typingTaskCount: topic.typingTaskCount,
+                                                                    multipleChoiceTaskCount: topic.multipleChoiceTaskCount,
                                                                     userLevel: level
                                                                 )
                                                             },
