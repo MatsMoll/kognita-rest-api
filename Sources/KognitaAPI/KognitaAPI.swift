@@ -158,14 +158,22 @@ public class KognitaAPI {
     static func setupTextClient(app: Application) {
 
         // Localhost testing config
-        var baseUrl = "http://127.0.0.1:5000"
+        var baseUrl = "127.0.0.1"
+        var port = 443
+        var scheme = "https"
 
         if let baseURL = Environment.get("TEXT_CLIENT_BASE_URL") {
             baseUrl = baseURL
         }
+        if let portString = Environment.get("TEXT_CLIENT_PORT"), let portNumber = Int(portString) {
+            port = portNumber
+        }
+        if let schemeOverwrite = Environment.get("TEXT_CLIENT_SCHEME") {
+            scheme = schemeOverwrite
+        }
 
         app.textMiningClienting.use { request in
-            PythonTextClient(client: request.client, baseUrl: baseUrl, logger: request.logger)
+            PythonTextClient(client: request.client, scheme: scheme, baseUrl: baseUrl, port: port, logger: request.logger)
         }
     }
 

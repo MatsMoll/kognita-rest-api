@@ -43,6 +43,10 @@ public struct UserAPIController: UserAPIControlling {
         case userNotFound
     }
 
+    public func user(on req: Request) throws -> EventLoopFuture<User> {
+        try req.eventLoop.future(req.auth.require(User.self))
+    }
+
     /// Logs a user in, returning a token for accessing protected endpoints.
     public func login(_ req: Request) throws -> EventLoopFuture<User.Login.Token> {
         // get user auth'd by basic auth middleware

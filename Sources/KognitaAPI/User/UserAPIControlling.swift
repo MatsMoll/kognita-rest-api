@@ -11,6 +11,7 @@ public protocol UserAPIControlling: CreateModelAPIController, RouteCollection {
     func startResetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func resetPassword(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func verify(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func user(on req: Request) throws -> EventLoopFuture<User>
 }
 
 extension UserAPIControlling {
@@ -21,6 +22,7 @@ extension UserAPIControlling {
         // public routes
         register(create: create(on:), router: users)
 
+        users.get(use: user(on: ))
         users.post(User.parameter, "verify", use: self.verify(on: ))
         users.post("send-reset-mail", use: self.startResetPassword)
         users.post("reset-password", use: self.resetPassword)
