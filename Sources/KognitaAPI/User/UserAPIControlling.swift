@@ -22,7 +22,7 @@ extension UserAPIControlling {
         // public routes
         register(create: create(on:), router: users)
 
-        users.get(use: user(on: ))
+        users.grouped(User.bearerAuthMiddleware()).get(use: user(on: ))
         users.post(User.parameter, "verify", use: self.verify(on: ))
         users.post("send-reset-mail", use: self.startResetPassword)
         users.post("reset-password", use: self.resetPassword)
