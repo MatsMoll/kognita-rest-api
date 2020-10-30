@@ -8,7 +8,9 @@ var dependencies: [Package.Dependency] = [
     // 💧 A server-side Swift web framework.
     .package(name: "vapor", url: "https://github.com/vapor/vapor.git", from: "4.29.0"),
 
-    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc")
+    .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc"),
+
+    .package(name: "SwiftMarkdown", url: "https://github.com/vapor-community/markdown.git", .upToNextMajor(from: "0.4.0"))
 ]
 
 switch ProcessInfo.processInfo.environment["BUILD_TYPE"] {
@@ -58,6 +60,7 @@ let package = Package(
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Mailgun", package: "VaporMailgunService"),
                 .product(name: "QTIKit", package: "QTIKit"),
+                .product(name: "SwiftMarkdown", package: "SwiftMarkdown"),
         ]),
         .testTarget(
             name: "KognitaAPITests",
