@@ -190,7 +190,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
         let user = try req.auth.require(User.self)
 
         return try req.repositories.subjectRepository
-            .allSubjects(for: user)
+            .allSubjects(for: user, searchQuery: .init())
             .flatMap { subjects in
 
                 req.repositories.taskResultRepository
