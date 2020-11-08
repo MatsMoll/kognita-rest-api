@@ -23,7 +23,9 @@ extension LectureNoteTakingSessionAPIController {
 extension LectureNote.TakingSession {
     struct APIController: LectureNoteTakingSessionAPIController {
         func create(on req: Request) throws -> EventLoopFuture<LectureNote.TakingSession> {
-            try req.repositories.lectureNoteTakingRepository.create(for: req.auth.require())
+            req.repositories { repositories in
+                try repositories.lectureNoteTakingRepository.create(for: req.auth.require())
+            }
         }
     }
 }

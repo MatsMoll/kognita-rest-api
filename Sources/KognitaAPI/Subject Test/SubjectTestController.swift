@@ -4,51 +4,63 @@ import KognitaCore
 public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<SubjectTest> {
-        try req.repositories.subjectTestRepository.create(from: req.content.decode(), by: req.auth.require())
+        req.repositories { repositories in
+            try repositories.subjectTestRepository.create(from: req.content.decode(), by: req.auth.require())
+        }
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<SubjectTest.Update.Response> {
-        try req.repositories.subjectTestRepository.updateModelWith(
-            id: req.parameters.get(SubjectTest.self),
-            to: req.content.decode(),
-            by: req.auth.require()
-        )
+        req.repositories { repositories in
+            try repositories.subjectTestRepository.updateModelWith(
+                id: req.parameters.get(SubjectTest.self),
+                to: req.content.decode(),
+                by: req.auth.require()
+            )
+        }
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.repositories.subjectTestRepository.deleteModelWith(
-            id: req.parameters.get(SubjectTest.self),
-            by: req.auth.require()
-        )
-        .transform(to: .ok)
+        req.repositories { repositories in
+            try repositories.subjectTestRepository.deleteModelWith(
+                id: req.parameters.get(SubjectTest.self),
+                by: req.auth.require()
+            )
+            .transform(to: .ok)
+        }
     }
 
     public func open(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
-                try req.repositories.subjectTestRepository.open(test: test, by: user)
+        return req.repositories { repositories in
+            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
+                    try repositories.subjectTestRepository.open(test: test, by: user)
+            }
+            .transform(to: .ok)
         }
-        .transform(to: .ok)
     }
 
     public func enter(on req: Request) throws -> EventLoopFuture<TestSession> {
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
-                try req.repositories.subjectTestRepository.enter(test: test, with: req.content.decode(), by: user)
+        return req.repositories { repositories in
+            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
+                    try repositories.subjectTestRepository.enter(test: test, with: req.content.decode(), by: user)
+            }
         }
     }
 
     public func userCompletionStatus(on req: Request) throws -> EventLoopFuture<SubjectTest.CompletionStatus> {
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
-                try req.repositories.subjectTestRepository.userCompletionStatus(in: test, user: user)
+        return req.repositories { repositories in
+            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
+                    try repositories.subjectTestRepository.userCompletionStatus(in: test, user: user)
+            }
         }
     }
 
@@ -60,10 +72,12 @@ public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
+        return req.repositories { repositories in
+            return try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
 
-                try req.repositories.subjectTestRepository.results(for: test, user: user)
+                    try repositories.subjectTestRepository.results(for: test, user: user)
+            }
         }
     }
 
@@ -71,24 +85,28 @@ public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectRepository
-            .find(req.parameters.get(Subject.self), or: Abort(.badRequest))
-            .failableFlatMap { subject in
+        return req.repositories { repositories in
+            try repositories.subjectRepository
+                .find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+                .failableFlatMap { subject in
 
-                try req.repositories.subjectTestRepository.all(in: subject, for: user)
-                    .map { tests in
+                    try repositories.subjectTestRepository.all(in: subject, for: user)
+                        .map { tests in
 
-                        SubjectTest.ListReponse(
-                            subject: subject,
-                            tests: tests
-                        )
-                }
+                            SubjectTest.ListReponse(
+                                subject: subject,
+                                tests: tests
+                            )
+                    }
+            }
         }
     }
 
     public func test(withID req: Request) -> EventLoopFuture<SubjectTest> {
         do {
-            return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+            return req.repositories { repositories in
+                try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+            }
         } catch {
             return req.eventLoop.future(error: error)
         }
@@ -97,21 +115,25 @@ public struct SubjectTestAPIController: SubjectTestAPIControlling {
     public func end(req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
-                try req.repositories.subjectTestRepository.end(test: test, by: user)
+        return req.repositories { repositories in
+            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
+                    try repositories.subjectTestRepository.end(test: test, by: user)
+            }
+            .transform(to: .ok)
         }
-        .transform(to: .ok)
     }
 
     public func scoreHistogram(req: Request) throws -> EventLoopFuture<SubjectTest.ScoreHistogram> {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
+        return req.repositories { repositories in
+            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
 
-                try req.repositories.subjectTestRepository.scoreHistogram(for: test, user: user)
+                    try repositories.subjectTestRepository.scoreHistogram(for: test, user: user)
+            }
         }
     }
 
@@ -119,17 +141,19 @@ public struct SubjectTestAPIController: SubjectTestAPIControlling {
 
         _ = try req.auth.require(User.self)
 
-        return try req.repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
-            .failableFlatMap { test in
+        return req.repositories { repositories in
+            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+                .failableFlatMap { test in
 
-                return try req.repositories.subjectTestRepository.taskIDsFor(testID: test.id)
-                    .map { taskIDs in
+                    return try repositories.subjectTestRepository.taskIDsFor(testID: test.id)
+                        .map { taskIDs in
 
-                        SubjectTest.ModifyResponse(
-                            test: test,
-                            taskIDs: taskIDs
-                        )
-                }
+                            SubjectTest.ModifyResponse(
+                                test: test,
+                                taskIDs: taskIDs
+                            )
+                    }
+            }
         }
     }
 }

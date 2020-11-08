@@ -25,15 +25,19 @@ extension LectureNoteAPIController {
 struct LectureNoteDatabaseAPIController: LectureNoteAPIController {
 
     func update(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.repositories.lectureNoteRepository.update(
-            id: req.parameters.get(LectureNote.self),
-            with: req.content.decode(),
-            by: req.auth.require()
-        )
-        .transform(to: .ok)
+        req.repositories { repositories in
+            try repositories.lectureNoteRepository.update(
+                id: req.parameters.get(LectureNote.self),
+                with: req.content.decode(),
+                by: req.auth.require()
+            )
+            .transform(to: .ok)
+        }
     }
 
     func create(on req: Request) throws -> EventLoopFuture<LectureNote.ID> {
-        try req.repositories.lectureNoteRepository.create(from: req.content.decode(), by: req.auth.require())
+        req.repositories { repositories in
+            try repositories.lectureNoteRepository.create(from: req.content.decode(), by: req.auth.require())
+        }
     }
 }

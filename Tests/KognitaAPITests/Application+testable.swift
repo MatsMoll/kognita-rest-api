@@ -33,6 +33,17 @@ import Mailgun
 @testable import KognitaAPI
 import XCTVapor
 
+struct RepositoryFactoryMock: AsyncRepositoriesFactory {
+    
+    func repositories<T>(req: Request, tran: @escaping (RepositoriesRepresentable) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        tran(TestableRepositories.testable(database: req.db, password: req.password))
+    }
+    
+    func repositories<T>(app: Application, tran: @escaping (RepositoriesRepresentable) -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+        tran(TestableRepositories.testable(database: app.db, password: app.password))
+    }
+}
+
 extension Application {
     
     static func testable(envArgs: [String]? = nil) throws -> Application {
@@ -44,7 +55,7 @@ extension Application {
         try KognitaAPI.setupApi(for: app, routes: app.grouped("api"))
         app.verifyEmailSender.use(EmailSenderMock.init(request: ))
         app.resetPasswordSender.use(ResetPasswordMock.init(request: ))
-        app.repositoriesFactory.use { request in TestableRepositories.testable(database: request.db, password: request.password) }
+        app.repositoriesFactory.use(RepositoryFactoryMock())
         DatabaseMigrations.setupTables(app.migrations)
 
         return app

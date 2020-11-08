@@ -6,6 +6,10 @@ extension Topic {
 }
 
 struct TopicRepositoryMock: TopicRepository {
+    
+    func importContent(from content: Topic.Import, in subjectID: Subject.ID) -> EventLoopFuture<Void> {
+        eventLoop.future()
+    }
 
     func getTopicsWithTaskCount(withSubjectID subjectID: Subject.ID) throws -> EventLoopFuture<[Topic.WithTaskCount]> {
         eventLoop.future([])
@@ -41,11 +45,11 @@ struct TopicRepositoryMock: TopicRepository {
         return eventLoop.future([])
     }
 
-    func exportTasks(in topic: Topic) throws -> EventLoopFuture<TopicExportContent> {
+    func exportTasks(in topic: Topic) throws -> EventLoopFuture<Topic.Export> {
         eventLoop.future(error: Abort(.notImplemented))
     }
 
-    func exportTopics(in subject: Subject) throws -> EventLoopFuture<SubjectExportContent> {
+    func exportTopics(in subject: Subject) throws -> EventLoopFuture<Subject.Export> {
         eventLoop.future(error: Abort(.notImplemented))
     }
 
@@ -53,11 +57,11 @@ struct TopicRepositoryMock: TopicRepository {
         eventLoop.future([])
     }
 
-    func importContent(from content: TopicExportContent, in subject: Subject) throws -> EventLoopFuture<Void> {
+    func importContent(from content: Topic.Import, in subject: Subject) throws -> EventLoopFuture<Void> {
         eventLoop.future()
     }
 
-    func importContent(from content: SubtopicExportContent, in topic: Topic) throws -> EventLoopFuture<Void> {
+    func importContent(from content: Subtopic.Import, in topic: Topic) throws -> EventLoopFuture<Void> {
         eventLoop.future()
     }
 
