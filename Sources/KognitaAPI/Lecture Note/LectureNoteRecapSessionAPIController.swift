@@ -14,7 +14,7 @@ public protocol LectureNoteRecapSessionAPIController: RouteCollection {
     func taskForIndex(on req: Request) throws -> EventLoopFuture<LectureNote.RecapSession.ExecuteTask>
     func solutionForIndex(on req: Request) throws -> EventLoopFuture<[TaskSolution.Response]>
     func estimateScoreForIndex(on req: Request) throws -> EventLoopFuture<ClientResponse>
-    func results(on req: Request) throws -> EventLoopFuture<PracticeSession.Result>
+    func results(on req: Request) throws -> EventLoopFuture<Sessions.Result>
 }
 
 extension LectureNote.RecapSession: ModelParameterRepresentable {}
@@ -36,7 +36,9 @@ extension LectureNote.RecapSession {
     struct APIController: LectureNoteRecapSessionAPIController {
 
         func create(on req: Request) throws -> EventLoopFuture<LectureNote.RecapSession.ID> {
-            try req.repositories.lectureNoteRecapRepository.create(recap: req.content.decode(), for: req.auth.require())
+            req.repositories { repositories in
+                try repositories.lectureNoteRecapRepository.create(recap: req.content.decode(), for: req.auth.require())
+            }
         }
 
         func submit(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
@@ -45,14 +47,16 @@ extension LectureNote.RecapSession {
             let sessionID   = try req.parameters.get(LectureNote.RecapSession.self)
             let user        = try req.auth.require(User.self)
 
-            return try req.repositories.lectureNoteRecapRepository
-                .submit(
-                    answer: req.content.decode(),
-                    forIndex: index,
-                    userID: user.id,
-                    sessionID: sessionID
-                )
-                .transform(to: .ok)
+            return req.repositories { repositories in
+                try repositories.lectureNoteRecapRepository
+                    .submit(
+                        answer: req.content.decode(),
+                        forIndex: index,
+                        userID: user.id,
+                        sessionID: sessionID
+                    )
+                    .transform(to: .ok)
+            }
         }
 
         func taskForIndex(on req: Request) throws -> EventLoopFuture<LectureNote.RecapSession.ExecuteTask> {
@@ -60,12 +64,14 @@ extension LectureNote.RecapSession {
             let sessionID = try req.parameters.get(LectureNote.RecapSession.self)
             let user = try req.auth.require(User.self)
 
-            return req.repositories.lectureNoteRecapRepository
-                .taskContentFor(
-                    index: index,
-                    sessionID: sessionID,
-                    userID: user.id
-                )
+            return req.repositories { repositories in
+                repositories.lectureNoteRecapRepository
+                    .taskContentFor(
+                        index: index,
+                        sessionID: sessionID,
+                        userID: user.id
+                    )
+            }
         }
 
         func solutionForIndex(on req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
@@ -73,11 +79,13 @@ extension LectureNote.RecapSession {
             let sessionID = try req.parameters.get(LectureNote.RecapSession.self)
             let user = try req.auth.require(User.self)
 
-            return req.repositories.lectureNoteRecapRepository
-                .taskIDFor(index: index, sessionID: sessionID, userID: user.id)
-                .flatMap { taskID in
-                    req.repositories.taskSolutionRepository.solutions(for: taskID, for: user)
-                }
+            return req.repositories { repositories in
+                repositories.lectureNoteRecapRepository
+                    .taskIDFor(index: index, sessionID: sessionID, userID: user.id)
+                    .flatMap { taskID in
+                        repositories.taskSolutionRepository.solutions(for: taskID, for: user)
+                    }
+            }
         }
 
         struct EstimateScore: Codable {
@@ -95,22 +103,24 @@ extension LectureNote.RecapSession {
             }
         }
 
-        public func results(on req: Request) throws -> EventLoopFuture<PracticeSession.Result> {
+        public func results(on req: Request) throws -> EventLoopFuture<Sessions.Result> {
 
             let sessionID = try req.parameters.get(LectureNote.RecapSession.self)
 
-            return req.repositories.lectureNoteRecapRepository
-                .subjectFor(sessionID: sessionID)
-                .flatMap { subject in
+            return req.repositories { repositories in
+                repositories.lectureNoteRecapRepository
+                    .subjectFor(sessionID: sessionID)
+                    .flatMap { subject in
 
-                    req.repositories.lectureNoteRecapRepository
-                        .getResult(for: sessionID)
-                        .map { results in
-                            PracticeSession.Result(
-                                subject: subject,
-                                results: results
-                            )
-                        }
+                        repositories.lectureNoteRecapRepository
+                            .getResult(for: sessionID)
+                            .map { results in
+                                Sessions.Result(
+                                    subject: subject,
+                                    results: results
+                                )
+                            }
+                    }
             }
         }
     }

@@ -2,6 +2,7 @@ import Vapor
 import KognitaCore
 
 extension Subject: ModelParameterRepresentable {}
+extension Subject.Export: Content {}
 
 public protocol SubjectAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
@@ -17,7 +18,7 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func importContentPeerWise(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func getListContent(_ req: Request) throws -> EventLoopFuture<Dashboard>
-    func export(on req: Request) throws -> EventLoopFuture<SubjectExportContent>
+    func export(on req: Request) throws -> EventLoopFuture<Subject.Export>
     func makeSubject(active req: Request) throws -> EventLoopFuture<HTTPStatus>
     func makeSubject(inactive req: Request) throws -> EventLoopFuture<HTTPStatus>
     func grantPriveleges(on req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -25,6 +26,8 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     func compendium(on req: Request) throws -> EventLoopFuture<Subject.Compendium>
     func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
     func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview>
+
+    func importTopic(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension Subject.Compendium: Content {}
@@ -53,5 +56,6 @@ extension SubjectAPIControlling {
         subjectInstance.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
         routes.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
         subjectInstance.post("import-peer", use: self.importContentPeerWise)
+        subjectInstance.on(.POST, "import/topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
     }
 }

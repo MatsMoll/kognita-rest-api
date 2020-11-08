@@ -13,28 +13,36 @@ extension TypingTask: ModelParameterRepresentable, Content {}
 public struct FlashCardTaskAPIController: FlashCardTaskAPIControlling {
 
     public func create(on req: Request) throws -> EventLoopFuture<TypingTask> {
-        try req.repositories.typingTaskRepository.create(from: req.content.decode(), by: req.auth.require())
+        req.repositories { repositories in
+            try repositories.typingTaskRepository.create(from: req.content.decode(), by: req.auth.require())
+        }
     }
 
     public func update(on req: Request) throws -> EventLoopFuture<TypingTask> {
-        try req.repositories.typingTaskRepository.updateModelWith(
-            id: req.parameters.get(TypingTask.self),
-            to: req.content.decode(),
-            by: req.auth.require()
-        )
+        req.repositories { repositories in
+            try repositories.typingTaskRepository.updateModelWith(
+                id: req.parameters.get(TypingTask.self),
+                to: req.content.decode(),
+                by: req.auth.require()
+            )
+        }
     }
 
     public func delete(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
-        try req.repositories.typingTaskRepository.deleteModelWith(
-            id: req.parameters.get(TypingTask.self),
-            by: req.auth.require()
-        )
-        .transform(to: .ok)
+        req.repositories { repositories in
+            try repositories.typingTaskRepository.deleteModelWith(
+                id: req.parameters.get(TypingTask.self),
+                by: req.auth.require()
+            )
+            .transform(to: .ok)
+        }
     }
 
     public func forceDelete(on req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
-        try req.repositories.typingTaskRepository.forceDelete(taskID: req.parameters.get(TypingTask.self), by: req.auth.require())
-            .transform(to: .ok)
+        req.repositories { repositories in
+            try repositories.typingTaskRepository.forceDelete(taskID: req.parameters.get(TypingTask.self), by: req.auth.require())
+                .transform(to: .ok)
+        }
     }
 }
 

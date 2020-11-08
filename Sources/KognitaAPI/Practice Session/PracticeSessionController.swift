@@ -6,6 +6,7 @@
 //
 
 import Vapor
+import KognitaModels
 import KognitaCore
 
 public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
@@ -15,7 +16,12 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
     }
 
     public func create(on req: Request) throws -> EventLoopFuture<PracticeSession> {
-        try req.repositories.practiceSessionRepository.create(from: req.content.decode(), by: req.auth.require())
+        req.repositories { repositories in
+            try repositories.practiceSessionRepository.create(
+                from: req.content.decode(PracticeSession.Create.Data.self),
+                by: req.auth.require()
+            )
+        }
     }
 
     /// Submits an answer to a session
@@ -27,23 +33,32 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { (session) in
+        return req.repositories { repositories in
+            return try repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { (session) in
 
-                try req.repositories.practiceSessionRepository
-                    .submit(req.content.decode(), in: session, by: user)
+                    try repositories.practiceSessionRepository
+                        .submit(req.content.decode(), in: session, by: user)
+            }
         }
     }
 
-    public func submit(flashCardKnowledge req: Request) throws -> EventLoopFuture<TaskSessionResult<TypingTask.Submit>> {
+    public func submit(typingTask req: Request) throws -> EventLoopFuture<HTTPStatus> {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository
-            .find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { session in
+        return req.repositories { repositories in
+            return try repositories.practiceSessionRepository
+                .find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { session in
 
-                try req.repositories.practiceSessionRepository.submit(req.content.decode(), in: session, by: user)
+                    try repositories.practiceSessionRepository.submit(
+                        req.content.decode(TypingTask.Submit.self),
+                        in: session,
+                        by: user
+                    )
+                    .transform(to: .ok)
+            }
         }
     }
 
@@ -51,11 +66,13 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { session in
-                req.repositories.practiceSessionRepository
-                    .end(session, for: user)
-                    .transform(to: session.content())
+        return req.repositories { repositories in
+            try repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { session in
+                    repositories.practiceSessionRepository
+                        .end(session, for: user)
+                        .transform(to: session.content())
+            }
         }
     }
 
@@ -70,12 +87,14 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         let query = try req.query.decode(HistogramQuery.self)
 
-        if let subjectId = query.subjectId {
-            return req.repositories.taskResultRepository
-                .getAmountHistory(for: user, in: subjectId, numberOfWeeks: query.numberOfWeeks ?? 4)
-        } else {
-            return req.repositories.taskResultRepository
-                .getAmountHistory(for: user, numberOfWeeks: query.numberOfWeeks ?? 4)
+        return req.repositories { repositories in
+            if let subjectId = query.subjectId {
+                return repositories.taskResultRepository
+                    .getAmountHistory(for: user, in: subjectId, numberOfWeeks: query.numberOfWeeks ?? 4)
+            } else {
+                return repositories.taskResultRepository
+                    .getAmountHistory(for: user, numberOfWeeks: query.numberOfWeeks ?? 4)
+            }
         }
     }
 
@@ -83,29 +102,24 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { session in
+        return req.repositories { repositories in
+            try repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { session in
 
-                guard session.userID == user.id else {
-                    throw Abort(.forbidden)
-                }
+                    guard session.userID == user.id else {
+                        throw Abort(.forbidden)
+                    }
 
-                let index = try req.parameters.get(Int.self)
+                    let index = try req.parameters.get(Int.self)
 
-                return try req.repositories.practiceSessionRepository
-                    .taskID(index: index, in: session.requireID())
-                    .flatMap { taskID in
+                    return try repositories.practiceSessionRepository
+                        .taskID(index: index, in: session.requireID())
+                        .flatMap { taskID in
 
-                        req.repositories.taskSolutionRepository.solutions(for: taskID, for: user)
-                }
+                            repositories.taskSolutionRepository.solutions(for: taskID, for: user)
+                    }
+            }
         }
-    }
-
-    /// Returns a session history
-    public func get(sessions req: Request) throws -> EventLoopFuture<[PracticeSession.Overview]> {
-
-        return try req.repositories.practiceSessionRepository
-            .getAllSessionsWithSubject(by: req.auth.require(User.self))
     }
 
     /// Get the statistics of a session
@@ -113,62 +127,67 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
     /// - Parameter req: The HTTP request
     /// - Returns: A rendered view
     /// - Throws: If unauth or any other error
-    public func getSessionResult(_ req: Request) throws -> EventLoopFuture<PracticeSession.Result> {
+    public func getSessionResult(_ req: Request) throws -> EventLoopFuture<Sessions.Result> {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { session in
-                guard user.id == session.userID else {
-                    throw Abort(.forbidden)
-                }
+        return req.repositories { repositories in
+            try repositories.practiceSessionRepository
+                .find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { session in
+                    guard user.id == session.userID else {
+                        throw Abort(.forbidden)
+                    }
 
-                return try req.repositories.practiceSessionRepository
-                    .getResult(for: session.requireID())
-                    .flatMap { results in
+                    return try repositories.practiceSessionRepository
+                        .getResult(for: session.requireID())
+                        .flatMap { results in
 
-                        return req.repositories.subjectRepository
-                            .subject(for: session)
-                            .map { subject in
+                            return repositories.subjectRepository
+                                .subject(for: session)
+                                .map { subject in
 
-                                PracticeSession.Result(
-                                    subject: subject,
-                                    results: results
-                                )
-                        }
-                }
+                                    Sessions.Result(
+                                        subject: subject,
+                                        results: results
+                                    )
+                            }
+                    }
+            }
         }
     }
 
-    public func getCurrentTask(on req: Request) throws -> EventLoopFuture<PracticeSession.CurrentTask> {
+    public func getCurrentTask(on req: Request) throws -> EventLoopFuture<Sessions.CurrentTask> {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { session in
+        return req.repositories { repositories in
+            return try repositories.practiceSessionRepository.find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { session in
 
-                let index = try req.parameters.get(Int.self)
+                    let index = try req.parameters.get(Int.self)
 
-                guard let sessionID = session.id else {
-                    throw Abort(.internalServerError)
-                }
-                guard session.userID == user.id else {
-                    throw Abort(.forbidden)
-                }
-                return try req.repositories.practiceSessionRepository
-                    .taskAt(index: index, in: sessionID)
-                    .map { taskType in
+                    guard let sessionID = session.id else {
+                        throw Abort(.internalServerError)
+                    }
+                    guard session.userID == user.id else {
+                        throw Abort(.forbidden)
+                    }
+                    return try repositories.practiceSessionRepository
+                        .taskAt(index: index, in: sessionID)
+                        .map { taskType in
 
-                        PracticeSession.CurrentTask(
-                            sessionID: sessionID,
-                            task: taskType,
-                            index: index,
-                            user: user
-                        )
-                }
-                .flatMapErrorThrowing { _ in
-                    throw Errors.unableToFindTask(session, user)
-                }
+                            Sessions.CurrentTask(
+                                sessionID: sessionID,
+                                task: taskType,
+                                index: index,
+                                user: user
+                            )
+                    }
+                    .flatMapErrorThrowing { _ in
+                        throw Errors.unableToFindTask(session, user)
+                    }
+            }
         }
     }
 
@@ -176,12 +195,14 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
         let user = try req.auth.require(User.self)
 
-        return try req.repositories.practiceSessionRepository
-            .find(req.parameters.get(PracticeSession.self))
-            .failableFlatMap { sessionID in
-                try req.repositories.practiceSessionRepository.extend(session: sessionID, for: user)
-            }
-            .transform(to: .ok)
+        return req.repositories { repositories in
+            try repositories.practiceSessionRepository
+                .find(req.parameters.get(PracticeSession.self))
+                .failableFlatMap { sessionID in
+                    try repositories.practiceSessionRepository.extend(session: sessionID, for: user)
+                }
+                .transform(to: .ok)
+        }
     }
 
     struct EstimateScore: Codable {

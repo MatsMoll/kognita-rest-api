@@ -29,6 +29,8 @@ public protocol APIControllerCollection: RouteCollection {
     var userController: UserAPIControlling { get }
     var lectureNoteController: LectureNoteAPIController { get }
     var lectureNoteTakingSessionController: LectureNoteTakingSessionAPIController { get }
+    var examController: ExamAPIController { get }
+    var examSessionController: ExamSessionAPIController { get }
 }
 
 public struct APIControllers: APIControllerCollection {
@@ -49,6 +51,8 @@ public struct APIControllers: APIControllerCollection {
     public var lectureNoteController: LectureNoteAPIController
     public var lectureNoteTakingSessionController: LectureNoteTakingSessionAPIController
     public var lectureNoteRecapSessionController: LectureNoteRecapSessionAPIController
+    public var examController: ExamAPIController
+    public var examSessionController: ExamSessionAPIController
 
     public func boot(routes: RoutesBuilder) throws {
 
@@ -74,6 +78,8 @@ public struct APIControllers: APIControllerCollection {
         try auth.register(collection: lectureNoteController)
         try auth.register(collection: lectureNoteTakingSessionController)
         try auth.register(collection: lectureNoteRecapSessionController)
+        try auth.register(collection: examController)
+        try auth.register(collection: examSessionController)
     }
 }
 
@@ -95,7 +101,9 @@ extension APIControllers {
             userController: User.DefaultAPIController(),
             lectureNoteController: LectureNoteDatabaseAPIController(),
             lectureNoteTakingSessionController: LectureNote.TakingSession.APIController(),
-            lectureNoteRecapSessionController: LectureNote.RecapSession.APIController()
+            lectureNoteRecapSessionController: LectureNote.RecapSession.APIController(),
+            examController: DefaultExamAPIController(),
+            examSessionController: DefaultExamSessionAPIController()
         )
     }
 }

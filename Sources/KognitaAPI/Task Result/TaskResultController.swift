@@ -31,8 +31,10 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
             throw Abort(.badRequest, reason: "lowerBoundDays needs to be lower then upperBoundDays")
         }
 
-        return req.repositories.taskResultRepository
-            .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: lowerBoundDays, limit: limit)
+        return req.repositories { repositories in
+            repositories.taskResultRepository
+                .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: lowerBoundDays, limit: limit)
+        }
     }
 }
 //public struct TaskResultAPIController: TaskResultAPIControlling {
