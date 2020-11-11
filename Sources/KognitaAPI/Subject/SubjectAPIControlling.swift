@@ -56,6 +56,6 @@ extension SubjectAPIControlling {
         subjectInstance.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
         routes.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
         subjectInstance.post("import-peer", use: self.importContentPeerWise)
-        subjectInstance.on(.POST, "import/topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
+        subjectInstance.on(.POST, "import", "topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
     }
 }
