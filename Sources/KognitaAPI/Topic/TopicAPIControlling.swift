@@ -2,6 +2,7 @@ import Vapor
 import KognitaCore
 
 extension Topic: ModelParameterRepresentable {}
+extension Topic.Export: Content {}
 
 public protocol TopicAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
@@ -15,6 +16,7 @@ public protocol TopicAPIControlling: CreateModelAPIController,
     func retriveAll(_ req: Request) throws -> EventLoopFuture<[Topic]>
     func retrive(_ req: Request) throws -> EventLoopFuture<Topic>
     func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]>
+    func export(topic req: Request) throws -> EventLoopFuture<Topic.Export>
 }
 
 extension TopicAPIControlling {
@@ -31,5 +33,6 @@ extension TopicAPIControlling {
         register(delete: topics, parameter: Topic.self)
         register(retriveAll: retriveAll(_:), router: topics)
 
+        topics.on(.GET, Topic.parameter, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(topic: ))
     }
 }

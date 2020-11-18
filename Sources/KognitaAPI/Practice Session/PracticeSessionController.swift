@@ -198,8 +198,8 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
         return req.repositories { repositories in
             try repositories.practiceSessionRepository
                 .find(req.parameters.get(PracticeSession.self))
-                .failableFlatMap { sessionID in
-                    try repositories.practiceSessionRepository.extend(session: sessionID, for: user)
+                .failableFlatMap { session in
+                    try repositories.practiceSessionRepository.extend(session: session.requireID(), for: user)
                 }
                 .transform(to: .ok)
         }

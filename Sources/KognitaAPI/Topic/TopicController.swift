@@ -67,6 +67,23 @@ public struct TopicAPIController: TopicAPIControlling {
             .transform(to: .ok)
         }
     }
+
+    public func export(topic req: Request) throws -> EventLoopFuture<Topic.Export> {
+        let user = try req.auth.require(User.self)
+        let topicID = try req.parameters.get(Topic.self)
+
+        return req.repositories { repo in
+            try repo.userRepository
+                .isModerator(user: user, topicID: topicID)
+                .ifFalse(throw: Abort(.forbidden))
+                .flatMap {
+                    repo.topicRepository.find(topicID, or: Abort(.badRequest))
+                        .failableFlatMap { topic in
+                            try repo.topicRepository.exportTasks(in: topic)
+                    }
+                }
+        }
+    }
 }
 
 extension Topic {

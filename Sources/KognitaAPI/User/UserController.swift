@@ -64,11 +64,11 @@ public struct UserAPIController: UserAPIControlling {
     public func create(on req: Request) throws -> EventLoopFuture<User> {
         // decode request content
         req.repositories { repositories in
-            try repositories.userRepository.create(from: req.content.decode(User.Create.Data.self), by: req.auth.get())
-                .flatMap { user in
-                    self.sendVerifyEmail(to: user, on: req)
-                        .transform(to: user)
-            }
+            try repositories.userRepository.create(from: req.content.decode(User.Create.Data.self))
+        }
+        .flatMap { user in
+            self.sendVerifyEmail(to: user, on: req)
+                .transform(to: user)
         }
     }
 
@@ -77,15 +77,15 @@ public struct UserAPIController: UserAPIControlling {
         req.repositories { repositories in
             repositories.userRepository
                 .verifyToken(for: user.id)
-                .failableFlatMap { token in
-                    try req.verifyEmailSender.sendEmail(
-                        with: User.VerifyEmail.EmailContent(
-                            token: token.token,
-                            userID: user.id,
-                            email: user.email
-                        )
-                    )
-            }
+        }
+        .failableFlatMap { token in
+            try req.verifyEmailSender.sendEmail(
+                with: User.VerifyEmail.EmailContent(
+                    token: token.token,
+                    userID: user.id,
+                    email: user.email
+                )
+            )
         }
     }
 
