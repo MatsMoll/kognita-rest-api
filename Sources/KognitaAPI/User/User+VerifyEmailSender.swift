@@ -70,8 +70,13 @@ extension User {
                         html: html
                     )
 
-                    return self.request.mailgun()
+                    return self.request
+                        .mailgun()
                         .send(message)
+                        .flatMapErrorThrowing { error in
+                            request.logger.critical("Error when using mailgun service: \(error.localizedDescription)")
+                            throw error
+                        }
                         .transform(to: ())
             }
         }

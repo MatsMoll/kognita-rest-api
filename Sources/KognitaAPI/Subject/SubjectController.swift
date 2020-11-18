@@ -316,7 +316,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
                 .isModerator(user: user, subjectID: subjectID)
                 .ifFalse(throw: Abort(.forbidden))
                 .failableFlatMap {
-                    try repo.topicRepository.importContent(
+                    repo.topicRepository.importContent(
                         from: content,
                         in: subjectID
                     )
