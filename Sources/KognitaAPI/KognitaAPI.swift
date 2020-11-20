@@ -2,6 +2,8 @@ import Vapor
 import KognitaCore
 import Mailgun
 import PostgresKit
+import Prometheus
+import Metrics
 
 extension Optional {
 
@@ -122,6 +124,7 @@ public struct KognitaAPIProvider: LifecycleHandler {
 
     public func register(_ app: Application) throws {
         try KognitaAPI.setupApi(for: app, routes: app.grouped("api"))
+        MetricsSystem.bootstrap(PrometheusClient())
 
         if env == .testing {
             try KognitaAPI.setupForTesting(app: app)
@@ -160,7 +163,27 @@ public class KognitaAPI {
         }
 
         setupTextClient(app: app)
+        setupMetrics(router: routes)
         try APIControllers.defaultControllers().boot(routes: routes.grouped(app.sessions.middleware))
+    }
+
+    static func setupMetrics(router: RoutesBuilder) {
+        router.grouped(User.bearerAuthMiddleware())
+            .on(.GET, "metrics", body: .collect(maxSize: ByteCount.init(value: 20_000_000))) { req -> EventLoopFuture<String> in
+
+            let user = try req.auth.require(User.self)
+            guard user.isAdmin else { return req.eventLoop.future(error: Abort(.forbidden)) }
+
+            let promise = req.eventLoop.makePromise(of: String.self)
+            DispatchQueue.global().async {
+                do {
+                    try MetricsSystem.prometheus().collect(into: promise)
+                } catch {
+                    promise.fail(error)
+                }
+            }
+            return promise.futureResult
+        }
     }
 
     static func setupTextClient(app: Application) {
