@@ -34,6 +34,9 @@ extension Request {
 extension User {
     struct ResetPasswordMailgunSender: ResetPasswordSender {
 
+        static let durationLabel = "reset_password_duration"
+        static let errorCounterLabel = "reset_password_errors_count"
+
         let request: Request
 
         func sendResetPassword(for user: User, token: User.ResetPassword.Token.Create.Response) -> EventLoopFuture<Void> {
@@ -46,8 +49,31 @@ extension User {
                     text: "",
                     html: request.resetPasswordRenderer.render(with: token, for: user)
                 )
+                let start = Date()
                 return request.mailgun()
                     .send(mail)
+                    .always { result in
+                        switch result {
+                        case .success:
+                            // In millisec
+                            let timeUsed = Date().timeIntervalSince(start) * 1000
+                            request.metrics.makeTimer(
+                                label: ResetPasswordMailgunSender.durationLabel,
+                                dimensions: [("to-user", "\(user.id)")]
+                            )
+                            .recordNanoseconds(Int64(timeUsed))
+                        case .failure(let error):
+                            request.logger.critical("Error when using mailgun service: \(error.localizedDescription)")
+                            request.metrics.makeCounter(
+                                label: ResetPasswordMailgunSender.errorCounterLabel,
+                                dimensions: [
+                                    ("error", error.localizedDescription),
+                                    ("to-user", "\(user.id)")
+                                ]
+                            )
+                            .increment(by: 1)
+                        }
+                    }
                     .transform(to: ())
             } catch {
                 return request.eventLoop.future(error: Abort(.internalServerError))

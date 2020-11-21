@@ -124,7 +124,6 @@ public struct KognitaAPIProvider: LifecycleHandler {
 
     public func register(_ app: Application) throws {
         try KognitaAPI.setupApi(for: app, routes: app.grouped("api"))
-        MetricsSystem.bootstrap(PrometheusClient())
 
         if env == .testing {
             try KognitaAPI.setupForTesting(app: app)
@@ -149,6 +148,13 @@ public class KognitaAPI {
     static func setupApi(for app: Application, routes: RoutesBuilder) throws {
         /// In order to upload big files
         KognitaCore.config(app: app)
+        var metricsFactory: MetricsFactory!
+        if let promFactory = try? MetricsSystem.prometheus() {
+            metricsFactory = promFactory
+        } else {
+            metricsFactory = PrometheusClient()
+            MetricsSystem.bootstrap(metricsFactory)
+        }
 
         setupDatabase(for: app)
         app.verifyEmailSender.use { User.VerifyEmailSender(request: $0) }
@@ -162,7 +168,7 @@ public class KognitaAPI {
             setupMailgun(in: app)
         }
 
-        setupTextClient(app: app)
+        setupTextClient(app: app, metricsFactory: metricsFactory)
         setupMetrics(router: routes)
         try APIControllers.defaultControllers().boot(routes: routes.grouped(app.sessions.middleware))
     }
@@ -186,7 +192,7 @@ public class KognitaAPI {
         }
     }
 
-    static func setupTextClient(app: Application) {
+    static func setupTextClient(app: Application, metricsFactory: MetricsFactory) {
 
         // Localhost testing config
         var baseUrl = "127.0.0.1"
@@ -204,7 +210,14 @@ public class KognitaAPI {
         }
 
         app.textMiningClienting.use { request in
-            PythonTextClient(client: request.client, scheme: scheme, baseUrl: baseUrl, port: port, logger: request.logger)
+            PythonTextClient(
+                client: request.client,
+                scheme: scheme,
+                baseUrl: baseUrl,
+                port: port,
+                logger: request.logger,
+                metricsFactory: metricsFactory
+            )
         }
     }
 

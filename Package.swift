@@ -10,9 +10,7 @@ var dependencies: [Package.Dependency] = [
 
     .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc"),
 
-    .package(name: "SwiftMarkdown", url: "https://github.com/vapor-community/markdown.git", .upToNextMajor(from: "0.4.0")),
-    
-    .package(url: "https://github.com/MrLotU/SwiftPrometheus.git", from: "1.0.0-alpha")
+    .package(name: "SwiftMarkdown", url: "https://github.com/vapor-community/markdown.git", .upToNextMajor(from: "0.4.0"))
 ]
 
 switch ProcessInfo.processInfo.environment["BUILD_TYPE"] {
@@ -63,7 +61,6 @@ let package = Package(
                 .product(name: "Mailgun", package: "VaporMailgunService"),
                 .product(name: "QTIKit", package: "QTIKit"),
                 .product(name: "SwiftMarkdown", package: "SwiftMarkdown"),
-                .product(name: "SwiftPrometheus", package: "SwiftPrometheus"),
         ]),
         .testTarget(
             name: "KognitaAPITests",
