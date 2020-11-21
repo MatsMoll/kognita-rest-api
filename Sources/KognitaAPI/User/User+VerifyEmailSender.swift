@@ -54,6 +54,9 @@ extension Request {
 extension User {
     struct VerifyEmailSender: VerifyEmailSendable {
 
+        static let durationLabel = "verify_email_duration"
+        static let errorCounterLabel = "verify_email_errors_count"
+
         let request: Request
 
         func sendEmail(with token: User.VerifyEmail.EmailContent) throws -> EventLoopFuture<Void> {
@@ -70,12 +73,31 @@ extension User {
                         html: html
                     )
 
+                    let start = Date()
                     return self.request
                         .mailgun()
                         .send(message)
-                        .flatMapErrorThrowing { error in
-                            request.logger.critical("Error when using mailgun service: \(error.localizedDescription)")
-                            throw error
+                        .always { result in
+                            switch result {
+                            case .success:
+                                // In millisec
+                                let timeUsed = Date().timeIntervalSince(start) * 1000
+                                request.metrics.makeTimer(
+                                    label: VerifyEmailSender.durationLabel,
+                                    dimensions: [("to-user", "\(token.userID)")]
+                                )
+                                .recordNanoseconds(Int64(timeUsed))
+                            case .failure(let error):
+                                request.logger.critical("Error when using mailgun service: \(error.localizedDescription)")
+                                request.metrics.makeCounter(
+                                    label: VerifyEmailSender.errorCounterLabel,
+                                    dimensions: [
+                                        ("error", error.localizedDescription),
+                                        ("to-user", "\(token.userID)")
+                                    ]
+                                )
+                                .increment(by: 1)
+                            }
                         }
                         .transform(to: ())
             }
