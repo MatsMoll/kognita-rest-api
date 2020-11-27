@@ -56,7 +56,7 @@ extension String {
     }
 
     func cleanMarkdown() throws -> String {
-        let cleanText = try SwiftSoup.parse(markdownToHTML(self)).text()
+        let cleanText = self
         let latexIndentifier = "$$"
         let latexIndices = cleanText.indicesOf(string: latexIndentifier)
         var index = 0
@@ -70,18 +70,26 @@ extension String {
                 lastIndex = latexStartIndex
             }
             let latexEndIndex = cleanText.index(startIndex, offsetBy: latexIndices[index + 1] + latexIndentifier.count)
-            let substring = cleanText[latexStartIndex...latexEndIndex]
+            guard latexEndIndex < cleanText.endIndex else {
+                lastIndex = cleanText.endIndex
+                index += 2
+                break
+            }
+            let substring = cleanText[latexStartIndex..<latexEndIndex]
+            print(substring)
             if substring.contains("\n") {
                 index += 1
+                print(index)
             } else {
                 lastIndex = latexEndIndex
-                index += latexIndentifier.count
+                index += 2
+                print(index)
             }
         }
         if cleanText.endIndex != lastIndex {
             resultString += cleanText[lastIndex..<cleanText.endIndex]
         }
-        return resultString
+        return try SwiftSoup.parse(markdownToHTML(resultString)).text()
     }
 
     func clean(stopwords: Set<String>) -> String {
@@ -129,8 +137,10 @@ struct PythonTextClient: TextMiningClienting {
         url.scheme = scheme
         url.host = baseUrl
         url.port = port
+
         logger.log(level: .info, "Sending request \(url)", file: #file, function: #function, line: #line)
         let start = Date()
+
         return client.post(
             url,
             headers: .init([
