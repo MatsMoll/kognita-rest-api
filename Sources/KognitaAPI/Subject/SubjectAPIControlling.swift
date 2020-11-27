@@ -3,6 +3,7 @@ import KognitaCore
 
 extension Subject: ModelParameterRepresentable {}
 extension Subject.Export: Content {}
+extension Subject.Details: Content {}
 
 public protocol SubjectAPIControlling: CreateModelAPIController,
     UpdateModelAPIController,
@@ -10,6 +11,8 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     RetriveModelAPIController,
     RetriveAllModelsAPIController,
     RouteCollection {
+    /// Creates a new Subject
+    /// - Parameter req: The HTTP request with the needed data
     func create(on req: Request) throws -> EventLoopFuture<Subject.Create.Response>
     func update(on req: Request) throws -> EventLoopFuture<Subject.Update.Response>
     func retrive(on req: Request) throws -> EventLoopFuture<Subject>
@@ -27,6 +30,10 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     func testStats(on req: Request) throws -> EventLoopFuture<[SubjectTest.DetailedResult]>
     func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview>
 
+    /// Return only the active subject
+    /// - Parameter req: The request
+    func activeSubjects(on req: Request) throws -> EventLoopFuture<[Subject]>
+
     func importTopic(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
@@ -38,6 +45,9 @@ extension SubjectAPIControlling {
 
         let subjects = routes.grouped("subjects")
         let subjectInstance = subjects.grouped(Subject.parameter)
+        let guardedSubjectInstance = subjectInstance.grouped(User.guardMiddleware())
+
+        subjects.get("active", use: activeSubjects(on:))
 
         register(create: create(on:), router: subjects)
         register(update: update(on:), router: subjects, parameter: Subject.self)
@@ -45,17 +55,18 @@ extension SubjectAPIControlling {
         register(retrive: retrive(on:), router: subjects, parameter: Subject.self)
         register(retriveAll: retriveAll(_:), router: subjects)
 
-        subjectInstance.get("stats", use: self.testStats(on: ))
         subjectInstance.get("compendium", use: self.compendium(on: ))
-        subjectInstance.post("active", use: self.makeSubject(active: ))
-        subjectInstance.post("inactive", use: self.makeSubject(inactive: ))
-        subjectInstance.post("grant-moderator", use: self.grantPriveleges(on: ))
-        subjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
+        subjectInstance.get("details", use: self.getDetails)
+        guardedSubjectInstance.get("stats", use: self.testStats(on: ))
+        guardedSubjectInstance.post("active", use: self.makeSubject(active: ))
+        guardedSubjectInstance.post("inactive", use: self.makeSubject(inactive: ))
+        guardedSubjectInstance.post("grant-moderator", use: self.grantPriveleges(on: ))
+        guardedSubjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
-        subjectInstance.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
-        routes.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
-        subjectInstance.post("import-peer", use: self.importContentPeerWise)
-        subjectInstance.on(.POST, "import", "topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
+        guardedSubjectInstance.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
+        guardedSubjectInstance.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
+        guardedSubjectInstance.post("import-peer", use: self.importContentPeerWise)
+        guardedSubjectInstance.on(.POST, "import", "topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
     }
 }

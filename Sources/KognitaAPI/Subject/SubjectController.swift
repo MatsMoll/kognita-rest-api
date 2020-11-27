@@ -19,10 +19,20 @@ extension ContentContainer {
 
 public struct SubjectAPIController: SubjectAPIControlling {
 
+    public func activeSubjects(on req: Request) throws -> EventLoopFuture<[Subject]> {
+
+        let user = try req.auth.require(User.self)
+
+        return req.repositories { repo in
+            try repo.subjectRepository.allActive(for: user)
+        }
+    }
+
     public func overview(on req: Request) throws -> EventLoopFuture<Subject.Overview> {
-        req.repositories { repositories in
-            try repositories.subjectRepository
-                .overviewFor(id: req.parameters.get(Subject.self))
+        let subjectID = try req.parameters.get(Subject.self)
+        return req.repositories { repositories in
+            repositories.subjectRepository
+                .overviewFor(id: subjectID)
         }
     }
 

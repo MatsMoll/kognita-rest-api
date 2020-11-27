@@ -151,7 +151,7 @@ struct PythonTextClient: TextMiningClienting {
                     let end = Date()
                     durationTimer.recordNanoseconds(Int64(end.timeIntervalSince(start) * 1000))
                 case .failure(let error):
-                    self.logger.log(level: .critical, "Error: \(error), when estimating similarity")
+                    logger.info("Error: \(error), when estimating similarity")
                     errorCounter(error: error).increment(by: 1)
                 }
             })

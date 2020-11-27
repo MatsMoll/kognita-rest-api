@@ -84,16 +84,16 @@ extension User {
                                 let timeUsed = Date().timeIntervalSince(start) * 1000
                                 request.metrics.makeTimer(
                                     label: VerifyEmailSender.durationLabel,
-                                    dimensions: [("to-user", "\(token.userID)")]
+                                    dimensions: [("toUser", "\(token.userID)")]
                                 )
                                 .recordNanoseconds(Int64(timeUsed))
                             case .failure(let error):
-                                request.logger.critical("Error when using mailgun service: \(error.localizedDescription)")
+                                request.logger.info("Error when using mailgun service: \(error.localizedDescription)")
                                 request.metrics.makeCounter(
                                     label: VerifyEmailSender.errorCounterLabel,
                                     dimensions: [
                                         ("error", error.localizedDescription),
-                                        ("to-user", "\(token.userID)")
+                                        ("toUser", "\(token.userID)")
                                     ]
                                 )
                                 .increment(by: 1)

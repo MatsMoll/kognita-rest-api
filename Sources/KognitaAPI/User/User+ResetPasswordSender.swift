@@ -59,16 +59,16 @@ extension User {
                             let timeUsed = Date().timeIntervalSince(start) * 1000
                             request.metrics.makeTimer(
                                 label: ResetPasswordMailgunSender.durationLabel,
-                                dimensions: [("to-user", "\(user.id)")]
+                                dimensions: [("toUser", "\(user.id)")]
                             )
                             .recordNanoseconds(Int64(timeUsed))
                         case .failure(let error):
-                            request.logger.critical("Error when using mailgun service: \(error.localizedDescription)")
+                            request.logger.info("Error when using mailgun service: \(error.localizedDescription)")
                             request.metrics.makeCounter(
                                 label: ResetPasswordMailgunSender.errorCounterLabel,
                                 dimensions: [
                                     ("error", error.localizedDescription),
-                                    ("to-user", "\(user.id)")
+                                    ("toUser", "\(user.id)")
                                 ]
                             )
                             .increment(by: 1)
