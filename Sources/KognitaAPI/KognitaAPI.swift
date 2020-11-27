@@ -68,7 +68,7 @@ public struct APIControllers: APIControllerCollection {
             User.bearerAuthMiddleware()
         )
         try auth.register(collection: subjectController)
-        
+
         let guardedAuth = auth.grouped(User.guardMiddleware())
         try guardedAuth.register(collection: topicController)
         try guardedAuth.register(collection: subtopicController)
@@ -310,12 +310,12 @@ public class KognitaAPI {
     /// Setup Redis a a session cacne if the config var exists
     /// - Parameter app: The app to config the cache to
     private static func setupSessionCache(for app: Application) {
-        guard let redisHostname = Environment.get("REDIS_HOSTNAME") else {
+        guard let redisUrl = Environment.get("REDISCLOUD_URL") else {
             // Do no setup as this will use the mem as the cache
             return
         }
-        guard let config = try? RedisConfiguration(hostname: redisHostname) else {
-            app.logger.warning("Redis unable to init config based on \(redisHostname)")
+        guard let config = try? RedisConfiguration(url: redisUrl) else {
+            app.logger.warning("Redis unable to init config based on \(redisUrl)")
             return
         }
         app.redis.configuration = config
