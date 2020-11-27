@@ -4,6 +4,7 @@ import Mailgun
 import PostgresKit
 import Prometheus
 import Metrics
+import Redis
 
 extension Optional {
 
@@ -15,6 +16,7 @@ extension Optional {
     }
 }
 
+/// A protocol containing all the different controllers needed to run the Kognita API
 public protocol APIControllerCollection: RouteCollection {
     var subjectController: SubjectAPIControlling { get }
     var topicController: TopicAPIControlling { get }
@@ -35,6 +37,7 @@ public protocol APIControllerCollection: RouteCollection {
     var examSessionController: ExamSessionAPIController { get }
 }
 
+/// An instance that contains all the different controllers that are needed to run the api
 public struct APIControllers: APIControllerCollection {
 
     public var subjectController: SubjectAPIControlling
@@ -62,30 +65,33 @@ public struct APIControllers: APIControllerCollection {
 
         let auth = routes.grouped(
             User.sessionAuthMiddleware(),
-            User.bearerAuthMiddleware(),
-            User.guardMiddleware()
+            User.bearerAuthMiddleware()
         )
         try auth.register(collection: subjectController)
-        try auth.register(collection: topicController)
-        try auth.register(collection: subtopicController)
-        try auth.register(collection: multipleChoiceTaskController)
-        try auth.register(collection: typingTaskController)
-        try auth.register(collection: practiceSessionController)
-        try auth.register(collection: testSessionController)
-        try auth.register(collection: subjectTestController)
-        try auth.register(collection: taskDiscussionController)
-        try auth.register(collection: taskDiscussionResponseController)
-        try auth.register(collection: taskSolutionController)
-        try auth.register(collection: taskResultController)
-        try auth.register(collection: lectureNoteController)
-        try auth.register(collection: lectureNoteTakingSessionController)
-        try auth.register(collection: lectureNoteRecapSessionController)
-        try auth.register(collection: examController)
-        try auth.register(collection: examSessionController)
+
+        let guardedAuth = auth.grouped(User.guardMiddleware())
+        try guardedAuth.register(collection: topicController)
+        try guardedAuth.register(collection: subtopicController)
+        try guardedAuth.register(collection: multipleChoiceTaskController)
+        try guardedAuth.register(collection: typingTaskController)
+        try guardedAuth.register(collection: practiceSessionController)
+        try guardedAuth.register(collection: testSessionController)
+        try guardedAuth.register(collection: subjectTestController)
+        try guardedAuth.register(collection: taskDiscussionController)
+        try guardedAuth.register(collection: taskDiscussionResponseController)
+        try guardedAuth.register(collection: taskSolutionController)
+        try guardedAuth.register(collection: taskResultController)
+        try guardedAuth.register(collection: lectureNoteController)
+        try guardedAuth.register(collection: lectureNoteTakingSessionController)
+        try guardedAuth.register(collection: lectureNoteRecapSessionController)
+        try guardedAuth.register(collection: examController)
+        try guardedAuth.register(collection: examSessionController)
     }
 }
 
 extension APIControllers {
+    /// Creates an instance of `APIControllers` that contains the differnet controllers to use
+    /// - Returns: A `APIControllers` instance
     public static func defaultControllers() -> APIControllers {
         APIControllers(
             subjectController: Subject.DefaultAPIController(),
@@ -111,9 +117,11 @@ extension APIControllers {
 }
 
 extension Request {
+    /// Returns the controllers to use on different requests
     public var controllers: APIControllers { .defaultControllers() }
 }
 
+/// A provider for the Kognita API
 public struct KognitaAPIProvider: LifecycleHandler {
 
     let env: Environment
@@ -139,12 +147,20 @@ public struct KognitaAPIProvider: LifecycleHandler {
     }
 }
 
+/// A class that group different Kognita API setup code
 public class KognitaAPI {
 
+    /// Setups the different middlewares needed to run the API for Kognita
+    /// - Parameter app: The app to config
     public static func configMiddleware(config app: Application) {
         app.middleware.use(HTTPSRedirectMiddleware())
     }
 
+    /// Setup the Kognita API
+    /// - Parameters:
+    ///   - app: The app to config the api on
+    ///   - routes: The route to use for the api calls
+    /// - Throws: If there where any eror when configing
     static func setupApi(for app: Application, routes: RoutesBuilder) throws {
         /// In order to upload big files
         KognitaCore.config(app: app)
@@ -160,6 +176,8 @@ public class KognitaAPI {
         app.verifyEmailSender.use { User.VerifyEmailSender(request: $0) }
         app.resetPasswordSender.use(User.ResetPasswordMailgunSender.init(request: ))
 
+        configMiddleware(config: app)
+
         // Needs to be after addMigrations(), because it relies on the tables created there
         if app.environment == .testing {
             // Register the commands (used to reset the database)
@@ -170,9 +188,12 @@ public class KognitaAPI {
 
         setupTextClient(app: app, metricsFactory: metricsFactory)
         setupMetrics(router: routes)
+        setupSessionCache(for: app)
         try APIControllers.defaultControllers().boot(routes: routes.grouped(app.sessions.middleware))
     }
 
+    /// Setup a call that fetches different metrics
+    /// - Parameter router: The root route to use
     static func setupMetrics(router: RoutesBuilder) {
         router.grouped(User.bearerAuthMiddleware())
             .on(.GET, "metrics", body: .collect(maxSize: ByteCount.init(value: 20_000_000))) { req -> EventLoopFuture<String> in
@@ -192,6 +213,10 @@ public class KognitaAPI {
         }
     }
 
+    /// Setup the text analyzer client
+    /// - Parameters:
+    ///   - app: The app to config the client to
+    ///   - metricsFactory: The metrics factory to use when logging data
     static func setupTextClient(app: Application, metricsFactory: MetricsFactory) {
 
         // Localhost testing config
@@ -281,33 +306,22 @@ public class KognitaAPI {
         }
         app.databases.use(.postgres(configuration: databaseConfig, maxConnectionsPerEventLoop: maxConnections), as: .psql)
     }
-}
 
-class HTTPSRedirectMiddleware: Middleware {
-    func respond(to request: Request, chainingTo next: Responder) -> EventLoopFuture<Response> {
-        guard request.application.environment == Environment.production else {
-            return next.respond(to: request)
+    /// Setup Redis a a session cacne if the config var exists
+    /// - Parameter app: The app to config the cache to
+    private static func setupSessionCache(for app: Application) {
+        guard let redisUrl = Environment.get("REDISCLOUD_URL") else {
+            // Do no setup as this will use the mem as the cache
+            app.sessions.use(.memory)
+            app.logger.info("Using in memory for sessions")
+            return
         }
-
-        let proto = request.headers.first(name: "X-Forwarded-Proto")
-            ?? request.url.scheme
-            ?? "http"
-
-        guard proto == "https" else {
-            guard let host = request.headers.first(name: .host) else {
-                return request.eventLoop.future(error: Abort(.badRequest))
-            }
-
-            let httpsURL = "https://" + host + request.url.string
-            return request.eventLoop.future(request.redirect(to: httpsURL, type: .permanent))
+        guard let config = try? RedisConfiguration(url: redisUrl) else {
+            app.logger.warning("Redis unable to init config based on \(redisUrl)")
+            return
         }
-
-        return next.respond(to: request)
-            .map { resp in
-                resp.headers.add(
-                    name: "Strict-Transport-Security",
-                    value: "max-age=31536000; includeSubDomains; preload")
-                return resp
-            }
+        app.logger.info("Using Redis for sessions")
+        app.redis.configuration = config
+        app.sessions.use(.redis)
     }
 }

@@ -27,11 +27,13 @@ extension ModelParameterRepresentable {
 }
 
 extension Parameters {
+    /// Convert a parameter to a model id
+    /// - Parameter parameter: The parameter tyåe to decode
+    /// - Throws: If the type is either wrong or if the value is invalid
+    /// - Returns: The id of the model
     public func get<Model: ModelParameterRepresentable>(_ parameter: Model.Type) throws -> Model.ID {
-        guard
-            let idValue = self.get(Model.identifier),
-            let id = Model.ID.expressed(by: idValue)
-        else { throw Abort(.badRequest) }
+        guard let idValue = self.get(Model.identifier) else { throw Abort(.internalServerError, reason: "Unable to find parameter of \(parameter)")}
+        guard let id = Model.ID.expressed(by: idValue) else { throw Abort(.badRequest, reason: "Unable to decode parameter to \(Model.ID.self)") }
         return id
     }
 }
