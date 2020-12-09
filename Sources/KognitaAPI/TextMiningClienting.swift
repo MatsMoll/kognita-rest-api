@@ -1,6 +1,6 @@
 import NIO
 import Vapor
-import Ink
+import SwiftMarkdown
 import SwiftSoup
 import Metrics
 
@@ -57,7 +57,6 @@ extension String {
 
     func cleanMarkdown() throws -> String {
         let cleanText = self
-        let parser = MarkdownParser()
         let latexIndentifier = "$$"
         let latexIndices = cleanText.indicesOf(string: latexIndentifier)
         var index = 0
@@ -90,7 +89,7 @@ extension String {
         if cleanText.endIndex != lastIndex {
             resultString += cleanText[lastIndex..<cleanText.endIndex]
         }
-        return try SwiftSoup.parse(parser.html(from: resultString)).text()
+        return try SwiftSoup.parse(markdownToHTML(resultString)).text()
     }
 
     func clean(stopwords: Set<String>) -> String {

@@ -36,18 +36,6 @@ public struct TaskResultAPIController: TaskResultAPIControlling {
                 .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: lowerBoundDays, limit: limit)
         }
     }
-
-    public func typingTaskResults(on req: Request) throws -> EventLoopFuture<[TypingTask.AnswerResult]> {
-        let user = try req.auth.require(User.self)
-        guard user.isAdmin else {
-            throw Abort(.unauthorized)
-        }
-        let subjectID = try req.parameters.get(Subject.self)
-        return req.repositories { repository in
-            repository.typingTaskRepository
-                .allTaskAnswers(for: subjectID)
-        }
-    }
 }
 //public struct TaskResultAPIController: TaskResultAPIControlling {
 

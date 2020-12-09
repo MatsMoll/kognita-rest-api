@@ -30,7 +30,7 @@ class CleanMarkdownTests: XCTestCase {
             """
         let expectedResult =
             """
-            hello there Lets add some math $$frac{1}{2} + sum_{i=n}^infinity n$$. Nice!
+            hello there Lets add some math $$\\frac{1}{2} + \\sum_{i=n}^\\infinity n$$. Nice!
             """
         try XCTAssertEqual(markdown.cleanMarkdown(), expectedResult)
     }
@@ -44,7 +44,7 @@ class CleanMarkdownTests: XCTestCase {
             $$\\frac{1}{2} + \\sum_{i=n}^\\infinity n$$
             $$\\frac{1}{2} + \\sum_{i=n}^\\infinity n
             """
-        let expectedResult = "hello there Lets add some math . Nice! $$frac{1}{2} + sum_{i=n}^infinity n"
+        let expectedResult = "hello there Lets add some math . Nice! $$\\frac{1}{2} + \\sum_{i=n}^\\infinity n"
         try XCTAssertEqual(markdown.cleanMarkdown(), expectedResult)
     }
     

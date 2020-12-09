@@ -1,17 +1,13 @@
 import Vapor
 import KognitaModels
 
-extension TypingTask.AnswerResult: Content {}
-
 public protocol TaskResultAPIControlling: RouteCollection {
     func recommendedRecap(on req: Request) throws -> EventLoopFuture<[RecommendedRecap]>
-    func typingTaskResults(on req: Request) throws -> EventLoopFuture<[TypingTask.AnswerResult]>
 }
 
 extension TaskResultAPIControlling {
     public func boot(routes: RoutesBuilder) throws {
         routes.get("recommended-recap", use: recommendedRecap)
-        routes.on(.GET, "subjects", Subject.parameter, "typing-task-results", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: typingTaskResults)
     }
 }
 
