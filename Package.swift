@@ -10,7 +10,7 @@ var dependencies: [Package.Dependency] = [
 
     .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc"),
 
-    .package(name: "SwiftMarkdown", url: "https://github.com/vapor-community/markdown.git", .upToNextMajor(from: "0.4.0")),
+    .package(name: "Ink", url: "https://github.com/johnsundell/Ink.git", from: "0.5.0"),
     
     .package(name: "redis", url: "https://github.com/vapor/redis.git", from: "4.0.0-rc")
 ]
@@ -31,6 +31,17 @@ case "DEV":
         ]
     )
 default:
+    #if os(macOS)
+    if ProcessInfo.processInfo.environment["CUSTOM_SETTINGS"] == nil {
+        dependencies.append(contentsOf: [
+                .package(path: "../KognitaCore"),
+                .package(path: "../KognitaModels"),
+                .package(path: "../../QTIKit")
+            ]
+        )
+        break
+    }
+    #endif
     dependencies.append(contentsOf: [
             .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
             .package(name: "KognitaModels", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaModels", from: "1.0.0"),
@@ -62,7 +73,7 @@ let package = Package(
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Mailgun", package: "VaporMailgunService"),
                 .product(name: "QTIKit", package: "QTIKit"),
-                .product(name: "SwiftMarkdown", package: "SwiftMarkdown"),
+                .product(name: "Ink", package: "Ink"),
                 .product(name: "Redis", package: "redis")
         ]),
         .testTarget(

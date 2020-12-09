@@ -70,6 +70,17 @@ public struct TaskSolutionAPIController: TaskSolutionAPIControlling {
             try repositories.taskSolutionRepository.solutions(for: req.parameters.get(GenericTask.self), for: user)
         }
     }
+    
+    public func solutionsForSubject(on req: Request) throws -> EventLoopFuture<[TaskSolution]> {
+        let user = try req.auth.require(User.self)
+        guard user.isAdmin else {
+            return req.eventLoop.future(error: Abort(.forbidden))
+        }
+        let subjectID = try req.parameters.get(Subject.self)
+        return req.repositories { repo in
+            repo.taskSolutionRepository.solutionsFor(subjectID: subjectID)
+        }
+    }
 }
 
 extension TaskSolution {
