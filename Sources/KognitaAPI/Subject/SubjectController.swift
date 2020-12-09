@@ -24,7 +24,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
         let user = try req.auth.require(User.self)
 
         return req.repositories { repo in
-            try repo.subjectRepository.allActive(for: user)
+            repo.subjectRepository.allActive(for: user.id)
         }
     }
 

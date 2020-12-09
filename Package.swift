@@ -10,7 +10,7 @@ var dependencies: [Package.Dependency] = [
 
     .package(url: "https://github.com/twof/VaporMailgunService.git", from: "4.0.0-rc"),
 
-    .package(name: "SwiftMarkdown", url: "https://github.com/vapor-community/markdown.git", .upToNextMajor(from: "0.4.0")),
+    .package(name: "Ink", url: "https://github.com/johnsundell/Ink.git", from: "0.5.0"),
     
     .package(name: "redis", url: "https://github.com/vapor/redis.git", from: "4.0.0-rc")
 ]
@@ -62,7 +62,7 @@ let package = Package(
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Mailgun", package: "VaporMailgunService"),
                 .product(name: "QTIKit", package: "QTIKit"),
-                .product(name: "SwiftMarkdown", package: "SwiftMarkdown"),
+                .product(name: "Ink", package: "Ink"),
                 .product(name: "Redis", package: "redis")
         ]),
         .testTarget(
