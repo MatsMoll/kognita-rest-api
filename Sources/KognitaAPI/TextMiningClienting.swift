@@ -77,14 +77,11 @@ extension String {
                 break
             }
             let substring = cleanText[latexStartIndex..<latexEndIndex]
-            print(substring)
             if substring.contains("\n") {
                 index += 1
-                print(index)
             } else {
                 lastIndex = latexEndIndex
                 index += 2
-                print(index)
             }
         }
         if cleanText.endIndex != lastIndex {
@@ -125,6 +122,7 @@ struct PythonTextClient: TextMiningClienting {
     static let errorCounterLabel = "text_client_request_error"
 
     private static let englishStopwords = Set(["i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "yourself", "yourselves", "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself", "they", "them", "their", "theirs", "themselves", "what", "which", "who", "whom", "this", "that", "these", "those", "am", "is", "are", "was", "were", "be", "been", "being", "have", "has", "had", "having", "do", "does", "did", "doing", "a", "an", "the", "and", "but", "if", "or", "because", "as", "until", "while", "of", "at", "by", "for", "with", "about", "against", "between", "into", "through", "during", "before", "after", "above", "below", "to", "from", "up", "down", "in", "out", "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both", "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t", "can", "will", "just", "don", "should", "now"])
+    
     private static let norwegianStopwords = Set(["å", "alle", "andre", "at", "av", "både", "båe", "bare", "begge", "ble", "blei", "bli", "blir", "blitt", "bort", "bra", "bruke", "da", "då", "de", "deg", "dei", "deim", "deira", "deires", "dem", "den", "denne", "der", "dere", "deres", "det", "dette", "di", "din", "disse", "dit", "ditt", "du", "dykk", "dykkar", "eg", "ein", "eit", "eitt", "eller", "elles", "en", "ene", "eneste", "enhver", "enn", "er", "et", "ett", "etter", "få", "for", "før", "fordi", "forsøke", "først", "fra", "fram", "gå", "gjorde", "gjøre", "god", "ha", "hadde", "han", "hans", "har", "hennar", "henne", "hennes", "her", "hit", "hjå", "ho", "hoe", "honom", "hoss", "hossen", "hun", "hva", "hvem", "hver", "hvilke", "hvilken", "hvis", "hvor", "hvordan", "hvorfor", "i", "ikke", "ikkje", "ingen", "ingi", "inkje", "inn", "innen", "inni", "ja", "jeg", "kan", "kom", "korleis", "korso", "kun", "kunne", "kva", "kvar", "kvarhelst", "kven", "kvi", "kvifor", "lage", "lang", "lik", "like", "må", "man", "mange", "måte", "me", "med", "medan", "meg", "meget", "mellom", "men", "mens", "mer", "mest", "mi", "min", "mine", "mitt", "mot", "mye", "mykje", "nå", "når", "ned", "nei", "no", "noe", "noen", "noka", "noko", "nokon", "nokor", "nokre", "ny", "og", "også", "om", "opp", "oss", "over", "på", "rett", "riktig", "så", "samme", "sånn", "seg", "selv", "si", "sia", "sidan", "siden", "sin", "sine", "sist", "sitt", "sjøl", "skal", "skulle", "slik", "slutt", "so", "som", "somme", "somt", "start", "stille", "tid", "til", "tilbake", "um", "under", "upp", "ut", "uten", "være", "vært", "var", "vår", "vart", "varte", "ved", "verdi", "vere", "verte", "vi", "vil", "ville", "vite", "vore", "vors", "vort"])
 
     struct SimilarityData: Content {

@@ -122,11 +122,14 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
     public func getDetails(_ req: Request) throws -> EventLoopFuture<Subject.Details> {
 
-        let user = try req.auth.require(User.self)
+        let subjectID = try req.parameters.get(Subject.self)
+        guard let user = req.auth.get(User.self) else {
+            return unauthenticatedDetails(for: subjectID, on: req)
+        }
 
         return req.repositories { repositories in
-            try repositories.subjectRepository
-                .find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            repositories.subjectRepository
+                .find(subjectID, or: Abort(.badRequest))
                 .failableFlatMap { subject in
 
                     try repositories.subjectTestRepository
@@ -189,6 +192,44 @@ public struct SubjectAPIController: SubjectAPIControlling {
             }
         }
     }
+    
+    private func unauthenticatedDetails(for subjectID: Subject.ID, on req: Request) -> EventLoopFuture<Subject.Details> {
+        req.repositories { repo in
+            repo.subjectRepository
+                .find(subjectID, or: Abort(.badRequest))
+                .failableFlatMap { subject in
+
+                    try repo.topicRepository
+                        .getTopicsWithTaskCount(withSubjectID: subject.id)
+                        .flatMap { topics in
+
+                            repo.examRepository
+                                .allExamsWithNumberOfTasksFor(subjectID: subject.id, userID: nil)
+                                .map { exams in
+                    
+                                    Subject.Details(
+                                        subject: subject,
+                                        topics: topics.map { topic in
+                                            Topic.UserOverview(
+                                                id: topic.topic.id,
+                                                name: topic.topic.name,
+                                                typingTaskCount: topic.typingTaskCount,
+                                                multipleChoiceTaskCount: topic.multipleChoiceTaskCount,
+                                                userLevel: topic.userLevelZero()
+                                            )
+                                        },
+                                        openTest: nil,
+                                        numberOfTasks: 0,
+                                        isActive: false,
+                                        canPractice: false,
+                                        isModerator: false,
+                                        exams: exams
+                                    )
+                                }
+                        }
+                }
+        }
+    }
 
     public func export(on req: Request) throws -> EventLoopFuture<Subject.Export> {
         let user = try req.auth.require(User.self)
@@ -234,7 +275,7 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         return req.repositories { repositories in
             repositories.subjectRepository
-                .allSubjects(for: user, searchQuery: .init())
+                .allSubjects(for: user.id, searchQuery: nil)
                 .flatMap { subjects in
 
                     repositories.taskResultRepository
