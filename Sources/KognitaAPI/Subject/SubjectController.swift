@@ -280,21 +280,27 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
                     repositories.taskResultRepository
                         .recommendedRecap(for: user.id, upperBoundDays: 10, lowerBoundDays: -5, limit: 1)
-                        .failableFlatMap { recommendedRecaps in
+                        .flatMap { recommendedRecaps in
+                            
+                            repositories.subjectRepository
+                                .feideSubjects(for: user.id)
+                                .failableFlatMap { potensialSubjects in
+                                 
+                                    try repositories.subjectTestRepository
+                                        .currentlyOpenTest(for: user)
+                                        .map { test in
 
-                            try repositories.subjectTestRepository
-                                .currentlyOpenTest(for: user)
-                                .map { test in
-
-                                    // FIXME: - Set ongoing sessions parameters
-                                    Dashboard(
-                                        subjects: subjects,
-                                        ongoingPracticeSession: nil,
-                                        ongoingTestSession: nil,
-                                        openedTest: test,
-                                        recommendedRecap: recommendedRecaps.first
-                                    )
-                            }
+                                            // FIXME: - Set ongoing sessions parameters
+                                            Dashboard(
+                                                subjects: subjects,
+                                                ongoingPracticeSession: nil,
+                                                ongoingTestSession: nil,
+                                                openedTest: test,
+                                                recommendedRecap: recommendedRecaps.first,
+                                                potensialSubjects: potensialSubjects.filter({ $0.wasViewedAt == nil && $0.subjectID != nil })
+                                            )
+                                    }
+                                }
                         }
             }
         }
@@ -320,9 +326,9 @@ public struct SubjectAPIController: SubjectAPIControlling {
 
         return req.repositories { repositories in
             return try repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
-                .failableFlatMap { subject in
+                .flatMap { subject in
 
-                    try repositories.subjectRepository.mark(active: subject, canPractice: true, for: user)
+                    repositories.subjectRepository.mark(active: subject.id, canPractice: true, for: user.id)
             }
             .transform(to: .ok)
         }
@@ -374,6 +380,16 @@ public struct SubjectAPIController: SubjectAPIControlling {
                 }
                 .transform(to: .ok)
         }
+    }
+    
+    public func markPotensialSubjects(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let user = try req.auth.require(User.self)
+        let potensialSubjects = try req.content.decode([User.FeideSubject.Update].self)
+        
+        return req.repositories { repo in
+            repo.subjectRepository.update(potensialSubjects: potensialSubjects, for: user.id)
+        }
+        .transform(to: .ok)
     }
 }
 

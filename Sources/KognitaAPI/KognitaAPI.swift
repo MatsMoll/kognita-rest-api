@@ -189,6 +189,7 @@ public class KognitaAPI {
         setupTextClient(app: app, metricsFactory: metricsFactory)
         setupMetrics(router: routes)
         setupSessionCache(for: app)
+        setupFeide(for: app)
         try APIControllers.defaultControllers().boot(routes: routes.grouped(app.sessions.middleware))
     }
 
@@ -323,5 +324,41 @@ public class KognitaAPI {
         app.logger.info("Using Redis for sessions")
         app.redis.configuration = config
         app.sessions.use(.redis)
+    }
+    
+    private static func setupFeide(for app: Application) {
+        guard
+            let clientID = Environment.get("FEIDE_CLIENT_ID"),
+            let clientSecret = Environment.get("FEIDE_CLIENT_SECRET"),
+            let authBaseUri = Environment.get("FEIDE_AUTH_BASE_URL"),
+            let apiBaseUri = Environment.get("FEIDE_API_BASE_URL"),
+            let callbackUri = Environment.get("FEIDE_CALLBACK_URI")
+        else { fatalError("Missing some of the env variables for setting up the Feide service") }
+        
+        let config = FeideClient.Config(
+            authBaseUri: authBaseUri,
+            apiBaseUri: apiBaseUri,
+            clientID: clientID,
+            clientSecret: clientSecret,
+            callbackUri: callbackUri
+        )
+        app.feideClient.use { FeideClient(config: config, client: $0.client) }
+    }
+}
+
+extension HTTPCookies {
+    
+    public var isFeideLogin: Bool {
+        get {
+            guard let cookie = self.all["feide-login"] else { return false }
+            return cookie.string == "true"
+        }
+        set {
+            if newValue {
+                self.all["feide-login"] = .init(string: "true")
+            } else {
+                self.all["feide-login"] = .init(string: "false", expires: .now)
+            }
+        }
     }
 }

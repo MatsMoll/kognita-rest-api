@@ -35,6 +35,8 @@ public protocol SubjectAPIControlling: CreateModelAPIController,
     func activeSubjects(on req: Request) throws -> EventLoopFuture<[Subject]>
 
     func importTopic(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    
+    func markPotensialSubjects(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 }
 
 extension Subject.Compendium: Content {}
@@ -46,6 +48,8 @@ extension SubjectAPIControlling {
         let subjects = routes.grouped("subjects")
         let subjectInstance = subjects.grouped(Subject.parameter)
         let guardedSubjectInstance = subjectInstance.grouped(User.guardMiddleware())
+        
+        subjects.grouped(User.guardMiddleware()).post("mark-potensial", use: markPotensialSubjects(on:))
 
         subjects.get("active", use: activeSubjects(on:))
 

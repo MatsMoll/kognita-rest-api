@@ -45,6 +45,7 @@ class SubjectTests: VaporTestCase {
         let user = try User.create(on: app)
 
         let requestBody = Subject.Create.Data(
+            code: Subject.uniqueCode(),
             name: "OS",
             description: "Operativstystemer",
             category: "Tech"
@@ -63,6 +64,7 @@ class SubjectTests: VaporTestCase {
 
     func testCreateSubjectWhenNotLoggedInError() throws {
         let requestBody = Subject.Create.Data(
+            code: Subject.uniqueCode(),
             name: "OS",
             description: "Operativstystemer",
             category: "Something"

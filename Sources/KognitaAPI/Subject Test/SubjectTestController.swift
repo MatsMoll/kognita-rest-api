@@ -46,7 +46,8 @@ public struct SubjectTestAPIController: SubjectTestAPIControlling {
         let user = try req.auth.require(User.self)
 
         return req.repositories { repositories in
-            try repositories.subjectTestRepository.find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
+            try repositories.subjectTestRepository
+                .find(req.parameters.get(SubjectTest.self), or: Abort(.badRequest))
                 .failableFlatMap { test in
                     try repositories.subjectTestRepository.enter(test: test, with: req.content.decode(), by: user)
             }

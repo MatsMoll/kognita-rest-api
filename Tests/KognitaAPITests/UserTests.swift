@@ -46,7 +46,14 @@ class UserTests: VaporTestCase {
 
 //        let jobQueue = try app.make(JobQueueable.self) as! JobQueueMock
 
-        let newUser = User.Create.Data(username: "Mats", email: "test@ntnu.no", password: "password", verifyPassword: "password", acceptedTerms: .accepted)
+        let newUser = User.Create.Data(
+            username: "Mats",
+            email: "test@ntnu.no",
+            password: "password",
+            verifyPassword: "password",
+            pictureUrl: nil,
+            acceptedTerms: .accepted
+        )
         try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser) { response in
 
     //        wait(for: [jobQueue.expectation], timeout: .seconds(1))
@@ -63,14 +70,28 @@ class UserTests: VaporTestCase {
     func testCreateUserExistingEmail() throws {
 
         let user = try User.create(on: app)
-        let newUser = User.Create.Data(username: "Mats", email: user.email, password: "password", verifyPassword: "password", acceptedTerms: .accepted)
+        let newUser = User.Create.Data(
+            username: "Mats",
+            email: user.email,
+            password: "password",
+            verifyPassword: "password",
+            pictureUrl: nil,
+            acceptedTerms: .accepted
+        )
         try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser) { response in
             response.has(statusCode: .internalServerError)
         }
     }
     
     func testCreateUserPasswordMismatch() throws {
-        let newUser = User.Create.Data(username: "Mats", email: "test@3.com", password: "password1", verifyPassword: "not matching", acceptedTerms: .accepted)
+        let newUser = User.Create.Data(
+            username: "Mats",
+            email: "test@3.com",
+            password: "password1",
+            verifyPassword: "not matching",
+            pictureUrl: nil,
+            acceptedTerms: .accepted
+        )
 
         try app.sendRequest(to: uri, method: .POST, headers: standardHeaders, body: newUser) { response in
             response.has(statusCode: .internalServerError)
