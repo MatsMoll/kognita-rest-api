@@ -43,3 +43,8 @@ jobs:
         DATABASE_PASSWORD: postgres
         DATABASE_DB: postgres
         DATABASE_HOSTNAME: localhost
+        FEIDE_CLIENT_ID: SOME_ID
+        FEIDE_CLIENT_SECRET: SOME_ID
+        FEIDE_AUTH_BASE_URL: https://some-url.com
+        FEIDE_API_BASE_URL: https://some-url.com
+        FEIDE_CALLBACK_URI: https://some-url.com
