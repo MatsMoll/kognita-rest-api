@@ -117,7 +117,8 @@ extension LectureNote.RecapSession {
                             .map { results in
                                 Sessions.Result(
                                     subject: subject,
-                                    results: results
+                                    results: results,
+                                    resources: []
                                 )
                             }
                     }

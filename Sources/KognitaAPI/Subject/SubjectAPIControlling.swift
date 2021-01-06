@@ -46,6 +46,7 @@ extension SubjectAPIControlling {
     public func boot(routes: RoutesBuilder) throws {
 
         let subjects = routes.grouped("subjects")
+        let guardedSubjects = subjects.grouped(User.guardMiddleware())
         let subjectInstance = subjects.grouped(Subject.parameter)
         let guardedSubjectInstance = subjectInstance.grouped(User.guardMiddleware())
         
@@ -68,9 +69,9 @@ extension SubjectAPIControlling {
         guardedSubjectInstance.post("revoke-moderator", use: self.revokePriveleges(on: ))
 
 //        router.get  ("subjects/export",                     use: Self.exportAll)
-        guardedSubjectInstance.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
-        guardedSubjectInstance.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
-        guardedSubjectInstance.post("import-peer", use: self.importContentPeerWise)
-        guardedSubjectInstance.on(.POST, "import", "topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
+        guardedSubjects.on(.GET, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(on:))
+        guardedSubjects.on(.POST, "subjects", "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importContent(on:))
+        guardedSubjects.post("import-peer", use: self.importContentPeerWise)
+        guardedSubjects.on(.POST, "import", "topic", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.importTopic(on:))
     }
 }

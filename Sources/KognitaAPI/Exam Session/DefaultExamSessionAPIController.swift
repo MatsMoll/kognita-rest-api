@@ -61,7 +61,8 @@ struct DefaultExamSessionAPIController: ExamSessionAPIController {
                         .map { subject in
                             Sessions.Result(
                                 subject: subject,
-                                results: results
+                                results: results,
+                                resources: []
                             )
                         }
                 }

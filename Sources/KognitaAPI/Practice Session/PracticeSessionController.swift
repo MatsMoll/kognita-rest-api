@@ -98,7 +98,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
         }
     }
 
-    public func get(solutions req: Request) throws -> EventLoopFuture<[TaskSolution.Response]> {
+    public func get(solutions req: Request) throws -> EventLoopFuture<TaskSolution.Resources> {
 
         let user = try req.auth.require(User.self)
 
@@ -117,6 +117,17 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
                         .flatMap { taskID in
 
                             repositories.taskSolutionRepository.solutions(for: taskID, for: user)
+                                .flatMap { solutions in
+                                
+                                    repositories.resourceRepository.resourcesFor(taskID: taskID)
+                                        .map { resources in
+                                        
+                                            TaskSolution.Resources(
+                                                solutions: solutions,
+                                                resources: resources
+                                            )
+                                    }
+                            }
                     }
             }
         }
@@ -130,10 +141,10 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
     public func getSessionResult(_ req: Request) throws -> EventLoopFuture<Sessions.Result> {
 
         let user = try req.auth.require(User.self)
-
+        let sessionID = try req.parameters.get(PracticeSession.self)
         return req.repositories { repositories in
-            try repositories.practiceSessionRepository
-                .find(req.parameters.get(PracticeSession.self))
+            repositories.practiceSessionRepository
+                .find(sessionID)
                 .failableFlatMap { session in
                     guard user.id == session.userID else {
                         throw Abort(.forbidden)
@@ -145,12 +156,22 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
 
                             return repositories.subjectRepository
                                 .subject(for: session)
-                                .map { subject in
-
-                                    Sessions.Result(
-                                        subject: subject,
-                                        results: results
-                                    )
+                                .flatMap { subject in
+                                    
+                                    repositories.practiceSessionRepository
+                                        .tasksWith(sessionID: sessionID)
+                                        .flatMap { taskIDs in
+                                            
+                                            repositories.resourceRepository
+                                                .resourcesFor(taskIDs: taskIDs)
+                                        }
+                                        .map { resources in
+                                            Sessions.Result(
+                                                subject: subject,
+                                                results: results,
+                                                resources: resources
+                                            )
+                                        }
                             }
                     }
             }
@@ -214,7 +235,7 @@ public struct PracticeSessionAPIController: PracticeSessionAPIControlling {
         return try self.get(solutions: req)
             .failableFlatMap { solutions in
 
-                guard let solution = solutions.first?.solution else {
+                guard let solution = solutions.solutions.first?.solution else {
                     throw Abort(.internalServerError)
                 }
 
