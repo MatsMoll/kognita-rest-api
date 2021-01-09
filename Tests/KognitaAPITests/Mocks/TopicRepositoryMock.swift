@@ -7,7 +7,11 @@ extension Topic {
 
 struct TopicRepositoryMock: TopicRepository {
     
-    func importContent(from content: Topic.Import, in subjectID: Subject.ID) -> EventLoopFuture<Void> {
+    func importContent(from content: Subtopic.Import, in topic: Topic, resourceMap: [Resource.ID : Resource.ID]) throws -> EventLoopFuture<Void> {
+        eventLoop.future()
+    }
+    
+    func importContent(from content: Topic.Import, in subjectID: Subject.ID, resourceMap: [Resource.ID : Resource.ID]) -> EventLoopFuture<Void> {
         eventLoop.future()
     }
 
@@ -55,14 +59,6 @@ struct TopicRepositoryMock: TopicRepository {
 
     func getTopicResponses(in subject: Subject) throws -> EventLoopFuture<[Topic]> {
         eventLoop.future([])
-    }
-
-    func importContent(from content: Topic.Import, in subject: Subject) throws -> EventLoopFuture<Void> {
-        eventLoop.future()
-    }
-
-    func importContent(from content: Subtopic.Import, in topic: Topic) throws -> EventLoopFuture<Void> {
-        eventLoop.future()
     }
 
     func getTopicsWithTaskCount(in subject: Subject) throws -> EventLoopFuture<[Topic.WithTaskCount]> {
