@@ -375,7 +375,8 @@ public struct SubjectAPIController: SubjectAPIControlling {
                 .failableFlatMap {
                     repo.topicRepository.importContent(
                         from: content,
-                        in: subjectID
+                        in: subjectID,
+                        resourceMap: [:]
                     )
                 }
                 .transform(to: .ok)

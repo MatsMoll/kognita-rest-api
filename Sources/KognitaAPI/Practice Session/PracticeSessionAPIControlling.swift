@@ -6,6 +6,7 @@ extension PracticeSession: ModelParameterRepresentable {}
 extension Sessions.Result: Content {}
 extension PracticeSession.Overview: Content {}
 extension Sessions.CurrentTask: Content {}
+extension TaskSolution.Resources: Content {}
 
 public protocol PracticeSessionAPIControlling: CreateModelAPIController, RouteCollection {
     func create(on req: Request)                 throws -> EventLoopFuture<PracticeSession.Create.Response>
@@ -13,7 +14,7 @@ public protocol PracticeSessionAPIControlling: CreateModelAPIController, RouteCo
     func submit(typingTask req: Request)         throws -> EventLoopFuture<HTTPStatus>
     func end(session req: Request)               throws -> EventLoopFuture<PracticeSession>
     func get(amountHistogram req: Request)       throws -> EventLoopFuture<[TaskResult.History]>
-    func get(solutions req: Request)             throws -> EventLoopFuture<[TaskSolution.Response]>
+    func get(solutions req: Request)             throws -> EventLoopFuture<TaskSolution.Resources>
     func getSessionResult(_ req: Request)        throws -> EventLoopFuture<Sessions.Result>
     func extend(session req: Request)            throws -> EventLoopFuture<HTTPResponseStatus>
     func estimatedScore(on req: Request)         throws -> EventLoopFuture<ClientResponse>
