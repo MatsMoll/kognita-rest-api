@@ -22,6 +22,9 @@ public protocol ResourceAPIController: RouteCollection {
     func connectTaskToResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func disconnectTaskFromResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func resourcesForTask(on req: Request) throws -> EventLoopFuture<[Resource]>
+    
+    func connectTermToResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
+    func disconnectTermFromResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
 
     func deleteResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     
@@ -47,6 +50,9 @@ extension ResourceAPIController {
         // /tasks/:id/resources
         let taskConnection = routes.grouped("tasks", GenericTask.parameter, "resources")
         
+        // /terms/:id/resources
+        let termConnection = routes.grouped("terms", Term.parameter, "resources")
+        
         resources.post("video", use: createVideo(on:))
         resources.post("book", use: createBook(on:))
         resources.post("article", use: createArticle(on:))
@@ -61,5 +67,8 @@ extension ResourceAPIController {
         taskConnection.get(use: resourcesForTask(on:))
         taskConnection.post(Resource.parameter, use: connectTaskToResource(on:))
         taskConnection.delete(Resource.parameter, use: disconnectTaskFromResource(on:))
+        
+        termConnection.post(Resource.parameter, use: connectTermToResource(on:))
+        termConnection.delete(Resource.parameter, use: disconnectTermFromResource(on:))
     }
 }

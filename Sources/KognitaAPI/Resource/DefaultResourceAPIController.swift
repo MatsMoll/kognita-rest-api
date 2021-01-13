@@ -103,4 +103,22 @@ struct DefaultResourceAPIController: ResourceAPIController {
         }
         .transform(to: .ok)
     }
+    
+    func connectTermToResource(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let termID = try req.parameters.get(Term.self)
+        let resourceID = try req.parameters.get(Resource.self)
+        return req.repositories { repo in
+            repo.resourceRepository.connect(termID: termID, to: resourceID)
+        }
+        .transform(to: .created)
+    }
+    
+    func disconnectTermFromResource(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
+        let termID = try req.parameters.get(Term.self)
+        let resourceID = try req.parameters.get(Resource.self)
+        return req.repositories { repo in
+            repo.resourceRepository.disconnect(termID: termID, from: resourceID)
+        }
+        .transform(to: .ok)
+    }
 }

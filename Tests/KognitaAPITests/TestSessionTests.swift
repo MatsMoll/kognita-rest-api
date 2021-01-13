@@ -32,6 +32,7 @@ class TestableControllers: APIControllerCollection {
     var examController: ExamAPIController { controllers.examController }
     var examSessionController: ExamSessionAPIController { controllers.examSessionController }
     var resourceController: ResourceAPIController { controllers.resourceController }
+    var termController: TermAPIController { controllers.termController }
 
     static var shared: TestableControllers!
 

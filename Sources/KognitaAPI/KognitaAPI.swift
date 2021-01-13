@@ -36,6 +36,7 @@ public protocol APIControllerCollection: RouteCollection {
     var examController: ExamAPIController { get }
     var examSessionController: ExamSessionAPIController { get }
     var resourceController: ResourceAPIController { get }
+    var termController: TermAPIController { get }
 }
 
 /// An instance that contains all the different controllers that are needed to run the api
@@ -60,6 +61,7 @@ public struct APIControllers: APIControllerCollection {
     public var examController: ExamAPIController
     public var examSessionController: ExamSessionAPIController
     public var resourceController: ResourceAPIController
+    public var termController: TermAPIController
 
     public func boot(routes: RoutesBuilder) throws {
 
@@ -89,6 +91,7 @@ public struct APIControllers: APIControllerCollection {
         try guardedAuth.register(collection: examController)
         try guardedAuth.register(collection: examSessionController)
         try guardedAuth.register(collection: resourceController)
+        try guardedAuth.register(collection: termController)
     }
 }
 
@@ -115,7 +118,8 @@ extension APIControllers {
             lectureNoteRecapSessionController: LectureNote.RecapSession.APIController(),
             examController: DefaultExamAPIController(),
             examSessionController: DefaultExamSessionAPIController(),
-            resourceController: DefaultResourceAPIController()
+            resourceController: DefaultResourceAPIController(),
+            termController: DefaultTermAPIController()
         )
     }
 }
