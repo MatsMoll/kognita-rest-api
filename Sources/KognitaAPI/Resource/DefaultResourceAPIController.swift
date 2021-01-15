@@ -60,6 +60,13 @@ struct DefaultResourceAPIController: ResourceAPIController {
         }
     }
     
+    func resourcesForTopic(on req: Request) throws -> EventLoopFuture<[Resource]> {
+        let topicID = try req.parameters.get(Topic.self)
+        return req.repositories { repo in
+            repo.resourceRepository.resourcesFor(topicID: topicID)
+        }
+    }
+    
     func connectTaskToResource(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let taskID = try req.parameters.get(GenericTask.self)
         let resourceID = try req.parameters.get(Resource.self)

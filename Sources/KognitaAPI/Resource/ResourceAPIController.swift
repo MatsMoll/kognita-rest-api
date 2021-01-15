@@ -18,6 +18,8 @@ public protocol ResourceAPIController: RouteCollection {
     func connectSubtopicToResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func disconnectSubtopicFromResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func resourcesForSubtopic(on req: Request) throws -> EventLoopFuture<[Resource]>
+    
+    func resourcesForTopic(on req: Request) throws -> EventLoopFuture<[Resource]>
 
     func connectTaskToResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
     func disconnectTaskFromResource(on req: Request) throws -> EventLoopFuture<HTTPStatus>
@@ -47,6 +49,9 @@ extension ResourceAPIController {
         // /subtopics/:id/resources
         let subtopicConnection = routes.grouped("subtopics", Subtopic.parameter, "resources")
         
+        // /topics/:id/resources
+        let topicConnection = routes.grouped("topics", Topic.parameter, "resources")
+        
         // /tasks/:id/resources
         let taskConnection = routes.grouped("tasks", GenericTask.parameter, "resources")
         
@@ -63,6 +68,8 @@ extension ResourceAPIController {
         subtopicConnection.get(use: resourcesForSubtopic(on: ))
         subtopicConnection.post(Resource.parameter, use: connectTaskToResource(on: ))
         subtopicConnection.delete(Resource.parameter, use: disconnectTaskFromResource(on:))
+        
+        topicConnection.get(use: resourcesForTopic(on:))
         
         taskConnection.get(use: resourcesForTask(on:))
         taskConnection.post(Resource.parameter, use: connectTaskToResource(on:))
