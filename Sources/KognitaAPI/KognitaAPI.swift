@@ -174,9 +174,9 @@ public class KognitaAPI {
         KognitaCore.config(app: app)
         var metricsFactory: MetricsFactory!
         if let promFactory = try? MetricsSystem.prometheus() {
-            metricsFactory = promFactory
+            metricsFactory = PrometheusMetricsFactory(client: promFactory)
         } else {
-            metricsFactory = PrometheusClient()
+            metricsFactory = PrometheusMetricsFactory(client: PrometheusClient())
             MetricsSystem.bootstrap(metricsFactory)
         }
 
