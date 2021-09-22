@@ -25,8 +25,8 @@ case "LOCAL":
     )
 case "DEV":
     dependencies.append(contentsOf: [
-            .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", .branch("develop")),
-            .package(name: "KognitaModels", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaModels", .branch("develop")),
+            .package(name: "KognitaCore", url: "https://github.com/MatsMoll/KognitaCore", .branch("develop")),
+            .package(name: "KognitaModels", url: "https://github.com/MatsMoll/KognitaModels", .branch("develop")),
             .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
         ]
     )
@@ -43,8 +43,8 @@ default:
     }
     #endif
     dependencies.append(contentsOf: [
-            .package(name: "KognitaCore", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaCore", from: "2.0.0"),
-            .package(name: "KognitaModels", url: "https://Kognita:dyjdov-bupgev-goffY8@github.com/MatsMoll/KognitaModels", from: "1.0.0"),
+            .package(name: "KognitaCore", url: "https://github.com/MatsMoll/KognitaCore", from: "2.0.0"),
+            .package(name: "KognitaModels", url: "https://github.com/MatsMoll/KognitaModels", from: "1.0.0"),
             .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
         ]
     )
