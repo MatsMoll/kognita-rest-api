@@ -20,14 +20,14 @@ case "LOCAL":
     dependencies.append(contentsOf: [
             .package(path: "../KognitaCore"),
             .package(path: "../KognitaModels"),
-            .package(path: "../../QTIKit")
+//            .package(path: "../../QTIKit")
         ]
     )
 case "DEV":
     dependencies.append(contentsOf: [
             .package(name: "KognitaCore", url: "https://github.com/MatsMoll/KognitaCore", .branch("develop")),
             .package(name: "KognitaModels", url: "https://github.com/MatsMoll/KognitaModels", .branch("develop")),
-            .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
+//            .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
         ]
     )
 default:
@@ -36,7 +36,7 @@ default:
         dependencies.append(contentsOf: [
                 .package(path: "../KognitaCore"),
                 .package(path: "../KognitaModels"),
-                .package(path: "../../QTIKit")
+//                .package(path: "../../QTIKit")
             ]
         )
         break
@@ -45,7 +45,7 @@ default:
     dependencies.append(contentsOf: [
             .package(name: "KognitaCore", url: "https://github.com/MatsMoll/KognitaCore", from: "2.0.0"),
             .package(name: "KognitaModels", url: "https://github.com/MatsMoll/KognitaModels", from: "1.0.0"),
-            .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
+//            .package(name: "QTIKit", url: "https://github.com/MatsMoll/qtikit", from: "0.0.1"),
         ]
     )
 }
@@ -72,7 +72,7 @@ let package = Package(
                 .product(name: "KognitaModels", package: "KognitaModels"),
                 .product(name: "Vapor", package: "vapor"),
                 .product(name: "Mailgun", package: "VaporMailgunService"),
-                .product(name: "QTIKit", package: "QTIKit"),
+//                .product(name: "QTIKit", package: "QTIKit"),
                 .product(name: "Ink", package: "Ink"),
                 .product(name: "Redis", package: "redis")
         ]),

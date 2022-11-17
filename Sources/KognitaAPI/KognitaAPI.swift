@@ -365,7 +365,7 @@ extension HTTPCookies {
             if newValue {
                 self.all["feide-login"] = .init(string: "true")
             } else {
-                self.all["feide-login"] = .init(string: "false", expires: .now)
+                self.all["feide-login"] = .init(string: "false", expires: Date())
             }
         }
     }
