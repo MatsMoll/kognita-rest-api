@@ -84,6 +84,28 @@ public struct TopicAPIController: TopicAPIControlling {
                 }
         }
     }
+    
+    public func importSubtopics(req: Request) throws -> EventLoopFuture<HTTPResponseStatus> {
+        
+        let user = try req.auth.require(User.self)
+        let topicID = try req.parameters.get(Topic.self)
+        let content = try req.content.decode(Subtopic.Import.self)
+        
+        return req.repositories { repo in
+            try repo.userRepository
+                .isModerator(user: user, topicID: topicID)
+                .ifFalse(throw: Abort(.forbidden))
+                .flatMap {
+                    repo.topicRepository
+                        .find(topicID, or: Abort(.badRequest, reason: "Invalid Topic ID"))
+                    
+                }.flatMapThrowing { topic in
+                    try repo.topicRepository
+                        .importContent(from: content, in: topic, resourceMap: [:])
+                }
+        }
+        .transform(to: .ok)
+    }
 }
 
 extension Topic {

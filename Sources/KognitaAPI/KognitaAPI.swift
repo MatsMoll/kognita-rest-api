@@ -174,9 +174,9 @@ public class KognitaAPI {
         KognitaCore.config(app: app)
         var metricsFactory: MetricsFactory!
         if let promFactory = try? MetricsSystem.prometheus() {
-            metricsFactory = promFactory
+            metricsFactory = PrometheusMetricsFactory(client: promFactory)
         } else {
-            metricsFactory = PrometheusClient()
+            metricsFactory = PrometheusMetricsFactory(client: PrometheusClient())
             MetricsSystem.bootstrap(metricsFactory)
         }
 
@@ -365,7 +365,7 @@ extension HTTPCookies {
             if newValue {
                 self.all["feide-login"] = .init(string: "true")
             } else {
-                self.all["feide-login"] = .init(string: "false", expires: .now)
+                self.all["feide-login"] = .init(string: "false", expires: Date())
             }
         }
     }

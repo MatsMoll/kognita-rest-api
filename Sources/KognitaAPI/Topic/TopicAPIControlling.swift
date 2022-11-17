@@ -17,6 +17,7 @@ public protocol TopicAPIControlling: CreateModelAPIController,
     func retrive(_ req: Request) throws -> EventLoopFuture<Topic>
     func getAllIn(subject req: Request) throws -> EventLoopFuture<[Topic]>
     func export(topic req: Request) throws -> EventLoopFuture<Topic.Export>
+    func importSubtopics(req: Request) throws -> EventLoopFuture<HTTPResponseStatus>
 }
 
 extension TopicAPIControlling {
@@ -34,5 +35,6 @@ extension TopicAPIControlling {
         register(retriveAll: retriveAll(_:), router: topics)
 
         topics.on(.GET, Topic.parameter, "export", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: self.export(topic: ))
+        topics.on(.POST, Topic.parameter, "import", body: .collect(maxSize: ByteCount.init(value: 20_000_000)), use: importSubtopics(req: ))
     }
 }

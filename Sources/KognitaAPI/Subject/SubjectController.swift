@@ -7,7 +7,6 @@
 
 import Vapor
 import KognitaCore
-import QTIKit
 
 extension URLQueryContainer {
     func decode<T: Decodable>() throws -> T { try decode(T.self) }
@@ -236,7 +235,8 @@ public struct SubjectAPIController: SubjectAPIControlling {
         guard user.isAdmin else { throw Abort(.notFound) }
 
         return req.repositories { repositories in
-            return try repositories.subjectRepository.find(req.parameters.get(Subject.self), or: Abort(.badRequest))
+            return try repositories.subjectRepository
+                .find(req.parameters.get(Subject.self), or: Abort(.badRequest, reason: "Invalid Subject ID"))
                 .failableFlatMap { try repositories.topicRepository.exportTopics(in: $0) }
         }
     }
@@ -260,11 +260,11 @@ public struct SubjectAPIController: SubjectAPIControlling {
     public func importContent(on req: Request) throws -> EventLoopFuture<HTTPStatus> {
         let user = try req.auth.require(User.self)
         guard user.isAdmin else { throw Abort(.forbidden) }
-
+        
+        let content = try req.content.decode([Subject.Import].self, using: JSONDecoder())
+        
         return req.repositories { repositories in
-            try req.content
-                .decode([Subject.Import].self)
-                .map { repositories.subjectRepository.importContent($0) }
+            content.map { repositories.subjectRepository.importContent($0) }
                 .flatten(on: req.eventLoop)
                 .transform(to: .ok)
         }

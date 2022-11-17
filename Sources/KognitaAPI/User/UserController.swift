@@ -242,7 +242,7 @@ extension Feide.AccessToken: TokenConfig {
     public var token: String { accessToken }
     public var expiresAt: Date {
         // Remove 20 sec as network and access time buffer
-        Date(timeInterval: TimeInterval(expiresIn) - 20, since: .now)
+        Date(timeInterval: TimeInterval(expiresIn) - 20, since: Date())
     }
 }
 
